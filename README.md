@@ -92,4 +92,4 @@ This is a private repository for collaboration. Please coordinate with the proje
 
 ## 📄 License
 
-Private project - All rights reserved. 
+Private project - All rights reserved.
