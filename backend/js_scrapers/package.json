@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "puppeteer": "^24.1.0",
+    "puppeteer-core": "^24.1.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}
