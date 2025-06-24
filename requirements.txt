@@ -1,6 +1,4 @@
 streamlit
 pandas
-google-cloud-firestore
 plotly
-scikit-learn
-firebase-admin 
+scikit-learn 

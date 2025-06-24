@@ -1,22 +1,17 @@
 import os
-import firebase_admin
-from firebase_admin import credentials, firestore
+from pymongo import MongoClient
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from datetime import datetime
 
-# --- FIREBASE INITIALIZATION ---
-if not firebase_admin._apps:
-    cred_path = os.environ.get("FIREBASE_SERVICE_ACCOUNT_KEY_PATH")
-    if not cred_path or not os.path.exists(cred_path):
-        raise RuntimeError("FIREBASE_SERVICE_ACCOUNT_KEY_PATH env variable not set or file does not exist.")
-    cred = credentials.Certificate(cred_path)
-    firebase_admin.initialize_app(cred)
-db = firestore.client()
-
 # --- CONFIG ---
 N_CLUSTERS = 3  # Number of wallet categories
+
+# MongoDB Atlas connection
+MONGO_URI = "mongodb+srv://santowastaken:DGsmWd4ikXVNxA8@cluster0.vxseyuu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+client = MongoClient(MONGO_URI)
+db = client["solens_ai"]
 
 # --- FEATURE EXTRACTION ---
 def extract_features(wallet):
@@ -65,15 +60,14 @@ CATEGORY_LABELS = [
 
 def main():
     # 1. Query wallets with both gmgn_data and on_chain_data
-    wallets_ref = db.collection('wallets')
-    wallets = [doc for doc in wallets_ref.stream()]
+    wallets = list(db.wallets.find({}))
     selected = []
     wallet_ids = []
     for doc in wallets:
-        data = doc.to_dict()
+        data = doc
         if 'gmgn_data' in data and 'on_chain_data' in data:
             selected.append(data)
-            wallet_ids.append(doc.id)
+            wallet_ids.append(doc['_id'])
     if not selected:
         print('No wallets with both gmgn_data and on_chain_data found.')
         return
@@ -94,17 +88,19 @@ def main():
     # 5. Clustering
     kmeans = KMeans(n_clusters=N_CLUSTERS, random_state=42)
     clusters = kmeans.fit_predict(X_norm)
-    # 6. Write back to Firestore
+    # 6. Write back to MongoDB
     for i, doc_id in enumerate(wallet_ids):
         ai_insights = {
             'overall_smart_score': smart_scores[i],
             'risk_score': risk_scores[i],
             'tags_ml': [CATEGORY_LABELS[clusters[i]]],
-            'last_ml_inference': firestore.SERVER_TIMESTAMP
+            'last_ml_inference': datetime.utcnow()
         }
-        db.collection('wallets').document(doc_id).set({
-            'ai_insights': ai_insights
-        }, merge=True)
+        db.wallets.update_one(
+            {"_id": doc_id},
+            {"$set": {"ai_insights": ai_insights}},
+            upsert=True
+        )
     print(f'Processed {len(wallet_ids)} wallets and updated ai_insights.')
 
 if __name__ == '__main__':

@@ -1,22 +1,14 @@
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import fs from "fs";
-import admin from "firebase-admin";
+import { MongoClient } from "mongodb";
 
 puppeteer.use(StealthPlugin());
 
-// Firebase Admin SDK initialization
-if (!admin.apps.length) {
-  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-  if (!serviceAccountPath) {
-    throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY env variable not set");
-  }
-  const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
-}
-const db = admin.firestore();
+// MongoDB Atlas connection
+const MONGO_URI = "mongodb+srv://santowastaken:DGsmWd4ikXVNxA8@cluster0.vxseyuu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const client = new MongoClient(MONGO_URI);
+let db;
 
 // Function to get random time period
 function getRandomTimePeriod() {
@@ -25,31 +17,23 @@ function getRandomTimePeriod() {
 
 // Function to get random filters
 function getRandomFilters() {
-    const allFilters = ['renounced', 'frozen', 'verified', 'audited'];
-    const numFilters = Math.floor(Math.random() * 2) + 1; // 1 or 2 filters
-    const selectedFilters = [];
-    
-    while (selectedFilters.length < numFilters) {
-        const filter = allFilters[Math.floor(Math.random() * allFilters.length)];
-        if (!selectedFilters.includes(filter)) {
-            selectedFilters.push(filter);
-        }
-    }
-    
-    return selectedFilters;
+    return []; // No filters, include all tokens
 }
 
 // Function to get random quality thresholds
 function getRandomQualityThresholds() {
     return {
-        minLiquidity: Math.floor(Math.random() * 3000) + 1000, // 1000-4000
-        minHolderCount: Math.floor(Math.random() * 30) + 10,   // 10-40
-        minMarketCap: Math.floor(Math.random() * 5000) + 3000, // 3000-8000
-        maxRugRatio: 0.7 + (Math.random() * 0.2)              // 0.7-0.9
+        minLiquidity: 0, // Allow any liquidity
+        minHolderCount: 0, // Allow any holder count
+        minMarketCap: 0, // Allow any market cap
+        maxRugRatio: 1.0 // Allow any rug ratio
     };
 }
 
 async function main() {
+    await client.connect();
+    db = client.db("solens_ai");
+
     const browser = await puppeteer.launch({
         headless: true,
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
@@ -83,20 +67,23 @@ async function main() {
         }, url);
 
         console.log(`DEBUG: Found ${rankData.length} total coins from API.`);
-
+        // Add debug: print first 5 tokens
+        console.log('DEBUG: First 5 tokens from API:', rankData.slice(0, 5));
         // Filter for what we define as "good quality" coins using random thresholds
         const goodQualityCoins = rankData.filter(coin => {
             const liquidity = parseFloat(coin.liquidity);
             const holder_count = parseInt(coin.holder_count, 10);
             const market_cap = parseInt(coin.market_cap, 10);
             const rug_ratio = parseFloat(coin.rug_ratio);
-
-            return liquidity > thresholds.minLiquidity &&
+            const pass = liquidity > thresholds.minLiquidity &&
                    holder_count > thresholds.minHolderCount &&
                    market_cap > thresholds.minMarketCap &&
                    rug_ratio < thresholds.maxRugRatio;
+            if (!pass) {
+                console.log(`DEBUG: Token ${coin.symbol || coin.address.slice(0,6)} filtered out. Liquidity: ${liquidity}, Holders: ${holder_count}, Market Cap: ${market_cap}, Rug Ratio: ${rug_ratio}`);
+            }
+            return pass;
         });
-
         console.log(`DEBUG: Filtered down to ${goodQualityCoins.length} 'good quality' coins.`);
 
         // Load previously processed coins if file exists
@@ -156,16 +143,21 @@ async function main() {
                             }))
                         );
                 });
+                console.log(`DEBUG: Fetched ${tradesData.length} trades for token ${coin.symbol || coinAddress.slice(0,6)}`);
+                if (tradesData.length > 0) {
+                    console.log('DEBUG: First 3 trades:', tradesData.slice(0,3));
+                }
 
-                // Filter wallets with less than 50% PNL.
-                const filteredTrades = tradesData.filter(trade => {
-                    if (trade.profit_change === undefined || trade.profit_change === null) {
-                        return true;
-                    }
-                    return parseFloat(trade.profit_change) >= 50;
-                });
-
-                const profitableTrades = filteredTrades.filter(trade => trade.profit > 0);
+                // --- BEGIN: Remove wallet profitability filter ---
+                // const filteredTrades = tradesData.filter(trade => {
+                //     if (trade.profit_change === undefined || trade.profit_change === null) {
+                //         return true;
+                //     }
+                //     return parseFloat(trade.profit_change) >= 50;
+                // });
+                // const profitableTrades = filteredTrades.filter(trade => trade.profit > 0);
+                const profitableTrades = tradesData; // No filtering, include all
+                // --- END: Remove wallet profitability filter ---
 
                 // Deduplicate makers
                 const uniqueTrades = [];
@@ -180,10 +172,10 @@ async function main() {
 
                 console.log(`DEBUG: Found ${uniqueTrades.length} unique, profitable traders for ${coin.symbol || coinAddress.slice(0, 6)}.`);
 
-                // Firestore: update token document
-                const tokenRef = db.collection('tokens').doc(coinAddress);
+                // Replace Firestore upserts with MongoDB upserts for tokens and wallets
+                // For tokens:
                 const tokenData = {
-                  address: coin.address,
+                  address: coinAddress,
                   symbol: coin.symbol,
                   logo: coin.logo,
                   liquidity: coin.liquidity,
@@ -191,28 +183,30 @@ async function main() {
                   market_cap: coin.market_cap,
                   rug_ratio: coin.rug_ratio,
                   is_honeypot: coin.is_honeypot !== undefined ? coin.is_honeypot : null,
-                  last_gmgn_update: admin.firestore.Timestamp.now(),
-                  discovered_by: admin.firestore.FieldValue.arrayUnion('GMGN_Coin_Scraper')
+                  last_gmgn_update: new Date(),
+                  discovered_by: ['GMGN_Coin_Scraper']
                 };
-                await tokenRef.set(tokenData, { merge: true });
+                await db.collection("tokens").updateOne(
+                  { address: coinAddress },
+                  { $set: tokenData },
+                  { upsert: true }
+                );
 
-                // Firestore: update wallet documents for each trade
+                // For wallets:
                 for (const trade of uniqueTrades) {
-                  const walletRef = db.collection('wallets').doc(trade.address);
-                  const tradeSummary = {
+                  const walletData = {
                     token_address: coinAddress,
                     profit: trade.profit,
                     profit_change: trade.profit_change,
-                    timestamp: trade.timestamp
+                    timestamp: trade.timestamp,
+                    discovered_by: ['GMGN_Token_Trader_Scraper'],
+                    updated_at: new Date()
                   };
-                  // Add to gmgn_data.trades_on_tokens (array)
-                  await walletRef.set({
-                    gmgn_data: {
-                      trades_on_tokens: admin.firestore.FieldValue.arrayUnion(tradeSummary)
-                    },
-                    discovered_by: admin.firestore.FieldValue.arrayUnion('GMGN_Token_Trader_Scraper'),
-                    updated_at: admin.firestore.Timestamp.now()
-                  }, { merge: true });
+                  await db.collection("wallets").updateOne(
+                    { _id: trade.address },
+                    { $set: walletData },
+                    { upsert: true }
+                  );
                 }
 
                 // Add to processed coins

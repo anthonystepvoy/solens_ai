@@ -8,9 +8,7 @@ import asyncio
 from solana.rpc.async_api import AsyncClient
 from solders.pubkey import Pubkey
 from solders.signature import Signature
-# --- FIREBASE ADMIN SDK ---
-import firebase_admin
-from firebase_admin import credentials, firestore
+from pymongo import MongoClient
 
 # Ensure FIREBASE_SERVICE_ACCOUNT_KEY_PATH is set
 if not os.environ.get("FIREBASE_SERVICE_ACCOUNT_KEY_PATH"):
@@ -28,22 +26,10 @@ HELIUS_API_URL = "https://api.helius.xyz"
 HELIUS_RPC_URL = f"https://mainnet.helius-rpc.com/?api-key={HELIUS_API_KEY}"
 WRAPPED_SOL_MINT = "So11111111111111111111111111111111111111112"
 
-# --- FIREBASE INITIALIZATION ---
-if not firebase_admin._apps:
-    print("DEBUG: Firebase app not initialized. Initializing now...")
-    cred_path = os.environ.get("FIREBASE_SERVICE_ACCOUNT_KEY_PATH")
-    if not cred_path or not os.path.exists(cred_path):
-        print(f"ERROR: FIREBASE_SERVICE_ACCOUNT_KEY_PATH env var is not set or path does not exist. Path: {cred_path}")
-        raise RuntimeError("FIREBASE_SERVICE_ACCOUNT_KEY_PATH env variable not set or file does not exist.")
-    try:
-        cred = credentials.Certificate(cred_path)
-        firebase_admin.initialize_app(cred)
-        print("DEBUG: Firebase app initialized successfully.")
-    except Exception as e:
-        print(f"ERROR: Failed to initialize Firebase Admin SDK: {e}")
-        raise
-db = firestore.client()
-print("DEBUG: Firestore client created.")
+# MongoDB Atlas connection
+MONGO_URI = "mongodb+srv://santowastaken:DGsmWd4ikXVNxA8@cluster0.vxseyuu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+client = MongoClient(MONGO_URI)
+db = client["solens_ai"]
 
 # --- ANALYSIS CONFIGURATION ---
 # TRANSACTION_LIMIT is no longer a global constant. It will be passed as a parameter.
@@ -264,14 +250,12 @@ async def analyze_wallet(wallet_address, days_history=7, ui_callback=None):
         'analysis_period_days': days_history
     }
 
-    # --- FIRESTORE INTEGRATION ---
-    wallet_ref = db.collection('wallets').document(wallet_address)
-    update_data = {
-        'on_chain_data': result,
-        'updated_at': firestore.SERVER_TIMESTAMP,
-        'discovered_by': firestore.ArrayUnion(['OnChain_Analyzer'])
-    }
-    wallet_ref.set(update_data, merge=True)
+    # --- MONGODB INTEGRATION ---
+    db.wallets.update_one(
+        {"_id": wallet_address},
+        {"$set": {"on_chain_data": result, "updated_at": datetime.utcnow(), "discovered_by": ["OnChain_Analyzer"]}},
+        upsert=True
+    )
 
     return result
 
@@ -350,44 +334,33 @@ async def main():
     print("="*50)
 
     try:
-        wallets_ref = db.collection('wallets')
-        wallets_docs = wallets_ref.stream()
-        
-        # We need to collect them into a list to see the count and iterate
-        wallet_addresses = [doc.id for doc in wallets_docs]
-        
+        wallet_docs = db.wallets.find({})
+        wallet_addresses = [doc['_id'] for doc in wallet_docs]
         if not wallet_addresses:
-            print("WARNING: No wallets found in the 'wallets' collection in Firestore. Exiting.")
+            print("WARNING: No wallets found in the 'wallets' collection in MongoDB. Exiting.")
             return
-
         print(f"Found {len(wallet_addresses)} wallets to analyze.")
-        
         analysis_results = []
         for i, address in enumerate(wallet_addresses):
             print(f"\nAnalyzing wallet {i+1}/{len(wallet_addresses)}: {address}")
-            # The ui_callback will now print to stdout, which is what we want for debugging
             result = await analyze_wallet(address, days_history=7, ui_callback=print)
             if result:
                 analysis_results.append(result)
-        
         print("\n" + "-"*50)
-        print("Updating Firestore with analysis results...")
+        print("Updating MongoDB with analysis results...")
         if not analysis_results:
             print("No new analysis results to update.")
         else:
-            batch = db.batch()
             for res in analysis_results:
                 wallet_id = res.pop('wallet') 
-                wallet_ref = db.collection('wallets').document(wallet_id)
-                # Using set with merge=True to update/add fields without overwriting the doc
-                batch.set(wallet_ref, res, merge=True)
-            batch.commit()
-            print(f"Successfully updated {len(analysis_results)} wallets in Firestore.")
-        
+                db.wallets.update_one(
+                    {"_id": wallet_id},
+                    {"$set": res},
+                    upsert=True
+                )
+            print(f"Successfully updated {len(analysis_results)} wallets in MongoDB.")
     except Exception as e:
         print(f"\nERROR: An unexpected error occurred in main(): {e}")
-        # Optionally re-raise to ensure the script exits with an error code
-        # raise
 
     finally:
         print("\n" + "="*50)

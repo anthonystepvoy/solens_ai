@@ -8,19 +8,15 @@ import io
 from fake_useragent import UserAgent
 # --- FIREBASE ADMIN SDK ---
 import os
-import firebase_admin
-from firebase_admin import credentials, firestore
 import traceback
 import requests
+from pymongo import MongoClient
+from datetime import datetime
 
-# --- FIREBASE INITIALIZATION ---
-if not firebase_admin._apps:
-    cred_path = os.environ.get("FIREBASE_SERVICE_ACCOUNT_KEY_PATH")
-    if not cred_path or not os.path.exists(cred_path):
-        raise RuntimeError("FIREBASE_SERVICE_ACCOUNT_KEY_PATH env variable not set or file does not exist.")
-    cred = credentials.Certificate(cred_path)
-    firebase_admin.initialize_app(cred)
-db = firestore.client()
+# MongoDB Atlas connection
+MONGO_URI = "mongodb+srv://santowastaken:DGsmWd4ikXVNxA8@cluster0.vxseyuu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+client = MongoClient(MONGO_URI)
+db = client["solens_ai"]
 
 def shorten(s: str) -> str:
     return f"{s[:4]}...{s[-5:]}" if len(s) >= 9 else s
@@ -369,15 +365,15 @@ def main():
     Main execution function.
     """
     try:
-        # Build the absolute path to config.json relative to this script
-        script_dir = os.path.dirname(__file__)
-        config_path = os.path.join(script_dir, 'config.json')
+    # Build the absolute path to config.json relative to this script
+    script_dir = os.path.dirname(__file__)
+    config_path = os.path.join(script_dir, 'config.json')
 
         with open(config_path) as f:
             config = json.load(f)
 
         # Prefer explicit rpc_url, otherwise build from helius_api_key
-        rpcUrl = config.get("rpc_url")
+    rpcUrl = config.get("rpc_url")
         if not rpcUrl:
             helius_api_key = config.get("helius_api_key")
             if not helius_api_key:
@@ -390,27 +386,27 @@ def main():
         if len(sys.argv) > 1:
             walletAddress = sys.argv[1]
         else:
-            walletAddress = config.get("walletAddress")
-
-        if not walletAddress:
+    walletAddress = config.get("walletAddress")
+    
+    if not walletAddress:
             print("No target wallet address found", file=sys.stderr)
-            sys.exit(1)
+        sys.exit(1)
 
-        finder = CopyWalletFinder(rpcUrl)
-        transaction, contractAddress = finder.getLastBuy(walletAddress)
-        if not transaction or not contractAddress:
+    finder = CopyWalletFinder(rpcUrl)
+    transaction, contractAddress = finder.getLastBuy(walletAddress)
+    if not transaction or not contractAddress:
             print(f"Could not retrieve main wallet transaction details for {walletAddress}", file=sys.stderr)
-            sys.exit(1)
+        sys.exit(1)
         print(f"Main transaction for {walletAddress}: {transaction}, contract: {contractAddress}", file=sys.stderr)
-        mainBlock, txData = finder.getBlockHash(transaction)
-        if mainBlock is None:
+    mainBlock, txData = finder.getBlockHash(transaction)
+    if mainBlock is None:
             print("Main transaction failed or did not meet the criteria; cannot proceed.", file=sys.stderr)
-            sys.exit(1)
-        mainSolBought = getSolAmountBought(txData)
+        sys.exit(1)
+    mainSolBought = getSolAmountBought(txData)
         print(f"Finding potential copy traders...", file=sys.stderr)
-        _, mainBlock, potentialTraders = finder.getPotentialCopyTraders(mainBlock, walletAddress, contractAddress, blockLimit)
+    _, mainBlock, potentialTraders = finder.getPotentialCopyTraders(mainBlock, walletAddress, contractAddress, blockLimit)
         print(f"Potential copytraders found: {len(potentialTraders)}", file=sys.stderr)
-        detected_copy_traders = []
+    detected_copy_traders = []
         for offset in range(1, blockLimit + 1):
             block_slot = mainBlock + offset
             block_data = make_robust_rpc_request(rpcUrl, 'getBlock', [block_slot, {"encoding": "json", "maxSupportedTransactionVersion": 0, "transactionDetails": "full", "rewards": False}])
@@ -424,7 +420,7 @@ def main():
             for tx_idx, tx in enumerate(block_data['transactions'][:transactionLimit]):
                 primary_signer = tx['transaction']['message']['accountKeys'][0]
                 if primary_signer == walletAddress:
-                    continue
+            continue
                 postBalances = tx['meta'].get('postTokenBalances', [])
                 if any(balance.get('mint') == contractAddress for balance in postBalances):
                     txSig = tx['transaction']['signatures'][0]
@@ -451,7 +447,7 @@ def main():
                             print(json.dumps(tx_details, indent=2), file=sys.stderr)
                     else:
                         print(f"[DEBUG] No tx_details returned for {txSig}", file=sys.stderr)
-                    trader_data = {
+        trader_data = {
                         'Trader': primary_signer,
                         'Signature': txSig,
                         'Block Delay': blockDelay,
@@ -461,8 +457,8 @@ def main():
                         'SOL Bought': f"{solAmountBought:.8f} SOL" if isinstance(solAmountBought, (float, int)) and solAmountBought else 'N/A',
                         'Profit/USD': None,
                         'Profit/%': None
-                    }
-                    detected_copy_traders.append(trader_data)
+        }
+        detected_copy_traders.append(trader_data)
         print(f"Total detected copytraders: {len(detected_copy_traders)}", file=sys.stderr)
         if not detected_copy_traders:
             print(f"No copytraders detected for {walletAddress} after scanning {blockLimit} blocks.", file=sys.stderr)
@@ -488,45 +484,47 @@ def main():
         output.close()
         sys.stdout.write(csv_output)
 
-        # Update pro wallet doc
-        pro_wallet_ref = db.collection('wallets').document(walletAddress)
-        copy_trade_analysis = {
-            'is_pro_wallet': True,
-            'target_token_address': contractAddress,
-            'target_transaction_hash': transaction,
-            'target_block': mainBlock,
-            'target_sol_bought': mainSolBought,
-            'detected_copy_traders': detected_copy_traders
-        }
-        pro_wallet_ref.set({
-            'copy_trade_analysis': copy_trade_analysis,
-            'updated_at': firestore.SERVER_TIMESTAMP,
-            'discovered_by': firestore.ArrayUnion(['CopyTrade_Analyzer'])
-        }, merge=True)
+    # Update pro wallet doc
+        db.wallets.update_one(
+            {"_id": walletAddress},
+            {"$set": {
+                "copy_trade_analysis": {
+                    "is_pro_wallet": True,
+                    "target_token_address": contractAddress,
+                    "target_transaction_hash": transaction,
+                    "target_block": mainBlock,
+                    "target_sol_bought": mainSolBought,
+                    "detected_copy_traders": detected_copy_traders
+                },
+                "updated_at": datetime.utcnow(),
+                "discovered_by": ["CopyTrade_Analyzer"]
+            }},
+            upsert=True
+        )
 
-        # Get initial buy info for logging, with robust error handling
-        sol_bought_info = "N/A"
-        try:
-            rpc_url = config.get("rpc_url", "https://api.mainnet-beta.solana.com")
-            response = finder.session.get(
-                rpc_url,
-                json={'jsonrpc': '2.0', 'id': 1, 'method': 'getTransaction', 'params': [transaction, 'jsonParsed']}
-            )
-            if response.status_code == 200:
-                tx_data = response.json()
-                if tx_data.get("result"):
-                    sol_bought_info = getSolAmountBought(tx_data)
-                else:
-                    error_message = tx_data.get('error', {}).get('message', 'Unknown RPC error')
-                    print(f"Warning: RPC error fetching tx {transaction}: {error_message}", file=sys.stderr)
+    # Get initial buy info for logging, with robust error handling
+    sol_bought_info = "N/A"
+    try:
+        rpc_url = config.get("rpc_url", "https://api.mainnet-beta.solana.com")
+        response = finder.session.get(
+            rpc_url,
+            json={'jsonrpc': '2.0', 'id': 1, 'method': 'getTransaction', 'params': [transaction, 'jsonParsed']}
+        )
+        if response.status_code == 200:
+            tx_data = response.json()
+            if tx_data.get("result"):
+                sol_bought_info = getSolAmountBought(tx_data)
             else:
-                print(f"Warning: Could not fetch initial buy info for tx {transaction}. Status: {response.status_code}", file=sys.stderr)
-        except (tls_client.exceptions.TLSClientError, json.JSONDecodeError) as e:
-            print(f"Warning: Could not fetch initial buy info for tx {transaction}. Error: {e}", file=sys.stderr)
+                error_message = tx_data.get('error', {}).get('message', 'Unknown RPC error')
+                print(f"Warning: RPC error fetching tx {transaction}: {error_message}", file=sys.stderr)
+        else:
+            print(f"Warning: Could not fetch initial buy info for tx {transaction}. Status: {response.status_code}", file=sys.stderr)
+    except (tls_client.exceptions.TLSClientError, json.JSONDecodeError) as e:
+        print(f"Warning: Could not fetch initial buy info for tx {transaction}. Error: {e}", file=sys.stderr)
 
-        # Print informational logs to stderr so they don't corrupt the CSV output
-        print(f"Target Wallet: {walletAddress} - {shorten(transaction)} - Block: {mainBlock} - Bought: {sol_bought_info} SOL", file=sys.stderr)
-        print("Finding potential copy traders...", file=sys.stderr)
+    # Print informational logs to stderr so they don't corrupt the CSV output
+    print(f"Target Wallet: {walletAddress} - {shorten(transaction)} - Block: {mainBlock} - Bought: {sol_bought_info} SOL", file=sys.stderr)
+    print("Finding potential copy traders...", file=sys.stderr)
     except Exception as e:
         print(f"[ERROR] Exception in copy_trader_analyzer main(): {e}", file=sys.stderr)
         print(traceback.format_exc(), file=sys.stderr)

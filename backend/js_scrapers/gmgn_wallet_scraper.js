@@ -1,24 +1,19 @@
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import fs from "fs";
-import admin from "firebase-admin";
+import { MongoClient } from "mongodb";
 
 puppeteer.use(StealthPlugin());
 
-// Firebase Admin SDK initialization
-if (!admin.apps.length) {
-  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-  if (!serviceAccountPath) {
-    throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY env variable not set");
-  }
-  const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
-}
-const db = admin.firestore();
+// MongoDB Atlas connection
+const MONGO_URI = "mongodb+srv://santowastaken:DGsmWd4ikXVNxA8@cluster0.vxseyuu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const client = new MongoClient(MONGO_URI);
+let db;
 
 async function scrapeWallets() {
+  await client.connect();
+  db = client.db("solens_ai");
+
   const browser = await puppeteer.launch({
     headless: "new",
     args: [
@@ -116,19 +111,20 @@ async function scrapeWallets() {
         };
       });
 
-      // Firestore integration: upsert each wallet
-      const batch = db.batch();
+      // Replace Firestore upserts with MongoDB upserts for wallets
       for (const wallet of rankedWallets) {
-        const walletRef = db.collection('wallets').doc(wallet.wallet_address);
-        const data = {
+        const walletData = {
           gmgn_data: { ...wallet },
-          updated_at: admin.firestore.Timestamp.now(),
-          discovered_by: admin.firestore.FieldValue.arrayUnion('GMGN_Wallet_Scraper')
+          updated_at: new Date(),
+          discovered_by: ['GMGN_Wallet_Scraper']
         };
-        batch.set(walletRef, data, { merge: true });
+        await db.collection("wallets").updateOne(
+          { _id: wallet.wallet_address },
+          { $set: walletData },
+          { upsert: true }
+        );
       }
-      await batch.commit();
-      console.log(`Sent ${rankedWallets.length} wallets to Firestore (wallets collection).`);
+      console.log(`Sent ${rankedWallets.length} wallets to MongoDB (wallets collection).`);
       
       // Print top 5 wallets for quick review
       console.log("\nTop 5 Wallets for Copy Trading:");
