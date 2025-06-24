@@ -10,6 +10,8 @@ from fake_useragent import UserAgent
 import os
 import firebase_admin
 from firebase_admin import credentials, firestore
+import traceback
+import requests
 
 # --- FIREBASE INITIALIZATION ---
 if not firebase_admin._apps:
@@ -229,10 +231,10 @@ class CopyWalletFinder:
 
                     return profitUsd, profitPercent
                 else:
-                    print(f"Attempt failed for wallet {walletAddress} - Status: {response.status_code}")
+                    print(f"Attempt failed for wallet {walletAddress} - Status: {response.status_code}", file=sys.stderr)
 
             except Exception as e:
-                print(f"Attempt failed for wallet {walletAddress}: {e}")
+                print(f"Attempt failed for wallet {walletAddress}: {e}", file=sys.stderr)
         return "N/A", "N/A"
 
     def getLastBuy(self, walletAddress: str):
@@ -243,14 +245,14 @@ class CopyWalletFinder:
                 activities = self.session.get(url, headers=self.headers).json()['data']['activities']
                 buys = [act for act in activities if act.get("event_type") == "buy"]
                 if not buys:
-                    print(f"No buy events found for {walletAddress}")
+                    print(f"No buy events found for {walletAddress}", file=sys.stderr)
                     continue
                 lastToken = max(buys, key=lambda x: x['timestamp'])['token']['address']
                 tokenBuys = [act for act in buys if act['token']['address'] == lastToken]
                 firstTokenBuy = min(tokenBuys, key=lambda x: x['timestamp'])
                 return firstTokenBuy['tx_hash'], firstTokenBuy['token']['address']
             except Exception as e:
-                print(f"Attempt failed for wallet {walletAddress}: {e}")
+                print(f"Attempt failed for wallet {walletAddress}: {e}", file=sys.stderr)
         return None, None
 
     def getBlockHash(self, transaction: str):
@@ -265,7 +267,7 @@ class CopyWalletFinder:
         }
         txData = self.session.post(self.rpcUrl, json=payload).json()
         if not txData.get("result"):
-            print(f"Failed to fetch transaction data for {transaction}. Response: {txData}")
+            print(f"Failed to fetch transaction data for {transaction}. Response: {txData}", file=sys.stderr)
             return None, txData
         if txData["result"]['meta']["err"] is not None or not checkTxIsBuy(txData):
             return None, txData
@@ -286,7 +288,7 @@ class CopyWalletFinder:
             }
             data = self.session.post(self.rpcUrl, json=payload).json()
             if not data.get("result"):
-                print(f"Warning: Could not fetch block {currentBlock}. Response: {data}. Skipping.")
+                print(f"Warning: Could not fetch block {currentBlock}. Response: {data}. Skipping.", file=sys.stderr)
                 continue
             transactions = data['result']['transactions']
             if currentBlock == startBlock:
@@ -329,144 +331,206 @@ def processTransaction(finder: CopyWalletFinder, txSignature: str, mainBlock: in
         "solAmountBought": solBought
     }
 
+def make_robust_rpc_request(rpc_url, method, params, max_retries=5, initial_delay=1.0):
+    headers = {'Content-Type': 'application/json'}
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": method,
+        "params": params
+    }
+    for attempt in range(max_retries):
+        try:
+            response = requests.post(rpc_url, data=json.dumps(payload), headers=headers, timeout=20)
+            response.raise_for_status()
+            data = response.json()
+            if 'error' in data:
+                error_info = data['error']
+                print(f"RPC Error: {error_info.get('message')} (Code: {error_info.get('code')})", file=sys.stderr)
+                if response.status_code == 429:
+                    pass
+                else:
+                    return None
+            else:
+                return data['result']
+        except requests.exceptions.RequestException as e:
+            print(f"Network Error on attempt {attempt + 1}: {e}", file=sys.stderr)
+        except json.JSONDecodeError:
+            print(f"Failed to decode JSON response on attempt {attempt + 1}.", file=sys.stderr)
+        if attempt < max_retries - 1:
+            delay = (initial_delay * (2 ** attempt)) + (random.uniform(0, 1))
+            print(f"Retrying in {delay:.2f} seconds...", file=sys.stderr)
+            time.sleep(delay)
+    print("All retries failed. Could not fetch data.", file=sys.stderr)
+    return None
+
 def main():
     """
     Main execution function.
     """
-    # Build the absolute path to config.json relative to this script
-    script_dir = os.path.dirname(__file__)
-    config_path = os.path.join(script_dir, 'config.json')
-
     try:
+        # Build the absolute path to config.json relative to this script
+        script_dir = os.path.dirname(__file__)
+        config_path = os.path.join(script_dir, 'config.json')
+
         with open(config_path) as f:
             config = json.load(f)
-    except FileNotFoundError:
-        print(f"Error: Configuration file not found at {config_path}", file=sys.stderr)
-        sys.exit(1)
-    except json.JSONDecodeError:
-        print(f"Error: Could not decode JSON from {config_path}", file=sys.stderr)
-        sys.exit(1)
 
-    rpcUrl = config.get("rpc_url")
-    walletAddress = config.get("walletAddress")
-    blockLimit = config['blockLimit']
-    
-    if not walletAddress:
-        print("No target wallet address found")
-        sys.exit(1)
+        # Prefer explicit rpc_url, otherwise build from helius_api_key
+        rpcUrl = config.get("rpc_url")
+        if not rpcUrl:
+            helius_api_key = config.get("helius_api_key")
+            if not helius_api_key:
+                raise RuntimeError("Neither rpc_url nor helius_api_key found in config.json")
+            rpcUrl = f"https://mainnet.helius-rpc.com/?api-key={helius_api_key}"
+        blockLimit = config.get('blockLimit', 10)
+        transactionLimit = config.get('transactionLimit', 500)
 
-    finder = CopyWalletFinder(rpcUrl)
-    transaction, contractAddress = finder.getLastBuy(walletAddress)
-    if not transaction or not contractAddress:
-        print("Could not retrieve main wallet transaction details")
-        sys.exit(1)
+        # Use wallet address from command-line if provided
+        if len(sys.argv) > 1:
+            walletAddress = sys.argv[1]
+        else:
+            walletAddress = config.get("walletAddress")
 
-    mainBlock, txData = finder.getBlockHash(transaction)
-    if mainBlock is None:
-        print("Main transaction failed or did not meet the criteria; cannot proceed.")
-        sys.exit(1)
+        if not walletAddress:
+            print("No target wallet address found", file=sys.stderr)
+            sys.exit(1)
 
-    mainSolBought = getSolAmountBought(txData)
+        finder = CopyWalletFinder(rpcUrl)
+        transaction, contractAddress = finder.getLastBuy(walletAddress)
+        if not transaction or not contractAddress:
+            print(f"Could not retrieve main wallet transaction details for {walletAddress}", file=sys.stderr)
+            sys.exit(1)
+        print(f"Main transaction for {walletAddress}: {transaction}, contract: {contractAddress}", file=sys.stderr)
+        mainBlock, txData = finder.getBlockHash(transaction)
+        if mainBlock is None:
+            print("Main transaction failed or did not meet the criteria; cannot proceed.", file=sys.stderr)
+            sys.exit(1)
+        mainSolBought = getSolAmountBought(txData)
+        print(f"Finding potential copy traders...", file=sys.stderr)
+        _, mainBlock, potentialTraders = finder.getPotentialCopyTraders(mainBlock, walletAddress, contractAddress, blockLimit)
+        print(f"Potential copytraders found: {len(potentialTraders)}", file=sys.stderr)
+        detected_copy_traders = []
+        for offset in range(1, blockLimit + 1):
+            block_slot = mainBlock + offset
+            block_data = make_robust_rpc_request(rpcUrl, 'getBlock', [block_slot, {"encoding": "json", "maxSupportedTransactionVersion": 0, "transactionDetails": "full", "rewards": False}])
+            if not block_data or 'transactions' not in block_data:
+                print(f"Warning: Could not fetch or parse block {block_slot}.", file=sys.stderr)
+                continue
+            print(f"[DEBUG] Block {block_slot} has {len(block_data['transactions'])} transactions", file=sys.stderr)
+            if block_data['transactions']:
+                print(f"[DEBUG] First transaction in block {block_slot}:", file=sys.stderr)
+                print(json.dumps(block_data['transactions'][0], indent=2), file=sys.stderr)
+            for tx_idx, tx in enumerate(block_data['transactions'][:transactionLimit]):
+                primary_signer = tx['transaction']['message']['accountKeys'][0]
+                if primary_signer == walletAddress:
+                    continue
+                postBalances = tx['meta'].get('postTokenBalances', [])
+                if any(balance.get('mint') == contractAddress for balance in postBalances):
+                    txSig = tx['transaction']['signatures'][0]
+                    blockDelay = block_slot - mainBlock
+                    print(f"[DEBUG] Candidate copytrader found: {primary_signer}, signature: {txSig}, block: {block_slot}", file=sys.stderr)
+                    print(f"[DEBUG] Attempting to fetch tx_details for {txSig}", file=sys.stderr)
+                    tx_details = make_robust_rpc_request(rpcUrl, 'getTransaction', [txSig, {"encoding": "jsonParsed", "maxSupportedTransactionVersion": 0}])
+                    print(f"[DEBUG] Full tx_details for copytrader {txSig}:", file=sys.stderr)
+                    print(json.dumps(tx_details, indent=2), file=sys.stderr)
+                    botUsed = ''
+                    feePaidTo = {}
+                    feePaid = ''
+                    solAmountBought = ''
+                    if tx_details:
+                        try:
+                            for instr in tx_details.get("result", {}).get("transaction", {}).get("message", {}).get("instructions", []):
+                                if isinstance(instr, dict) and "programId" in instr and instr["programId"] in botAccounts:
+                                    botUsed = botAccounts[instr["programId"]]
+                                    break
+                            feePaidTo, feePaid = getFeeInfo(tx_details)
+                            solAmountBought = getSolAmountBought(tx_details)
+                        except Exception as e:
+                            print(f"[DEBUG] Error parsing tx details for {txSig}: {e}", file=sys.stderr)
+                            print(json.dumps(tx_details, indent=2), file=sys.stderr)
+                    else:
+                        print(f"[DEBUG] No tx_details returned for {txSig}", file=sys.stderr)
+                    trader_data = {
+                        'Trader': primary_signer,
+                        'Signature': txSig,
+                        'Block Delay': blockDelay,
+                        'Bot Used': botUsed if botUsed else 'N/A',
+                        'Tx Processor/Fee Wallet': ', '.join(feePaidTo.keys()) if feePaidTo else 'N/A',
+                        'Fee Paid': f"{feePaid} SOL" if feePaid else 'N/A',
+                        'SOL Bought': f"{solAmountBought:.8f} SOL" if isinstance(solAmountBought, (float, int)) and solAmountBought else 'N/A',
+                        'Profit/USD': None,
+                        'Profit/%': None
+                    }
+                    detected_copy_traders.append(trader_data)
+        print(f"Total detected copytraders: {len(detected_copy_traders)}", file=sys.stderr)
+        if not detected_copy_traders:
+            print(f"No copytraders detected for {walletAddress} after scanning {blockLimit} blocks.", file=sys.stderr)
+        # Print CSV header and rows to stdout only
+        output = io.StringIO()
+        writer = csv.writer(output)
+        header = ["Trader", "Signature", "Block Delay", "Bot Used", "Tx Processor/Fee Wallet", "Fee Paid", "SOL Bought", "Profit/USD", "Profit/%"]
+        writer.writerow(header)
+        for trader in detected_copy_traders:
+            feeWalletsStr = trader.get("Tx Processor/Fee Wallet", "N/A")
+            writer.writerow([
+                trader.get('Trader', 'N/A'),
+                shorten(trader.get('Signature', 'N/A')),
+                str(trader.get('Block Delay', 'N/A')),
+                trader.get('Bot Used', 'N/A'),
+                feeWalletsStr,
+                trader.get('Fee Paid', 'N/A'),
+                trader.get('SOL Bought', 'N/A'),
+                trader.get('Profit/USD', 'N/A'),
+                trader.get('Profit/%', 'N/A')
+            ])
+        csv_output = output.getvalue()
+        output.close()
+        sys.stdout.write(csv_output)
 
-    _, mainBlock, potentialTraders = finder.getPotentialCopyTraders(mainBlock, walletAddress, contractAddress, blockLimit)
-    detected_copy_traders = []
-
-    for trader, txSig, contestantBlock in potentialTraders:
-        result = processTransaction(finder, txSig, mainBlock, trader)
-        if not result:
-            continue
-        profitUsd, profitPercent = finder.getPNL(contractAddress, trader)
-        # Parse profitUsd (e.g., '$123.45') and profitPercent (e.g., '5.67%') to floats
-        try:
-            profit_usd_val = float(profitUsd.replace('$','').replace(',','')) if profitUsd and profitUsd != 'N/A' else None
-        except Exception:
-            profit_usd_val = None
-        try:
-            profit_percent_val = float(profitPercent.replace('%','')) if profitPercent and profitPercent != 'N/A' else None
-        except Exception:
-            profit_percent_val = None
-        trader_data = {
-            'trader': trader,
-            'hash': result['hash'],
-            'blockDelay': result['blockDelay'],
-            'botUsed': result['botUsed'],
-            'feePaidTo': result['feePaidTo'],
-            'feePaid': result['feePaid'],
-            'solAmountBought': result['solAmountBought'],
-            'profit_usd': profit_usd_val,
-            'profit_percent': profit_percent_val
+        # Update pro wallet doc
+        pro_wallet_ref = db.collection('wallets').document(walletAddress)
+        copy_trade_analysis = {
+            'is_pro_wallet': True,
+            'target_token_address': contractAddress,
+            'target_transaction_hash': transaction,
+            'target_block': mainBlock,
+            'target_sol_bought': mainSolBought,
+            'detected_copy_traders': detected_copy_traders
         }
-        detected_copy_traders.append(trader_data)
-        # Update each trader's wallet doc
-        wallet_ref = db.collection('wallets').document(trader)
-        wallet_ref.set({
-            'discovered_by': firestore.ArrayUnion(['CopyTrade_Analyzer']),
-            'updated_at': firestore.SERVER_TIMESTAMP
+        pro_wallet_ref.set({
+            'copy_trade_analysis': copy_trade_analysis,
+            'updated_at': firestore.SERVER_TIMESTAMP,
+            'discovered_by': firestore.ArrayUnion(['CopyTrade_Analyzer'])
         }, merge=True)
 
-    # Update pro wallet doc
-    pro_wallet_ref = db.collection('wallets').document(walletAddress)
-    copy_trade_analysis = {
-        'is_pro_wallet': True,
-        'target_token_address': contractAddress,
-        'target_transaction_hash': transaction,
-        'target_block': mainBlock,
-        'target_sol_bought': mainSolBought,
-        'detected_copy_traders': detected_copy_traders
-    }
-    pro_wallet_ref.set({
-        'copy_trade_analysis': copy_trade_analysis,
-        'updated_at': firestore.SERVER_TIMESTAMP,
-        'discovered_by': firestore.ArrayUnion(['CopyTrade_Analyzer'])
-    }, merge=True)
-
-    # Get initial buy info for logging, with robust error handling
-    sol_bought_info = "N/A"
-    try:
-        rpc_url = config.get("rpc_url", "https://api.mainnet-beta.solana.com")
-        response = finder.session.get(
-            rpc_url,
-            json={'jsonrpc': '2.0', 'id': 1, 'method': 'getTransaction', 'params': [transaction, 'jsonParsed']}
-        )
-        if response.status_code == 200:
-            tx_data = response.json()
-            if tx_data.get("result"):
-                sol_bought_info = getSolAmountBought(tx_data)
+        # Get initial buy info for logging, with robust error handling
+        sol_bought_info = "N/A"
+        try:
+            rpc_url = config.get("rpc_url", "https://api.mainnet-beta.solana.com")
+            response = finder.session.get(
+                rpc_url,
+                json={'jsonrpc': '2.0', 'id': 1, 'method': 'getTransaction', 'params': [transaction, 'jsonParsed']}
+            )
+            if response.status_code == 200:
+                tx_data = response.json()
+                if tx_data.get("result"):
+                    sol_bought_info = getSolAmountBought(tx_data)
+                else:
+                    error_message = tx_data.get('error', {}).get('message', 'Unknown RPC error')
+                    print(f"Warning: RPC error fetching tx {transaction}: {error_message}", file=sys.stderr)
             else:
-                error_message = tx_data.get('error', {}).get('message', 'Unknown RPC error')
-                print(f"Warning: RPC error fetching tx {transaction}: {error_message}", file=sys.stderr)
-        else:
-            print(f"Warning: Could not fetch initial buy info for tx {transaction}. Status: {response.status_code}", file=sys.stderr)
-    except (tls_client.exceptions.TLSClientError, json.JSONDecodeError) as e:
-        print(f"Warning: Could not fetch initial buy info for tx {transaction}. Error: {e}", file=sys.stderr)
+                print(f"Warning: Could not fetch initial buy info for tx {transaction}. Status: {response.status_code}", file=sys.stderr)
+        except (tls_client.exceptions.TLSClientError, json.JSONDecodeError) as e:
+            print(f"Warning: Could not fetch initial buy info for tx {transaction}. Error: {e}", file=sys.stderr)
 
-    # Print informational logs to stderr so they don't corrupt the CSV output
-    print(f"Target Wallet: {walletAddress} - {shorten(transaction)} - Block: {mainBlock} - Bought: {sol_bought_info} SOL", file=sys.stderr)
-    print("Finding potential copy traders...", file=sys.stderr)
-
-    output = io.StringIO()
-    writer = csv.writer(output)
-    header = ["Trader", "Signature", "Block Delay", "Bot Used", "Tx Processor/Fee Wallet", "Fee Paid", "SOL Bought", "Profit/USD", "Profit/%"]
-    writer.writerow(header)
-
-    for trader in detected_copy_traders:
-        feeWalletsStr = ", ".join(trader["feePaidTo"].keys())
-        writer.writerow([
-            trader['trader'],
-            shorten(trader['hash']),
-            str(trader['blockDelay']),
-            trader['botUsed'],
-            feeWalletsStr,
-            f"{trader['feePaid']} SOL",
-            f"{trader['solAmountBought']:.8f} SOL",
-            trader['profit_usd'] if trader['profit_usd'] is not None else 'N/A',
-            trader['profit_percent'] if trader['profit_percent'] is not None else 'N/A'
-        ])
-
-    # Get the CSV string and print ONLY that to stdout
-    csv_output = output.getvalue()
-    output.close()
-    sys.stdout.write(csv_output)
+        # Print informational logs to stderr so they don't corrupt the CSV output
+        print(f"Target Wallet: {walletAddress} - {shorten(transaction)} - Block: {mainBlock} - Bought: {sol_bought_info} SOL", file=sys.stderr)
+        print("Finding potential copy traders...", file=sys.stderr)
+    except Exception as e:
+        print(f"[ERROR] Exception in copy_trader_analyzer main(): {e}", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+        raise
 
 if __name__ == "__main__":
     main()

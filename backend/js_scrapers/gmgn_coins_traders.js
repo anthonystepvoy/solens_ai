@@ -190,7 +190,7 @@ async function main() {
                   holder_count: coin.holder_count,
                   market_cap: coin.market_cap,
                   rug_ratio: coin.rug_ratio,
-                  is_honeypot: coin.is_honeypot,
+                  is_honeypot: coin.is_honeypot !== undefined ? coin.is_honeypot : null,
                   last_gmgn_update: admin.firestore.Timestamp.now(),
                   discovered_by: admin.firestore.FieldValue.arrayUnion('GMGN_Coin_Scraper')
                 };

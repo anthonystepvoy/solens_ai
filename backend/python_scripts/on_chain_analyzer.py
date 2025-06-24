@@ -17,8 +17,13 @@ if not os.environ.get("FIREBASE_SERVICE_ACCOUNT_KEY_PATH"):
     os.environ["FIREBASE_SERVICE_ACCOUNT_KEY_PATH"] = r"C:/Users/HomePC/Documents/Code Togheter/solens_ai/config/solensai-service-account.json"
 
 # --- CONFIGURATION ---
-HELIUS_API_KEY = "319614ea-39ed-496a-9720-1a103bcb6472"
-
+script_dir = os.path.dirname(__file__)
+config_path = os.path.join(script_dir, 'config.json')
+with open(config_path) as f:
+    config = json.load(f)
+HELIUS_API_KEY = config.get("helius_api_key")
+if not HELIUS_API_KEY:
+    raise RuntimeError("helius_api_key missing from config.json")
 HELIUS_API_URL = "https://api.helius.xyz"
 HELIUS_RPC_URL = f"https://mainnet.helius-rpc.com/?api-key={HELIUS_API_KEY}"
 WRAPPED_SOL_MINT = "So11111111111111111111111111111111111111112"
