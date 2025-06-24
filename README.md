@@ -7,19 +7,26 @@ A comprehensive platform for discovering and analyzing cryptocurrency traders us
 - **Trader Discovery**: Automatically find high-performing traders from top tokens
 - **Smart Scoring**: AI-powered copy trading scores for trader evaluation
 - **Real-time Analysis**: On-chain analysis of trader performance
-- **Web Interface**: Streamlit-based dashboard for easy interaction
+- **Modern Web Interface**: React TypeScript frontend with 3D visualizations
+- **RESTful API**: FastAPI backend for scalable data processing
+- **ML Processing**: Advanced machine learning for trader analysis
 
 ## 📁 Project Structure
 
 ```
 solens_ai/
-├── frontend/           # Streamlit web application
-│   ├── pages/         # Multi-page dashboard
-│   └── assets/        # Static assets
-├── backend/           # Backend services and scrapers
-│   └── js_scrapers/   # JavaScript scrapers
-├── config/            # Configuration files
-└── data/              # Data storage
+├── frontend-vite/     # React TypeScript frontend (Vite)
+│   ├── src/          # Source code
+│   ├── public/       # Static assets
+│   ├── assets/       # 3D models and images
+│   └── package.json  # Frontend dependencies
+├── backend/          # Backend services and scrapers
+│   ├── js_scrapers/  # JavaScript scrapers
+│   └── python_scripts/ # Python ML and analysis scripts
+├── backend-api/      # FastAPI backend service
+├── backend_api/      # Alternative API structure
+├── config/           # Configuration files
+└── data/             # Data storage
 ```
 
 ## 🛠️ Setup
@@ -47,24 +54,50 @@ solens_ai/
    npm install
    ```
 
-4. **Configure credentials**
+4. **Install Frontend dependencies**
+   ```bash
+   cd frontend-vite
+   npm install
+   cd ..
+   ```
+
+5. **Configure credentials**
    - Place your Firestore service account key in `config/solensai-service-account.json`
-   - Or configure Streamlit secrets for deployment
+   - Or configure environment variables for deployment
 
 ### Running the Application
 
-1. **Start the Streamlit app**
+1. **Start the Frontend (Development)**
    ```bash
-   streamlit run frontend/pages/1_Home.py
+   cd frontend-vite
+   npm run dev
+   ```
+   The frontend will be available at `http://localhost:5173`
+
+2. **Start the Backend API**
+   ```bash
+   # Option 1: Using backend-api
+   cd backend-api
+   python main.py
+   
+   # Option 2: Using backend_api
+   cd backend_api
+   python main.py
    ```
 
-2. **Run discovery scripts**
+3. **Run discovery scripts**
    ```bash
    # Discover traders from top tokens
    node backend/js_scrapers/gmgn_coins_traders.js
    
    # Analyze wallet performance
    node backend/js_scrapers/gmgn_wallet_scraper.js
+   
+   # Run ML processing
+   python backend/python_scripts/ml_processor.py
+   
+   # Run on-chain analysis
+   python backend/python_scripts/on_chain_analyzer.py
    ```
 
 ## 🔧 Configuration
@@ -79,12 +112,29 @@ The application uses Google Cloud Firestore for data storage. Make sure to:
 1. **Discover Traders**: Use the discovery page to find new traders from trending tokens
 2. **Analyze Performance**: View detailed trader analysis and copy trading scores
 3. **Monitor Activity**: Track trader activity and performance over time
+4. **3D Visualization**: Interactive 3D wallet models and data visualization
+
+## 🎨 Frontend Features
+
+- **React 18** with TypeScript for type safety
+- **Vite** for fast development and building
+- **Three.js** for 3D visualizations
+- **Modern UI** with responsive design
+- **Real-time updates** from backend API
+
+## 🔧 Backend Features
+
+- **FastAPI** for high-performance API
+- **Machine Learning** processing pipeline
+- **On-chain analysis** for trader evaluation
+- **Scalable architecture** for production deployment
 
 ## 🔒 Security
 
 - Service account keys are excluded from version control
 - Sensitive configuration is handled via environment variables
 - Data access is controlled through Firestore security rules
+- API endpoints are secured with authentication
 
 ## 🤝 Contributing
 
