@@ -1,65 +1,15 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
-import Drawer from '@mui/material/Drawer';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import SettingsIcon from '@mui/icons-material/Settings';
-import SearchIcon from '@mui/icons-material/Search';
-import TableChartIcon from '@mui/icons-material/TableChart';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
-import MemoryIcon from '@mui/icons-material/Memory';
-import Container from '@mui/material/Container';
-import TextField from '@mui/material/TextField';
-import Slider from '@mui/material/Slider';
-import Button from '@mui/material/Button';
-import Checkbox from '@mui/material/Checkbox';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FormGroup from '@mui/material/FormGroup';
-import Stack from '@mui/material/Stack';
 import axios from 'axios';
-import { DataGrid } from '@mui/x-data-grid';
-import type { GridColDef } from '@mui/x-data-grid';
 import solensLogo from '../assets/solens-logo-white.png';
 import '@fontsource/dm-sans/400.css';
 import '@fontsource/dm-sans/700.css';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import LinearProgress from '@mui/material/LinearProgress';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import IconButton from '@mui/material/IconButton';
-import CloseIcon from '@mui/icons-material/Close';
-import Tooltip from '@mui/material/Tooltip';
-import StarBorderIcon from '@mui/icons-material/StarBorder';
-import StarIcon from '@mui/icons-material/Star';
-import CircularProgress from '@mui/material/CircularProgress';
-import Snackbar from '@mui/material/Snackbar';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Grid from '@mui/material/Grid';
-import Fade from '@mui/material/Fade';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import Paper from '@mui/material/Paper';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import Hero3DBackground from './assets/Hero3DBackground';
+import TopTokensSection from './components/TopTokensSection';
 
 const drawerWidth = 220;
 
-// Add WalletAddress component at the top (after imports)
+// WalletAddress component
 function WalletAddress({ address, short = false }: { address: string, short?: boolean }) {
   const [copied, setCopied] = React.useState(false);
   const display = short && address.length > 12 ? `${address.slice(0, 4)}...${address.slice(-4)}` : address;
@@ -83,8 +33,17 @@ function WalletAddress({ address, short = false }: { address: string, short?: bo
   );
 }
 
+// Add this helper function near the top of the file
+function getRiskLabel(score: number | undefined | null): string {
+  if (score === 0) return 'Low';
+  if (score == null || typeof score !== 'number' || isNaN(score)) return 'No data';
+  if (score < 0.34) return 'Low';
+  if (score < 0.67) return 'Medium';
+  return 'High';
+}
+
+// Dashboard Page
 function DashboardPage() {
-  // State for dashboard data
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [metrics, setMetrics] = React.useState<any[]>([]);
@@ -92,12 +51,8 @@ function DashboardPage() {
   const [onFireWallets, setOnFireWallets] = React.useState<any[]>([]);
   const [trendingTokens, setTrendingTokens] = React.useState<any[]>([]);
   const [mlTags, setMlTags] = React.useState<string[]>([]);
-  const [detailOpen, setDetailOpen] = React.useState(false);
-  const [detailWalletId, setDetailWalletId] = React.useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = React.useState<string | null>(null);
   const [nextUpdate, setNextUpdate] = React.useState<string | null>(null);
-  // Add state for copied wallet
-  const [copiedWallet, setCopiedWallet] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setLoading(true);
@@ -110,9 +65,7 @@ function DashboardPage() {
         setTrendingTokens(d.trendingTokens || []);
         setMlTags(d.mlTags || []);
         setLoading(false);
-        // Try to get last update info if present
         if (d.lastUpdate) setLastUpdate(d.lastUpdate);
-        // Calculate next update (assume hourly for now)
         if (d.lastUpdate) {
           const last = new Date(d.lastUpdate);
           const next = new Date(last.getTime() + 60 * 60 * 1000);
@@ -161,7 +114,6 @@ function DashboardPage() {
       });
   }, []);
 
-  // Helper for relative time
   function getRelativeTime(iso: string | null) {
     if (!iso) return 'unknown';
     const now = new Date();
@@ -174,177 +126,200 @@ function DashboardPage() {
   }
 
   return (
-    <Container sx={{ mt: 4, position: 'relative' }}>
+    <div style={{ marginTop: 32, position: 'relative', maxWidth: 1200, margin: '32px auto 0', padding: '0 24px' }}>
       {/* Floating Info Bar */}
-      <Box sx={{
+      <div style={{
         position: 'fixed',
         top: 24,
         right: 32,
         zIndex: 10,
         minWidth: 320,
         maxWidth: 420,
-        bgcolor: '#26304a',
+        background: '#26304a',
         color: '#e3f2fd',
-        borderRadius: 2,
+        borderRadius: 8,
         border: '1px solid #3a4663',
-        boxShadow: 6,
-        p: 2,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+        padding: 16,
         display: 'flex',
         flexDirection: 'column',
-        gap: 1,
+        gap: 4,
         fontSize: 15,
         alignItems: 'flex-start',
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-          <InfoOutlinedIcon sx={{ color: '#42a5f5', mr: 1 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+          <span style={{ color: '#42a5f5', marginRight: 8 }}>ℹ️</span>
           <span style={{ fontWeight: 600, color: '#b3e5fc', fontSize: 15 }}>Auto-updates every hour</span>
-        </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, fontSize: 14 }}>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: 14 }}>
           <span><b>Last update:</b> <span style={{ color: '#fff' }}>{getRelativeTime(lastUpdate)}</span> <span style={{ color: '#b0bec5', fontSize: 13, marginLeft: 6 }}>({lastUpdate ? new Date(lastUpdate).toUTCString() : 'unknown'})</span></span>
           <span><b>Next update:</b> <span style={{ color: '#fff' }}>{nextUpdate || 'unknown'}</span></span>
-        </Box>
-      </Box>
-      <Typography variant="h4" gutterBottom>Dashboard</Typography>
+        </div>
+      </div>
+
+      <h1 style={{ color: '#fff', marginBottom: 24, fontSize: 32, fontWeight: 700 }}>Dashboard</h1>
+      
       {loading ? (
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
-          <CircularProgress />
-        </Box>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
+          <div style={{ color: '#42a5f5', fontSize: 18 }}>Loading...</div>
+        </div>
       ) : (
-        <Fade in timeout={600}>
-          <Box>
-            {error && <Typography color="error" sx={{ mb: 2 }}>{error}</Typography>}
-            {/* Key Metrics Row */}
-            <Grid container spacing={3} sx={{ mb: 4 }}>
-              {metrics.map((m, i) => (
-                <Grid item xs={12} sm={6} md={3} key={i}>
-                  <Fade in timeout={400 + i * 100}>
-                    <Card sx={{ bgcolor: '#181f2a', color: '#fff', borderRadius: 3, boxShadow: 3 }}>
-                      <CardContent>
-                        <Tooltip title={m.label} arrow>
-                          <Typography variant="h6" sx={{ fontWeight: 700 }}>{m.value}</Typography>
-                        </Tooltip>
-                        <Typography variant="body2" color="grey.400">{m.label}</Typography>
-                      </CardContent>
-                    </Card>
-                  </Fade>
-                </Grid>
-              ))}
-            </Grid>
-            <Grid container spacing={4}>
-              {/* Leaderboards */}
-              <Grid item xs={12} md={6}>
-                <Fade in timeout={700}>
-                  <Card sx={{ bgcolor: '#181f2a', color: '#fff', borderRadius: 3, boxShadow: 3, mb: 3 }}>
-                    <CardContent>
-                      <Typography variant="h6" sx={{ mb: 2 }}>Top 5 Most Profitable Wallets (All Time)</Typography>
-                      <table style={{ width: '100%', color: '#fff', fontSize: 15 }}>
-                        <thead>
-                          <tr>
-                            <th style={{ textAlign: 'left', padding: 6 }}>Wallet</th>
-                            <th style={{ textAlign: 'right', padding: 6 }}>PnL</th>
-                            <th style={{ textAlign: 'right', padding: 6 }}>Win Rate</th>
-                            <th style={{ textAlign: 'right', padding: 6 }}>Smart Score</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {topWallets.map((w, i) => (
-                            <tr key={i}
-                              style={{ cursor: 'pointer', transition: 'background 0.2s' }}
-                              onClick={() => {
-                                navigator.clipboard.writeText(w.address);
-                                setCopiedWallet(w.address);
-                                setTimeout(() => setCopiedWallet(null), 1200);
-                              }}
-                              onMouseEnter={e => e.currentTarget.style.background = '#232b3a'}
-                              onMouseLeave={e => e.currentTarget.style.background = ''}
-                            >
-                              <td style={{ textAlign: 'left', padding: 6, position: 'relative' }}>
-                                <WalletAddress address={w.address} short />
-                              </td>
-                              <td style={{ textAlign: 'right', padding: 6 }}>{w.pnl}</td>
-                              <td style={{ textAlign: 'right', padding: 6 }}>{w.winRate}</td>
-                              <td style={{ textAlign: 'right', padding: 6 }}>{w.smartScore}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </CardContent>
-                  </Card>
-                </Fade>
-                <Fade in timeout={900}>
-                  <Card sx={{ bgcolor: '#181f2a', color: '#fff', borderRadius: 3, boxShadow: 3 }}>
-                    <CardContent>
-                      <Typography variant="h6" sx={{ mb: 2 }}>Top 5 "On Fire" Wallets (24h)</Typography>
-                      <table style={{ width: '100%', color: '#fff', fontSize: 15 }}>
-                        <thead>
-                          <tr>
-                            <th style={{ textAlign: 'left', padding: 6 }}>Wallet</th>
-                            <th style={{ textAlign: 'right', padding: 6 }}>PnL (24h)</th>
-                            <th style={{ textAlign: 'right', padding: 6 }}>Trades</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {onFireWallets.map((w, i) => (
-                            <tr key={i} style={{ cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => {
-                              navigator.clipboard.writeText(w.address);
-                              setCopiedWallet(w.address);
-                              setTimeout(() => setCopiedWallet(null), 1200);
-                            }} onMouseEnter={e => e.currentTarget.style.background='#232b3a'} onMouseLeave={e => e.currentTarget.style.background=''}>
-                              <td style={{ textAlign: 'left', padding: 6, position: 'relative' }}>
-                                <WalletAddress address={w.address} short />
-                              </td>
-                              <td style={{ textAlign: 'right', padding: 6 }}>{w.pnl}</td>
-                              <td style={{ textAlign: 'right', padding: 6 }}>{w.trades}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </CardContent>
-                  </Card>
-                </Fade>
-              </Grid>
-              {/* Market Trends */}
-              <Grid item xs={12} md={6}>
-                <Fade in timeout={1100}>
-                  <Card sx={{ bgcolor: '#181f2a', color: '#fff', borderRadius: 3, boxShadow: 3, mb: 3 }}>
-                    <CardContent>
-                      <Typography variant="h6" sx={{ mb: 2 }}>Trending Tokens by Volume</Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'flex-end', height: 120, gap: 2 }}>
-                        {trendingTokens.map((t, i) => (
-                          <Tooltip key={i} title={`Volume: ${t.volume}`} arrow>
-                            <Box sx={{ width: 36, textAlign: 'center' }}>
-                              <Box sx={{ bgcolor: '#42a5f5', height: `${t.volume / 1500}px`, borderRadius: 1, mb: 1, transition: 'height 0.3s' }} />
-                              <Typography variant="caption" sx={{ color: '#fff' }}>{t.token}</Typography>
-                            </Box>
-                          </Tooltip>
-                        ))}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Fade>
-                <Fade in timeout={1300}>
-                  <Card sx={{ bgcolor: '#181f2a', color: '#fff', borderRadius: 3, boxShadow: 3 }}>
-                    <CardContent>
-                      <Typography variant="h6" sx={{ mb: 2 }}>ML Tag Cloud</Typography>
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {mlTags.map((tag, i) => (
-                          <Box key={i} sx={{ bgcolor: '#26304a', color: '#42a5f5', px: 2, py: 0.5, borderRadius: 2, fontWeight: 600, fontSize: 15 }}>{tag}</Box>
-                        ))}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Fade>
-              </Grid>
-            </Grid>
-            {/* Wallet Detail Modal for leaderboard click */}
-            <WalletDetailModal open={detailOpen} onClose={() => setDetailOpen(false)} walletId={detailWalletId} />
-          </Box>
-        </Fade>
+        <div>
+          {error && <div style={{ color: '#f44336', marginBottom: 16 }}>{error}</div>}
+          
+          {/* Key Metrics Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16, marginBottom: 32 }}>
+            {metrics.map((m, i) => (
+              <div key={i} style={{ 
+                background: '#181f2a', 
+                color: '#fff', 
+                borderRadius: 12, 
+                padding: 24, 
+                boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                border: '1px solid #232b3a'
+              }}>
+                <div style={{ fontWeight: 700, fontSize: 24, marginBottom: 8 }}>{m.value}</div>
+                <div style={{ color: '#b0bec5', fontSize: 14 }}>{m.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+            {/* Leaderboards */}
+            <div>
+              <div style={{ 
+                background: '#181f2a', 
+                color: '#fff', 
+                borderRadius: 12, 
+                padding: 24, 
+                boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                border: '1px solid #232b3a',
+                marginBottom: 16
+              }}>
+                <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>Top 5 Most Profitable Wallets (All Time)</h3>
+                <table style={{ width: '100%', color: '#fff', fontSize: 14 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: 8, borderBottom: '1px solid #232b3a' }}>Wallet</th>
+                      <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #232b3a' }}>PnL</th>
+                      <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #232b3a' }}>Win Rate</th>
+                      <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #232b3a' }}>Smart Score</th>
+                      <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #232b3a' }}>Risk Score</th>
+                      <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #232b3a' }}>ML Tags</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topWallets.map((w, i) => (
+                      <tr key={w.address || i}>
+                        <td style={{ textAlign: 'left', padding: 8 }}><WalletAddress address={w.address} short /></td>
+                        <td style={{ textAlign: 'right', padding: 8 }}>{w.pnl}</td>
+                        <td style={{ textAlign: 'right', padding: 8 }}>{w.winRate}</td>
+                        <td style={{ textAlign: 'right', padding: 8 }}>{w.smartScore}</td>
+                        <td style={{ textAlign: 'right', padding: 8 }}>{getRiskLabel(w.riskScore ?? w.ai_insights?.risk_score)}</td>
+                        <td style={{ textAlign: 'right', padding: 8 }}>{w.mlTags ?? (w.ai_insights?.tags_ml?.join(', ') ?? w.quality_tier ?? '')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div style={{ 
+                background: '#181f2a', 
+                color: '#fff', 
+                borderRadius: 12, 
+                padding: 24, 
+                boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                border: '1px solid #232b3a'
+              }}>
+                <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>Top 5 "On Fire" Wallets (24h)</h3>
+                <table style={{ width: '100%', color: '#fff', fontSize: 14 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: 8, borderBottom: '1px solid #232b3a' }}>Wallet</th>
+                      <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #232b3a' }}>PnL (24h)</th>
+                      <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #232b3a' }}>Trades</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {onFireWallets.map((w, i) => (
+                      <tr key={i} style={{ cursor: 'pointer', transition: 'background 0.2s' }} 
+                        onClick={() => {
+                          navigator.clipboard.writeText(w.address);
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background='#232b3a'} 
+                        onMouseLeave={e => e.currentTarget.style.background=''}
+                      >
+                        <td style={{ textAlign: 'left', padding: 8 }}>
+                          <WalletAddress address={w.address} short />
+                        </td>
+                        <td style={{ textAlign: 'right', padding: 8 }}>{w.pnl}</td>
+                        <td style={{ textAlign: 'right', padding: 8 }}>{w.trades}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Market Trends */}
+            <div>
+              <div style={{ 
+                background: '#181f2a', 
+                color: '#fff', 
+                borderRadius: 12, 
+                padding: 24, 
+                boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                border: '1px solid #232b3a',
+                marginBottom: 16
+              }}>
+                <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>Trending Tokens by Volume</h3>
+                <div style={{ display: 'flex', alignItems: 'flex-end', height: 120, gap: 8 }}>
+                  {trendingTokens.map((t, i) => (
+                    <div key={i} style={{ width: 36, textAlign: 'center' }}>
+                      <div style={{ 
+                        background: '#42a5f5', 
+                        height: `${t.volume / 1500}px`, 
+                        borderRadius: 4, 
+                        marginBottom: 8, 
+                        transition: 'height 0.3s' 
+                      }} />
+                      <div style={{ color: '#fff', fontSize: 12 }}>{t.token}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ 
+                background: '#181f2a', 
+                color: '#fff', 
+                borderRadius: 12, 
+                padding: 24, 
+                boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                border: '1px solid #232b3a'
+              }}>
+                <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>ML Tag Cloud</h3>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {mlTags.map((tag, i) => (
+                    <div key={i} style={{ 
+                      background: '#26304a', 
+                      color: '#42a5f5', 
+                      padding: '4px 12px', 
+                      borderRadius: 8, 
+                      fontWeight: 600, 
+                      fontSize: 14 
+                    }}>{tag}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
-    </Container>
+    </div>
   );
 }
 
+// Settings Page
 function SettingsPage() {
   const [minLiquidity, setMinLiquidity] = React.useState(1000);
   const [minHolderCount, setMinHolderCount] = React.useState(10);
@@ -403,75 +378,134 @@ function SettingsPage() {
   };
 
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>Settings</Typography>
-      <Typography gutterBottom>Configure your discovery thresholds and filters here.</Typography>
+    <div style={{ marginTop: 32, maxWidth: 800, margin: '32px auto 0', padding: '0 24px' }}>
+      <h1 style={{ color: '#fff', marginBottom: 16, fontSize: 32, fontWeight: 700 }}>Settings</h1>
+      <p style={{ color: '#b0bec5', marginBottom: 24 }}>Configure your discovery thresholds and filters here.</p>
+      
       {loading ? (
-        <Typography>Loading...</Typography>
+        <div style={{ color: '#b0bec5' }}>Loading...</div>
       ) : error ? (
-        <Typography color="error">{error}</Typography>
+        <div style={{ color: '#f44336' }}>{error}</div>
       ) : (
-        <Box component="form" sx={{ mt: 4, maxWidth: 400 }}>
-          <Stack spacing={3}>
-            <TextField
-              label="Min Liquidity"
+        <div style={{ maxWidth: 400 }}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', color: '#fff', marginBottom: 8 }}>Min Liquidity</label>
+            <input
               type="number"
               value={minLiquidity}
               onChange={e => setMinLiquidity(Number(e.target.value))}
-              fullWidth
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: 8,
+                border: '1px solid #232b3a',
+                background: '#181f2a',
+                color: '#fff',
+                fontSize: 16
+              }}
             />
-            <TextField
-              label="Min Holder Count"
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', color: '#fff', marginBottom: 8 }}>Min Holder Count</label>
+            <input
               type="number"
               value={minHolderCount}
               onChange={e => setMinHolderCount(Number(e.target.value))}
-              fullWidth
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: 8,
+                border: '1px solid #232b3a',
+                background: '#181f2a',
+                color: '#fff',
+                fontSize: 16
+              }}
             />
-            <TextField
-              label="Min Market Cap"
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', color: '#fff', marginBottom: 8 }}>Min Market Cap</label>
+            <input
               type="number"
               value={minMarketCap}
               onChange={e => setMinMarketCap(Number(e.target.value))}
-              fullWidth
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: 8,
+                border: '1px solid #232b3a',
+                background: '#181f2a',
+                color: '#fff',
+                fontSize: 16
+              }}
             />
-            <Box>
-              <Typography gutterBottom>Max Rug Ratio: {maxRugRatio}</Typography>
-              <Slider
-                value={maxRugRatio}
-                min={0}
-                max={1}
-                step={0.01}
-                onChange={(_, val) => setMaxRugRatio(Number(val))}
-                valueLabelDisplay="auto"
-              />
-            </Box>
-            <FormGroup>
-              <Typography gutterBottom>Filters:</Typography>
-              {Object.keys(filters).map((key) => (
-                <FormControlLabel
-                  key={key}
-                  control={
-                    <Checkbox
-                      checked={filters[key as keyof typeof filters]}
-                      onChange={handleFilterChange}
-                      name={key}
-                    />
-                  }
-                  label={key.charAt(0).toUpperCase() + key.slice(1)}
-                />
-              ))}
-            </FormGroup>
-            <Button variant="contained" color="primary" onClick={handleSave}>
-              Save
-            </Button>
-            {success && <Typography color="success.main">Settings saved!</Typography>}
-          </Stack>
-        </Box>
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', color: '#fff', marginBottom: 8 }}>Max Rug Ratio: {maxRugRatio}</label>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={maxRugRatio}
+              onChange={e => setMaxRugRatio(Number(e.target.value))}
+              style={{
+                width: '100%',
+                height: 8,
+                borderRadius: 4,
+                background: '#232b3a',
+                outline: 'none'
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ display: 'block', color: '#fff', marginBottom: 12 }}>Filters:</label>
+            {Object.keys(filters).map((key) => (
+              <div key={key} style={{ marginBottom: 8 }}>
+                <label style={{ display: 'flex', alignItems: 'center', color: '#fff', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={filters[key as keyof typeof filters]}
+                    onChange={handleFilterChange}
+                    name={key}
+                    style={{ marginRight: 8 }}
+                  />
+                  {key.charAt(0).toUpperCase() + key.slice(1)}
+                </label>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={handleSave}
+            style={{
+              background: '#42a5f5',
+              color: '#fff',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: 8,
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'background 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#1976d2'}
+            onMouseLeave={e => e.currentTarget.style.background = '#42a5f5'}
+          >
+            Save
+          </button>
+
+          {success && <div style={{ color: '#4caf50', marginTop: 16 }}>Settings saved!</div>}
+        </div>
       )}
-    </Container>
+    </div>
   );
 }
 
+// Discovery Page
 function DiscoveryPage() {
   const [loading, setLoading] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
@@ -484,12 +518,10 @@ function DiscoveryPage() {
     axios.post('http://localhost:8000/run-discovery')
       .then(res => {
         const out = res.data.stdout || '';
-        // Parse new coins
         let coins = 0;
         let wallets = 0;
         const coinMatch = out.match(/Found (\d+) new good quality coins to process\./i);
         if (coinMatch) coins = parseInt(coinMatch[1]);
-        // Parse all trader lines and sum
         const walletMatches = [...out.matchAll(/DEBUG: Found (\d+) unique, profitable traders for /gi)];
         wallets = walletMatches.reduce((sum, m) => sum + (parseInt(m[1]) || 0), 0);
         let msg = '';
@@ -508,25 +540,76 @@ function DiscoveryPage() {
   };
 
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>Discovery</Typography>
-      <Typography gutterBottom>Find new tokens and wallets automatically. Click below to run discovery.</Typography>
-      <Button variant="contained" color="primary" onClick={handleRunDiscovery} disabled={loading} sx={{ mb: 3 }}>
+    <div style={{ marginTop: 32, maxWidth: 800, margin: '32px auto 0', padding: '0 24px' }}>
+      <h1 style={{ color: '#fff', marginBottom: 16, fontSize: 32, fontWeight: 700 }}>Discovery</h1>
+      <p style={{ color: '#b0bec5', marginBottom: 24 }}>Find new tokens and wallets automatically. Click below to run discovery.</p>
+      
+      <button
+        onClick={handleRunDiscovery}
+        disabled={loading}
+        style={{
+          background: loading ? '#666' : '#42a5f5',
+          color: '#fff',
+          border: 'none',
+          padding: '12px 24px',
+          borderRadius: 8,
+          fontSize: 16,
+          fontWeight: 600,
+          cursor: loading ? 'not-allowed' : 'pointer',
+          transition: 'background 0.2s',
+          marginBottom: 24
+        }}
+      >
         {loading ? 'Running...' : 'Run Discovery'}
-      </Button>
+      </button>
+
       {loading && (
-        <Box sx={{ mb: 2 }}>
-          <Typography sx={{ mb: 1 }}>Running discovery...</Typography>
-          <LinearProgress sx={{ height: 8, borderRadius: 2, background: '#222', '& .MuiLinearProgress-bar': { background: '#42a5f5' } }} />
-        </Box>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ color: '#fff', marginBottom: 8 }}>Running discovery...</div>
+          <div style={{ 
+            width: '100%', 
+            height: 8, 
+            background: '#232b3a', 
+            borderRadius: 4, 
+            overflow: 'hidden' 
+          }}>
+            <div style={{ 
+              width: '100%', 
+              height: '100%', 
+              background: '#42a5f5', 
+              animation: 'pulse 2s infinite' 
+            }} />
+          </div>
+        </div>
       )}
-      {error && <Typography color="error" sx={{ mb: 2 }}>{error}</Typography>}
+
+      {error && <div style={{ color: '#f44336', marginBottom: 16 }}>{error}</div>}
+      
       {status && !loading && (
-        <Box sx={{ mb: 2, p: 2, bgcolor: '#232b3a', color: '#fff', borderRadius: 2, fontWeight: 600, fontSize: 16, boxShadow: 2 }}>
+        <div style={{ 
+          marginBottom: 16, 
+          padding: 16, 
+          background: '#232b3a', 
+          color: '#fff', 
+          borderRadius: 8, 
+          fontWeight: 600, 
+          fontSize: 16, 
+          boxShadow: '0 2px 8px rgba(0,0,0,0.2)' 
+        }}>
           {status}
-        </Box>
+        </div>
       )}
-    </Container>
+    </div>
+  );
+}
+
+// Top Tokens Page
+function TopTokensPage() {
+  return (
+    <div style={{ marginTop: 32, maxWidth: 1200, margin: '32px auto 0', padding: '0 24px' }}>
+      <h1 style={{ color: '#fff', marginBottom: 24, fontSize: 32, fontWeight: 700 }}>Top Tokens</h1>
+      <TopTokensSection />
+    </div>
   );
 }
 
@@ -556,52 +639,90 @@ function AnalyticsPage() {
       });
   }, []);
 
-  // Define columns for each table (customize as needed)
-  const tokenCols: GridColDef[] = [
-    { field: 'address', headerName: 'Address', width: 220, renderCell: (params) => <WalletAddress address={params.value} short /> },
-    { field: 'symbol', headerName: 'Symbol', width: 120 },
-    { field: 'liquidity', headerName: 'Liquidity', width: 120 },
-    { field: 'holder_count', headerName: 'Holders', width: 100 },
-    { field: 'market_cap', headerName: 'Market Cap', width: 120 },
-  ];
-  const walletCols: GridColDef[] = [
-    { field: 'id', headerName: 'Wallet', width: 220, renderCell: (params) => <WalletAddress address={params.value} short /> },
-    { field: 'pnl_sol', headerName: 'PnL (SOL)', width: 120, valueGetter: (params: any) => (params && params.row && params.row.on_chain_data && params.row.on_chain_data.pnl_sol !== undefined ? params.row.on_chain_data.pnl_sol : '') },
-    { field: 'win_rate', headerName: 'Win Rate', width: 120, valueGetter: (params: any) => (params && params.row && params.row.on_chain_data && params.row.on_chain_data.win_rate !== undefined ? params.row.on_chain_data.win_rate : '') },
-    { field: 'total_trades', headerName: 'Trades', width: 100, valueGetter: (params: any) => (params && params.row && params.row.on_chain_data && params.row.on_chain_data.total_trades !== undefined ? params.row.on_chain_data.total_trades : '') },
-  ];
-  const traderCols: GridColDef[] = [
-    { field: 'wallet_address', headerName: 'Wallet', width: 220, renderCell: (params) => <WalletAddress address={params.value} short /> },
-    { field: 'copy_trading_score', headerName: 'Smart Score', width: 120 },
-    { field: 'token_num_7d', headerName: 'Tokens (7d)', width: 120 },
-    { field: 'pnl_sol_7d', headerName: 'PnL (7d)', width: 120 },
-  ];
-
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>Analytics</Typography>
-      <Typography gutterBottom>View tokens, traders, and wallet analytics here.</Typography>
+    <div style={{ marginTop: 32, maxWidth: 1200, margin: '32px auto 0', padding: '0 24px', color: '#fff' }}>
+      <h1>Analytics</h1>
+      <p>View tokens, traders, and wallet analytics here.</p>
       {loading ? (
-        <Typography>Loading...</Typography>
+        <div>Loading...</div>
       ) : error ? (
-        <Typography color="error">{error}</Typography>
+        <div style={{ color: '#f44336' }}>{error}</div>
       ) : (
         <>
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h6">Tokens</Typography>
-            <DataGrid rows={(tokens || []).map((t, i) => ({ id: t?.address || i, ...t }))} columns={tokenCols} autoHeight pageSizeOptions={[5, 10, 25]} />
-          </Box>
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h6">Wallets</Typography>
-            <DataGrid rows={(wallets || []).map((w, i) => ({ id: w?.id || i, ...w }))} columns={walletCols} autoHeight pageSizeOptions={[5, 10, 25]} />
-          </Box>
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h6">Traders</Typography>
-            <DataGrid rows={(traders || []).map((t, i) => ({ id: t?.wallet_address || i, ...t }))} columns={traderCols} autoHeight pageSizeOptions={[5, 10, 25]} />
-          </Box>
+          <div style={{ marginTop: 32 }}>
+            <h2>Tokens</h2>
+            <table style={{ width: '100%', color: '#fff', fontSize: 15, marginBottom: 32 }}>
+              <thead>
+                <tr>
+                  <th>Address</th>
+                  <th>Symbol</th>
+                  <th>Liquidity</th>
+                  <th>Holders</th>
+                  <th>Market Cap</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tokens.map((t: any, i: number) => (
+                  <tr key={i}>
+                    <td><WalletAddress address={t.address || t.id} short /></td>
+                    <td>{t.symbol}</td>
+                    <td>{t.liquidity}</td>
+                    <td>{t.holder_count}</td>
+                    <td>{t.market_cap}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ marginTop: 32 }}>
+            <h2>Wallets</h2>
+            <table style={{ width: '100%', color: '#fff', fontSize: 15, marginBottom: 32 }}>
+              <thead>
+                <tr>
+                  <th>Wallet</th>
+                  <th>PnL (SOL)</th>
+                  <th>Win Rate</th>
+                  <th>Trades</th>
+                </tr>
+              </thead>
+              <tbody>
+                {wallets.map((w: any, i: number) => (
+                  <tr key={i}>
+                    <td><WalletAddress address={w.id} short /></td>
+                    <td>{w.on_chain_data?.pnl_sol ?? ''}</td>
+                    <td>{w.on_chain_data?.win_rate ?? ''}</td>
+                    <td>{w.on_chain_data?.total_trades ?? ''}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ marginTop: 32 }}>
+            <h2>Traders</h2>
+            <table style={{ width: '100%', color: '#fff', fontSize: 15 }}>
+              <thead>
+                <tr>
+                  <th>Wallet</th>
+                  <th>Smart Score</th>
+                  <th>Tokens (7d)</th>
+                  <th>PnL (7d)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {traders.map((t: any, i: number) => (
+                  <tr key={i}>
+                    <td><WalletAddress address={t.wallet_address} short /></td>
+                    <td>{t.copy_trading_score}</td>
+                    <td>{t.token_num_7d}</td>
+                    <td>{t.pnl_sol_7d}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
-    </Container>
+    </div>
   );
 }
 
@@ -679,106 +800,85 @@ function WalletFinderPage() {
   const sortedWallets = [...validWallets].sort((a, b) => score(b) - score(a));
 
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>Wallet Finder</Typography>
-      <Typography gutterBottom>Search and explore wallets. Click a row to view details.</Typography>
-      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <TextField
-          label="Search by Wallet Address"
+    <div style={{ marginTop: 32, maxWidth: 1200, margin: '32px auto 0', padding: '0 24px', color: '#fff' }}>
+      <h1>Wallet Finder</h1>
+      <p>Search and explore wallets. Click a row to view details.</p>
+      <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+        <input
+          type="text"
+          placeholder="Search by Wallet Address"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          fullWidth
+          style={{ flex: 1, padding: 10, borderRadius: 6, border: '1px solid #232b3a', background: '#181f2a', color: '#fff', fontSize: 16 }}
         />
-        <Button variant="contained" color="secondary" onClick={runAllAnalyzers} disabled={!!progress}>
-          Run All Analyzers
-        </Button>
-      </Box>
+        <button
+          onClick={runAllAnalyzers}
+          disabled={!!progress}
+          style={{ background: '#e040fb', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 18px', fontWeight: 700, fontSize: 16, cursor: !!progress ? 'not-allowed' : 'pointer' }}
+        >
+          RUN ALL ANALYZERS
+        </button>
+      </div>
       {progress && (
-        <Box sx={{ mb: 2 }}>
-          <Typography sx={{ mb: 1 }}>{progress}</Typography>
-          <LinearProgress variant="determinate" value={progressStep * 33.33 + 10} sx={{ height: 8, borderRadius: 2, background: '#222', '& .MuiLinearProgress-bar': { background: progressStep === 0 ? '#42a5f5' : progressStep === 1 ? '#7e57c2' : progressStep === 2 ? '#66bb6a' : '#ffa726' } }} />
-        </Box>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ color: '#fff', marginBottom: 8 }}>{progress}</div>
+          <div style={{ width: '100%', height: 8, background: '#232b3a', borderRadius: 4, overflow: 'hidden' }}>
+            <div style={{ 
+              width: '100%', 
+              height: '100%', 
+              background: '#42a5f5', 
+              animation: 'pulse 2s infinite' 
+            }} />
+          </div>
+        </div>
       )}
       {loading ? (
-        <Typography>Loading...</Typography>
+        <div>Loading...</div>
       ) : error ? (
-        <Typography color="error">{error}</Typography>
+        <div style={{ color: '#f44336' }}>{error}</div>
       ) : (
-        <Box sx={{
-          overflowX: 'auto',
-          maxHeight: 500,
-          '&::-webkit-scrollbar': { width: 10, background: '#181f2a' },
-          '&::-webkit-scrollbar-thumb': { background: '#222b3a', borderRadius: 8 },
-          '&::-webkit-scrollbar-thumb:hover': { background: '#2e3a5c' },
-          scrollbarColor: '#222b3a #181f2a',
-          scrollbarWidth: 'thin',
-        }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'rgba(0,0,0,0.1)', tableLayout: 'fixed', fontSize: 15 }}>
+        <div style={{ overflowX: 'auto', maxHeight: 600 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', background: '#181f2a', color: '#fff', fontSize: 15 }}>
             <thead>
               <tr>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 40, textAlign: 'center' }}></th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 220, textAlign: 'left' }}>Wallet</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 100, textAlign: 'right' }}>PnL (SOL)</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 100, textAlign: 'right' }}>Win Rate</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 110, textAlign: 'right' }}>Smart Score</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 160, textAlign: 'left' }}>ML Tags</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 80, textAlign: 'right' }}>Trades</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 120, textAlign: 'right' }}>Last Active</th>
+                <th style={{ padding: 8, textAlign: 'left' }}>Wallet</th>
+                <th>PnL (SOL)</th>
+                <th>Win Rate</th>
+                <th>Trades</th>
+                <th>Smart Score</th>
+                <th>Risk Score</th>
+                <th>ML Tags</th>
               </tr>
             </thead>
             <tbody>
-              {/* Selected wallet row at the top */}
-              {selected && (
-                <tr key={selected?.id} style={{ cursor: 'pointer', background: '#2e3a5c', borderLeft: '4px solid #42a5f5' }}>
-                  <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', fontWeight: 600 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                      <WalletAddress address={selected?.id} short />
-                    </span>
-                  </td>
-                  <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', fontWeight: 600, textAlign: 'right' }}>{typeof selected?.on_chain_data?.pnl_sol === 'number' ? selected.on_chain_data.pnl_sol.toFixed(2) : ''}</td>
-                  <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', fontWeight: 600, textAlign: 'right' }}>{typeof selected?.on_chain_data?.win_rate === 'number' ? selected.on_chain_data.win_rate.toFixed(2) : ''}</td>
-                  <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', fontWeight: 600, textAlign: 'right' }}>{typeof selected?.on_chain_data?.total_trades === 'number' ? selected.on_chain_data.total_trades : ''}</td>
-                  <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', fontWeight: 600, textAlign: 'right' }}>{typeof selected?.ai_insights?.overall_smart_score === 'number' ? selected.ai_insights.overall_smart_score.toFixed(2) : ''}</td>
-                  <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', fontWeight: 600, textAlign: 'right' }}>{typeof selected?.ai_insights?.risk_score === 'number' ? selected.ai_insights.risk_score.toFixed(2) : ''}</td>
-                  <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', fontWeight: 600 }}>{selected?.ai_insights?.tags_ml ? selected.ai_insights.tags_ml.join(', ') : ''}</td>
-                </tr>
-              )}
-              {/* Other wallets, excluding selected */}
-              {sortedWallets.filter(w => !selected || w.id !== selected.id).map((w, i) => (
-                <tr key={w?.id || i} style={{ cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => setSelected(w)} onMouseOver={e => e.currentTarget.style.background='#232b3e'} onMouseLeave={e => e.currentTarget.style.background=''}>
-                  <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                      <WalletAddress address={w?.id} short />
-                    </span>
-                  </td>
-                  <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', textAlign: 'right' }}>{typeof w?.on_chain_data?.pnl_sol === 'number' ? w.on_chain_data.pnl_sol.toFixed(2) : ''}</td>
-                  <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', textAlign: 'right' }}>{typeof w?.on_chain_data?.win_rate === 'number' ? w.on_chain_data.win_rate.toFixed(2) : ''}</td>
-                  <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', textAlign: 'right' }}>{typeof w?.on_chain_data?.total_trades === 'number' ? w.on_chain_data.total_trades : ''}</td>
-                  <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', textAlign: 'right' }}>{typeof w?.ai_insights?.overall_smart_score === 'number' ? w.ai_insights.overall_smart_score.toFixed(2) : ''}</td>
-                  <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', textAlign: 'right' }}>{typeof w?.ai_insights?.risk_score === 'number' ? w.ai_insights.risk_score.toFixed(2) : ''}</td>
-                  <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff' }}>{w?.ai_insights?.tags_ml ? w.ai_insights.tags_ml.join(', ') : ''}</td>
+              {sortedWallets.map((w, i) => (
+                <tr key={w.id || i} style={{ cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => setSelected(w)} onMouseOver={e => e.currentTarget.style.background='#232b3e'} onMouseLeave={e => e.currentTarget.style.background=''}>
+                  <td style={{ padding: 8 }}><WalletAddress address={w.id} short /></td>
+                  <td>{typeof w?.on_chain_data?.pnl_sol === 'number' ? w.on_chain_data.pnl_sol.toFixed(2) : ''}</td>
+                  <td>{typeof w?.on_chain_data?.win_rate === 'number' ? w.on_chain_data.win_rate.toFixed(2) : ''}</td>
+                  <td>{typeof w?.on_chain_data?.total_trades === 'number' ? w.on_chain_data.total_trades : ''}</td>
+                  <td>{typeof w?.ai_insights?.overall_smart_score === 'number' ? w.ai_insights.overall_smart_score.toFixed(2) : ''}</td>
+                  <td>{typeof w?.ai_insights?.risk_score === 'number' ? w.ai_insights.risk_score.toFixed(2) : ''}</td>
+                  <td>{w?.ai_insights?.tags_ml ? w.ai_insights.tags_ml.join(', ') : ''}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </Box>
+        </div>
       )}
       {selected && (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h6">Wallet: {selected.id}</Typography>
-          {selected.on_chain_data ? (
-            <Box sx={{ mt: 2 }}>
-              <Typography>PnL (SOL): {selected.on_chain_data.pnl_sol}</Typography>
-              <Typography>Win Rate: {selected.on_chain_data.win_rate}</Typography>
-              <Typography>Total Trades: {selected.on_chain_data.total_trades}</Typography>
-              <Typography>Total Volume (SOL): {selected.on_chain_data.total_volume_sol}</Typography>
-            </Box>
-          ) : (
-            <Typography>No on-chain analytics available for this wallet.</Typography>
-          )}
-        </Box>
+        <div style={{ marginTop: 32, background: '#232b3a', borderRadius: 8, padding: 24 }}>
+          <h2>Wallet: {selected.id}</h2>
+          <p>PnL (SOL): {selected.on_chain_data?.pnl_sol}</p>
+          <p>Win Rate: {selected.on_chain_data?.win_rate}</p>
+          <p>Total Trades: {selected.on_chain_data?.total_trades}</p>
+          <p>Smart Score: {selected.ai_insights?.overall_smart_score}</p>
+          <p>Risk Score: {selected.ai_insights?.risk_score}</p>
+          <p>ML Tags: {selected.ai_insights?.tags_ml?.join(', ')}</p>
+          <button onClick={() => setSelected(null)} style={{ marginTop: 16, background: '#42a5f5', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Close</button>
+        </div>
       )}
-    </Container>
+    </div>
   );
 }
 
@@ -835,49 +935,44 @@ function CopytradeFinderPage() {
       });
   };
 
-  const columns: GridColDef[] = [
-    { field: 'Trader', headerName: 'Trader', width: 220, valueGetter: (params: any) => { const v = params?.row?.Trader; return (v === undefined || v === null || String(v).toLowerCase() === 'nan') ? 'N/A' : v; } },
-    { field: 'Signature', headerName: 'Signature', width: 120, valueGetter: (params: any) => { const v = params?.row?.Signature; return (v === undefined || v === null || String(v).toLowerCase() === 'nan') ? 'N/A' : v; } },
-    { field: 'Block Delay', headerName: 'Block Delay', width: 120, valueGetter: (params: any) => { const v = params?.row?.['Block Delay']; return (v === undefined || v === null || String(v).toLowerCase() === 'nan') ? 'N/A' : v; } },
-    { field: 'Bot Used', headerName: 'Bot Used', width: 120, valueGetter: (params: any) => { const v = params?.row?.['Bot Used']; return (v === undefined || v === null || String(v).toLowerCase() === 'nan') ? 'N/A' : v; } },
-    { field: 'Tx Processor/Fee Wallet', headerName: 'Fee Wallet', width: 160, valueGetter: (params: any) => { const v = params?.row?.['Tx Processor/Fee Wallet']; return (v === undefined || v === null || String(v).toLowerCase() === 'nan') ? 'N/A' : v; } },
-    { field: 'Fee Paid', headerName: 'Fee Paid', width: 120, valueGetter: (params: any) => { const v = params?.row?.['Fee Paid']; return (v === undefined || v === null || String(v).toLowerCase() === 'nan') ? 'N/A' : v; } },
-    { field: 'SOL Bought', headerName: 'SOL Bought', width: 120, valueGetter: (params: any) => { const v = params?.row?.['SOL Bought']; return (v === undefined || v === null || String(v).toLowerCase() === 'nan') ? 'N/A' : v; } },
-    { field: 'Profit/USD', headerName: 'Profit (USD)', width: 120, valueGetter: (params: any) => { const v = params?.row?.['Profit/USD']; return (v === undefined || v === null || String(v).toLowerCase() === 'nan') ? 'N/A' : v; } },
-    { field: 'Profit/%', headerName: 'Profit (%)', width: 120, valueGetter: (params: any) => { const v = params?.row?.['Profit/%']; return (v === undefined || v === null || String(v).toLowerCase() === 'nan') ? 'N/A' : v; } },
-  ];
-
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>Copytrade Finder</Typography>
-      <Typography gutterBottom>Analyze a wallet to find copy traders here.</Typography>
-      <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
-        <TextField
-          label="Wallet Address"
+    <div style={{ marginTop: 32, maxWidth: 1200, margin: '32px auto 0', padding: '0 24px', color: '#fff' }}>
+      <h1>Copytrade Finder</h1>
+      <p>Analyze a wallet to find copy traders here.</p>
+      <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+        <input
+          type="text"
+          placeholder="Wallet Address"
           value={address}
           onChange={e => setAddress(e.target.value)}
-          fullWidth
+          style={{ flex: 1, padding: 10, borderRadius: 6, border: '1px solid #232b3a', background: '#181f2a', color: '#fff', fontSize: 16 }}
         />
-        <Button variant="contained" color="primary" onClick={handleAnalyze} disabled={loading || !address}>
+        <button
+          onClick={handleAnalyze}
+          disabled={loading || !address}
+          style={{ background: '#42a5f5', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 18px', fontWeight: 700, fontSize: 16, cursor: loading || !address ? 'not-allowed' : 'pointer' }}
+        >
           Analyze
-        </Button>
-      </Box>
+        </button>
+      </div>
       {loading && (
-        <Box sx={{ mt: 2 }}>
-          <LinearProgress />
-          <Typography sx={{ mt: 1 }}>Running analysis...</Typography>
-        </Box>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ color: '#fff', marginBottom: 8 }}>Running analysis...</div>
+          <div style={{ width: '100%', height: 8, background: '#232b3a', borderRadius: 4, overflow: 'hidden' }}>
+            <div style={{ width: '100%', height: '100%', background: '#42a5f5', animation: 'pulse 2s infinite' }} />
+          </div>
+        </div>
       )}
-      {error && <Typography color="error" sx={{ mt: 2, whiteSpace: 'pre-wrap' }}>{error}</Typography>}
-      {parseError && <Typography color="error" sx={{ mt: 2, whiteSpace: 'pre-wrap' }}>Parse Error: {parseError}</Typography>}
-      {stderr && <Box sx={{ mt: 2 }}><Typography color="error">Stderr:</Typography><Box component="pre" sx={{ bgcolor: '#222', color: '#f44336', p: 2, borderRadius: 1, overflowX: 'auto' }}>{stderr}</Box></Box>}
-      {stdout && <Box sx={{ mt: 2 }}><Typography>Stdout:</Typography><Box component="pre" sx={{ bgcolor: '#222', color: '#90caf9', p: 2, borderRadius: 1, overflowX: 'auto' }}>{stdout}</Box></Box>}
+      {error && <div style={{ color: '#f44336', marginBottom: 16, whiteSpace: 'pre-wrap' }}>{error}</div>}
+      {parseError && <div style={{ color: '#f44336', marginBottom: 16, whiteSpace: 'pre-wrap' }}>Parse Error: {parseError}</div>}
+      {stderr && <div style={{ marginBottom: 16 }}><div style={{ color: '#f44336' }}>Stderr:</div><pre style={{ background: '#222', color: '#f44336', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{stderr}</pre></div>}
+      {stdout && <div style={{ marginBottom: 16 }}><div style={{ color: '#42a5f5' }}>Stdout:</div><pre style={{ background: '#222', color: '#90caf9', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{stdout}</pre></div>}
       {results && (
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h6">Copytrade Analysis Results</Typography>
+        <div style={{ marginTop: 32 }}>
+          <h2>Copytrade Analysis Results</h2>
           {results.length > 0 ? (
-            <Box sx={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', background: 'rgba(0,0,0,0.1)' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', background: '#181f2a', color: '#fff', fontSize: 15 }}>
                 <thead>
                   <tr>
                     {Object.keys(results[0]).map((key) => (
@@ -895,13 +990,109 @@ function CopytradeFinderPage() {
                   ))}
                 </tbody>
               </table>
-            </Box>
+            </div>
           ) : (
-            <Typography sx={{ mt: 2, color: 'grey.400' }}>No copytraders detected for this wallet in the scanned blocks.</Typography>
+            <div style={{ marginTop: 16, color: '#b0bec5' }}>No copytraders detected for this wallet in the scanned blocks.</div>
           )}
-        </Box>
+        </div>
       )}
-    </Container>
+    </div>
+  );
+}
+
+function OnChainAnalyzerPage() {
+  const [loading, setLoading] = React.useState(false);
+  const [status, setStatus] = React.useState<string | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const [step, setStep] = React.useState<string | null>(null);
+  const [progress, setProgress] = React.useState<number>(0);
+  const [currentWallet, setCurrentWallet] = React.useState<string | null>(null);
+  const [totalWallets, setTotalWallets] = React.useState<number | null>(null);
+  const [jobStatus, setJobStatus] = React.useState<string | null>(null);
+  const [intervalId, setIntervalId] = React.useState<any>(null);
+
+  // Poll job status
+  React.useEffect(() => {
+    let poller: any;
+    if (loading) {
+      poller = setInterval(() => {
+        axios.get('http://localhost:8000/job-status/onchain-analyzer')
+          .then(res => {
+            const d = res.data;
+            setProgress(d.percent || 0);
+            setCurrentWallet(d.current_wallet || null);
+            setTotalWallets(d.total_wallets || null);
+            setJobStatus(d.status || null);
+            if (d.status === 'complete' || (d.percent === 100)) {
+              setLoading(false);
+              setStatus('Analysis complete!');
+              clearInterval(poller);
+            } else if (d.status && d.status.startsWith('error')) {
+              setLoading(false);
+              setError(d.status);
+              clearInterval(poller);
+            }
+          })
+          .catch(() => {});
+      }, 2000);
+      setIntervalId(poller);
+    }
+    return () => { if (poller) clearInterval(poller); };
+  }, [loading]);
+
+  const handleRunOnChain = () => {
+    setLoading(true);
+    setStatus(null);
+    setError(null);
+    setStep(null);
+    setProgress(0);
+    setCurrentWallet(null);
+    setTotalWallets(null);
+    setJobStatus('running');
+    axios.post('http://localhost:8000/run-onchain-analysis')
+      .then(res => {
+        // The polling will handle status updates
+      })
+      .catch(() => {
+        setError('Something went wrong. Please try again later.');
+        setLoading(false);
+      });
+  };
+
+  return (
+    <div style={{ marginTop: 32, maxWidth: 800, margin: '32px auto 0', padding: '0 24px', color: '#fff' }}>
+      <h1>On-Chain Analyzer</h1>
+      <p>Run on-chain analysis for all wallets and update their analytics.</p>
+      <button
+        onClick={handleRunOnChain}
+        disabled={loading}
+        style={{ background: loading ? '#666' : '#42a5f5', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 18px', fontWeight: 700, fontSize: 16, cursor: loading ? 'not-allowed' : 'pointer', marginBottom: 24 }}
+      >
+        {loading ? 'Running...' : 'Run On-Chain Analyzer'}
+      </button>
+      {loading && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ color: '#fff', marginBottom: 8 }}>
+            {jobStatus === 'running' || (progress > 0 && progress < 100)
+              ? `Analyzing wallets... (${progress}%${totalWallets ? `, ${totalWallets} total` : ''})`
+              : jobStatus}
+          </div>
+          <div style={{ width: '100%', height: 12, background: '#232b3a', borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
+            <div style={{ width: `${progress}%`, height: '100%', background: '#42a5f5', transition: 'width 0.3s' }} />
+          </div>
+          {currentWallet && (
+            <div style={{ color: '#b0bec5', fontSize: 15 }}>
+              <span>Current wallet: </span>
+              <WalletAddress address={currentWallet} short />
+            </div>
+          )}
+        </div>
+      )}
+      {error && <div style={{ color: '#f44336', marginBottom: 16 }}>{error}</div>}
+      {status && !loading && (
+        <div style={{ marginBottom: 16, padding: 16, background: '#232b3a', color: '#fff', borderRadius: 8, fontWeight: 600, fontSize: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>{status}</div>
+      )}
+    </div>
   );
 }
 
@@ -933,693 +1124,439 @@ function MLProcessorPage() {
   };
 
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>ML Processor</Typography>
-      <Typography gutterBottom>Run ML analysis and view smart scores here.</Typography>
-      <Button variant="contained" color="primary" onClick={handleRunML} disabled={loading} sx={{ mt: 2 }}>
+    <div style={{ marginTop: 32, maxWidth: 800, margin: '32px auto 0', padding: '0 24px', color: '#fff' }}>
+      <h1>ML Processor</h1>
+      <p>Run ML analysis and view smart scores here.</p>
+      <button
+        onClick={handleRunML}
+        disabled={loading}
+        style={{ background: loading ? '#666' : '#42a5f5', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 18px', fontWeight: 700, fontSize: 16, cursor: loading ? 'not-allowed' : 'pointer', marginBottom: 24 }}
+      >
         {loading ? 'Running...' : 'Run ML Processor'}
-      </Button>
-      {error && <Typography color="error" sx={{ mt: 2 }}>{error}</Typography>}
+      </button>
+      {error && <div style={{ color: '#f44336', marginBottom: 16 }}>{error}</div>}
       {stdout && (
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle1">Stdout:</Typography>
-          <Box component="pre" sx={{ bgcolor: '#222', color: '#90caf9', p: 2, borderRadius: 1, overflowX: 'auto' }}>{stdout}</Box>
-        </Box>
+        <div style={{ marginTop: 16 }}>
+          <div style={{ color: '#42a5f5' }}>Stdout:</div>
+          <pre style={{ background: '#222', color: '#90caf9', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{stdout}</pre>
+        </div>
       )}
       {stderr && (
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle1" color="error">Stderr:</Typography>
-          <Box component="pre" sx={{ bgcolor: '#222', color: '#f44336', p: 2, borderRadius: 1, overflowX: 'auto' }}>{stderr}</Box>
-        </Box>
+        <div style={{ marginTop: 16 }}>
+          <div style={{ color: '#f44336' }}>Stderr:</div>
+          <pre style={{ background: '#222', color: '#f44336', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{stderr}</pre>
+        </div>
       )}
-    </Container>
+    </div>
   );
 }
 
-function OnChainAnalyzerPage() {
-  const [loading, setLoading] = React.useState(false);
-  const [status, setStatus] = React.useState<string | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [step, setStep] = React.useState<string | null>(null);
-  React.useEffect(() => {
-    let timer1: any, timer2: any;
-    if (loading) {
-      setStep('Preparing...');
-      timer1 = setTimeout(() => setStep('Analyzing wallets...'), 1200);
-      timer2 = setTimeout(() => setStep('Finalizing...'), 4200);
-    } else {
-      setStep(null);
-    }
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
-  }, [loading]);
-
-  const handleRunOnChain = () => {
-    setLoading(true);
-    setStatus(null);
-    setError(null);
-    fetch('http://localhost:8000/run-onchain-analysis', { method: 'POST' })
-      .then(res => res.json())
-      .then(data => {
-        const out = data.stdout || '';
-        let analyzed = 0;
-        const match = out.match(/Analyzed (\d+) wallets?/i);
-        if (match) analyzed = parseInt(match[1]);
-        else {
-          const lines = out.split(/\r?\n/);
-          analyzed = lines.filter((l: string) => /Analyzing wallet/i.test(l)).length;
-        }
-        let msg = analyzed > 0 ? `Analysis complete! ${analyzed} wallet${analyzed !== 1 ? 's' : ''} analyzed.` : 'Analysis complete!';
-        setStatus(msg);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError('Something went wrong. Please try again later.');
-        setLoading(false);
-      });
-  };
-
-  return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>On-Chain Analyzer</Typography>
-      <Typography gutterBottom>Run on-chain analysis for all wallets and update their analytics.</Typography>
-      <Button variant="contained" color="primary" onClick={handleRunOnChain} disabled={loading} sx={{ mt: 2 }}>
-        {loading ? 'Running...' : 'Run On-Chain Analyzer'}
-      </Button>
-      {loading && (
-        <Box sx={{ mb: 2, mt: 2 }}>
-          <Typography sx={{ mb: 1 }}>Analyzing wallets...</Typography>
-          <LinearProgress sx={{ height: 8, borderRadius: 2, background: '#222', '& .MuiLinearProgress-bar': { background: '#42a5f5' } }} />
-          {step && <Typography sx={{ mt: 1, fontSize: 15, color: '#b0bec5' }}>{step}</Typography>}
-        </Box>
-      )}
-      {error && <Typography color="error" sx={{ mt: 2 }}>{error}</Typography>}
-      {status && !loading && (
-        <Box sx={{ mb: 2, p: 2, bgcolor: '#232b3a', color: '#fff', borderRadius: 2, fontWeight: 600, fontSize: 16, boxShadow: 2 }}>
-          {status}
-        </Box>
-      )}
-    </Container>
-  );
-}
-
+// Landing Page
 function LandingPage() {
-  // Mock stats for now
-  const stats = [
-    { label: 'Wallets Tracked', value: '1,452' },
-    { label: 'Tokens Analyzed', value: '320' },
-    { label: 'Total PnL', value: '1,200,000 SOL' },
-    { label: 'Active Users', value: '87' },
-  ];
-  const features = [
-    { icon: <SearchIcon sx={{ fontSize: 40, color: '#fff' }} />, title: 'Discovery', desc: 'Find new tokens and wallets automatically.' },
-    { icon: <TableChartIcon sx={{ fontSize: 40, color: '#fff' }} />, title: 'Analyzer', desc: 'Analyze wallet performance, trades, and PnL.' },
-    { icon: <StarIcon sx={{ fontSize: 40, color: '#fff' }} />, title: 'Watchlist', desc: 'Track your favorite wallets and get updates.' },
-    { icon: <DashboardIcon sx={{ fontSize: 40, color: '#fff' }} />, title: 'Dashboard', desc: 'See live stats, leaderboards, and trends.' },
-  ];
+  const navigate = useNavigate();
+
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#101624', color: '#fff', display: 'flex', flexDirection: 'column', width: '100vw', fontFamily: 'DM Sans, sans-serif' }}>
-      {/* Logo Header */}
-      <Box sx={{ position: 'fixed', top: 0, left: 0, width: '100%', px: { xs: 2, sm: 4 }, py: { xs: 1, sm: 2 }, display: 'flex', alignItems: 'center', zIndex: 10, background: 'rgba(16,22,36,0.92)', boxShadow: 2 }}>
-        <img src={solensLogo} alt="SoLens Logo" style={{ height: 44 }} />
-      </Box>
-      {/* Hero Section */}
-      <Box sx={{
-        minHeight: { xs: '60vh', md: '75vh' },
-        width: '100%',
+    <div style={{ 
+      minHeight: '100vh', 
+      background: 'radial-gradient(ellipse at 60% 40%, #101a2b 0%, #0a1220 60%, #050a18 100%)',
+      fontFamily: '"DM Sans", sans-serif',
+      color: '#fff',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Background Animation */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'radial-gradient(ellipse at 60% 40%, #101a2b 0%, #0a1220 60%, #050a18 100%)',
+        zIndex: 0
+      }} />
+      
+      {/* Header */}
+      <header style={{
         position: 'relative',
-        overflow: 'hidden',
+        zIndex: 10,
         display: 'flex',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        justifyContent: 'center',
-        flexDirection: 'column',
-        textAlign: 'center',
-        background: 'radial-gradient(ellipse at top, #26304a 0%, #101624 100%)',
+        padding: '24px 48px',
+        maxWidth: 1400,
+        margin: '0 auto'
       }}>
-        {/* <Hero3DBackground /> */}
-        <Box sx={{
-          position: 'relative',
-          zIndex: 1,
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <img src={solensLogo} alt="Solens" style={{ height: 40 }} />
+          <span style={{ fontSize: 24, fontWeight: 700, color: '#fff' }}>Solens AI</span>
+        </div>
+        <button
+          onClick={() => navigate('/dashboard')}
+          style={{
+            background: '#42a5f5',
+            color: '#fff',
+            border: 'none',
+            padding: '12px 24px',
+            borderRadius: 8,
+            fontSize: 16,
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'background 0.2s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = '#1976d2'}
+          onMouseLeave={e => e.currentTarget.style.background = '#42a5f5'}
+        >
+          Launch App
+        </button>
+      </header>
+
+      {/* Hero Section */}
+      <section style={{
+        position: 'relative',
+        zIndex: 10,
+        textAlign: 'center',
+        padding: '120px 24px 80px',
+        maxWidth: 1200,
+        margin: '0 auto'
+      }}>
+        <h1 style={{
+          fontSize: 'clamp(48px, 8vw, 72px)',
+          fontWeight: 700,
+          marginBottom: 24,
+          background: 'linear-gradient(135deg, #42a5f5 0%, #e040fb 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text'
         }}>
-          <Typography variant="h4" sx={{ fontWeight: 800, mb: 3, letterSpacing: 0.5, color: '#fff', fontFamily: 'DM Sans, sans-serif', fontSize: { xs: 20, sm: 28, md: 36 } }}>
-            The modern analytics platform for Solana traders, wallets, and tokens.
-          </Typography>
-          <Button variant="contained" color="primary" size="large" sx={{ px: 7, py: 2.5, fontSize: 26, borderRadius: 3, boxShadow: 3, fontWeight: 700, fontFamily: 'DM Sans, sans-serif' }} href="/dashboard">
-            Launch
-          </Button>
-        </Box>
-        <Hero3DBackground />
-      </Box>
-      {/* Live Stats */}
-      <Container sx={{ mt: -5, mb: 6, maxWidth: '900px !important', px: 0, display: 'flex', justifyContent: 'center' }}>
-        <Paper elevation={3} sx={{ bgcolor: 'rgba(24,31,42,0.85)', borderRadius: 3, p: 3, display: 'flex', justifyContent: 'center', gap: 6, boxShadow: 4, backdropFilter: 'blur(8px)', width: '100%', maxWidth: 900, mx: 'auto' }}>
-          {stats.map((s, i) => (
-            <Box key={i} sx={{ textAlign: 'center', fontFamily: 'DM Sans, sans-serif' }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: '#fff', fontFamily: 'DM Sans, sans-serif' }}>{s.value}</Typography>
-              <Typography sx={{ color: '#e0e0e0', fontSize: 18, fontFamily: 'DM Sans, sans-serif' }}>{s.label}</Typography>
-            </Box>
-          ))}
-        </Paper>
-      </Container>
-      {/* Features - Glassy Squares */}
-      <Container sx={{ mb: 8, maxWidth: '100vw !important' }}>
-        <Grid container spacing={4} justifyContent="center">
-          {features.map((f, i) => (
-            <Grid item xs={12} sm={6} md={3} key={i}>
-              <Paper
-                elevation={4}
-                sx={{
-                  bgcolor: 'rgba(36, 45, 65, 0.55)',
-                  color: '#fff',
-                  borderRadius: 4,
-                  p: 4,
-                  textAlign: 'center',
-                  height: '100%',
-                  boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
-                  backdropFilter: 'blur(12px)',
-                  border: '1.5px solid rgba(255,255,255,0.08)',
-                  transition: 'transform 0.18s, box-shadow 0.18s',
-                  fontWeight: 600,
-                  fontFamily: 'DM Sans, sans-serif',
-                  '&:hover': {
-                    transform: 'translateY(-6px) scale(1.04)',
-                    boxShadow: '0 16px 40px 0 rgba(31, 38, 135, 0.22)',
-                    border: '1.5px solid #42a5f5',
-                  },
-                }}
-              >
-                {f.icon}
-                <Typography variant="h6" sx={{ mt: 2, fontWeight: 800, color: '#fff', letterSpacing: 0.5, fontFamily: 'DM Sans, sans-serif' }}>{f.title}</Typography>
-                <Typography sx={{ color: '#fff', mt: 1, fontWeight: 400, fontFamily: 'DM Sans, sans-serif' }}>{f.desc}</Typography>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-      {/* Why SoLens? - Centered */}
-      <Container sx={{ mb: 8, maxWidth: 600, textAlign: 'center' }}>
-        <Typography variant="h5" sx={{ fontWeight: 800, mb: 2, color: '#fff', fontFamily: 'DM Sans, sans-serif', textAlign: 'center' }}>Why SoLens?</Typography>
-        <ul style={{ color: '#fff', fontSize: 18, margin: '0 auto', fontWeight: 400, fontFamily: 'DM Sans, sans-serif', textAlign: 'left', display: 'inline-block' }}>
-          <li>All-in-one analytics for Solana wallets, tokens, and trades</li>
-          <li>Modern, fast, and user-friendly interface</li>
-          <li>Advanced discovery and filtering tools</li>
-          <li>Live stats, leaderboards, and watchlists</li>
-          <li>Open source and community-driven</li>
-        </ul>
-      </Container>
+          AI-Powered Wallet Discovery
+        </h1>
+        <p style={{
+          fontSize: 'clamp(18px, 4vw, 24px)',
+          color: '#b0bec5',
+          marginBottom: 48,
+          maxWidth: 800,
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          lineHeight: 1.6
+        }}>
+          Discover profitable wallets, analyze trading patterns, and find the best copy trading opportunities on Solana
+        </p>
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => navigate('/dashboard')}
+            style={{
+              background: 'linear-gradient(135deg, #42a5f5 0%, #1976d2 100%)',
+              color: '#fff',
+              border: 'none',
+              padding: '16px 32px',
+              borderRadius: 12,
+              fontSize: 18,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              boxShadow: '0 8px 32px rgba(66, 165, 245, 0.3)'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 12px 40px rgba(66, 165, 245, 0.4)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 8px 32px rgba(66, 165, 245, 0.3)';
+            }}
+          >
+            Get Started
+          </button>
+          <button
+            onClick={() => navigate('/wallet-finder')}
+            style={{
+              background: 'transparent',
+              color: '#42a5f5',
+              border: '2px solid #42a5f5',
+              padding: '16px 32px',
+              borderRadius: 12,
+              fontSize: 18,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'background 0.2s, color 0.2s'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = '#42a5f5';
+              e.currentTarget.style.color = '#fff';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = '#42a5f5';
+            }}
+          >
+            Explore Wallets
+          </button>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section style={{
+        position: 'relative',
+        zIndex: 10,
+        padding: '80px 24px',
+        maxWidth: 1200,
+        margin: '0 auto'
+      }}>
+        <h2 style={{
+          fontSize: 48,
+          fontWeight: 700,
+          textAlign: 'center',
+          marginBottom: 64,
+          color: '#fff'
+        }}>
+          Powerful Features
+        </h2>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: 32
+        }}>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            padding: 32,
+            borderRadius: 16,
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+            <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 16, color: '#fff' }}>Smart Discovery</h3>
+            <p style={{ color: '#b0bec5', lineHeight: 1.6 }}>
+              Automatically discover new tokens and profitable wallets using advanced algorithms
+            </p>
+          </div>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            padding: 32,
+            borderRadius: 16,
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
+            <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 16, color: '#fff' }}>On-Chain Analytics</h3>
+            <p style={{ color: '#b0bec5', lineHeight: 1.6 }}>
+              Deep analysis of wallet performance, PnL, win rates, and trading patterns
+            </p>
+          </div>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            padding: 32,
+            borderRadius: 16,
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🤖</div>
+            <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 16, color: '#fff' }}>AI Insights</h3>
+            <p style={{ color: '#b0bec5', lineHeight: 1.6 }}>
+              Machine learning powered smart scores and risk assessment for every wallet
+            </p>
+          </div>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            padding: 32,
+            borderRadius: 16,
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>📈</div>
+            <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 16, color: '#fff' }}>Copy Trading</h3>
+            <p style={{ color: '#b0bec5', lineHeight: 1.6 }}>
+              Find the best copy trading opportunities and track successful traders
+            </p>
+          </div>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            padding: 32,
+            borderRadius: 16,
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>⚡</div>
+            <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 16, color: '#fff' }}>Real-Time Data</h3>
+            <p style={{ color: '#b0bec5', lineHeight: 1.6 }}>
+              Live updates on token prices, wallet performance, and market trends
+            </p>
+          </div>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.05)',
+            padding: 32,
+            borderRadius: 16,
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🎯</div>
+            <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 16, color: '#fff' }}>Advanced Filtering</h3>
+            <p style={{ color: '#b0bec5', lineHeight: 1.6 }}>
+              Filter wallets by performance metrics, risk levels, and trading strategies
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <Box sx={{ bgcolor: '#181f2a', color: '#b0bec5', py: 3, mt: 'auto', textAlign: 'center', fontSize: 16, fontFamily: 'DM Sans, sans-serif' }}>
-        <span>© {new Date().getFullYear()} SoLens &nbsp;|&nbsp; </span>
-        <a href="https://github.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#42a5f5', textDecoration: 'none', fontFamily: 'DM Sans, sans-serif' }}>GitHub</a>
-        <span> &nbsp;|&nbsp; </span>
-        <a href="https://discord.gg/" target="_blank" rel="noopener noreferrer" style={{ color: '#42a5f5', textDecoration: 'none', fontFamily: 'DM Sans, sans-serif' }}>Discord</a>
-        <span> &nbsp;|&nbsp; </span>
-        <a href="https://twitter.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#42a5f5', textDecoration: 'none', fontFamily: 'DM Sans, sans-serif' }}>Twitter</a>
-      </Box>
-    </Box>
+      <footer style={{
+        position: 'relative',
+        zIndex: 10,
+        textAlign: 'center',
+        padding: '48px 24px',
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+        color: '#b0bec5'
+      }}>
+        <p>&copy; 2024 Solens AI. All rights reserved.</p>
+      </footer>
+    </div>
   );
 }
 
-// New navigation structure
-const mainNavItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
-  { text: 'Wallet Explorer', icon: <SearchIcon />, path: '/wallet-explorer' },
-  { text: 'Watchlists', icon: <PeopleAltIcon />, path: '/watchlists' },
-  { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
-];
-const advancedNavItems = [
-  { text: 'Discovery', icon: <SearchIcon />, path: '/discovery' },
-  { text: 'On-Chain Analyzer', icon: <MemoryIcon />, path: '/onchain-analyzer' },
-  { text: 'ML Processor', icon: <MemoryIcon />, path: '/ml-processor' },
-  { text: 'Copytrade Finder', icon: <PeopleAltIcon />, path: '/copytrade-finder' },
-];
-
-// Placeholder components for new pages
-function WatchlistsPage() {
-  const [wallets, setWallets] = React.useState<any[]>([]);
-  const [watchlist, setWatchlist] = React.useState<string[]>([]);
-  const [loading, setLoading] = React.useState(true);
-
-  // Load watchlist from localStorage
-  React.useEffect(() => {
-    const stored = localStorage.getItem('solens_watchlist');
-    setWatchlist(stored ? JSON.parse(stored) : []);
-  }, []);
-
-  // Fetch all wallets and filter to watchlist
-  React.useEffect(() => {
-    setLoading(true);
-    fetch('http://localhost:8000/wallets')
-      .then(res => res.json())
-      .then(data => {
-        setWallets(data);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  // Remove wallet from watchlist
-  const removeFromWatchlist = (walletId: string) => {
-    const updated = watchlist.filter(id => id !== walletId);
-    setWatchlist(updated);
-    localStorage.setItem('solens_watchlist', JSON.stringify(updated));
-  };
-
-  // Only show wallets in watchlist
-  const watchedWallets = wallets.filter(w => watchlist.includes(w.id));
-
-  return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>Watchlist</Typography>
-      <Typography gutterBottom>Track wallets of interest here.</Typography>
-      {loading ? (
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
-          <CircularProgress />
-        </Box>
-      ) : watchedWallets.length === 0 ? (
-        <Typography sx={{ mt: 4, color: '#b0bec5', fontSize: 18 }}>Your watchlist is empty. Add wallets from the Explorer!</Typography>
-      ) : (
-        <Box sx={{ mt: 3 }}>
-          <table style={{ width: '100%', background: '#181f2a', color: '#fff', borderRadius: 8, overflow: 'hidden', fontSize: 16 }}>
-            <thead>
-              <tr style={{ background: '#232b3a', fontWeight: 700 }}>
-                <th style={{ padding: 12, textAlign: 'left' }}>Wallet</th>
-                <th>PnL (SOL)</th>
-                <th>Win Rate</th>
-                <th>Trades</th>
-                <th>Smart Score</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {watchedWallets.map(w => (
-                <tr key={w.id} style={{ borderBottom: '1px solid #232b3a' }}>
-                  <td style={{ padding: 10, fontFamily: 'monospace' }}>{w.id}</td>
-                  <td style={{ textAlign: 'center' }}>{w.on_chain_data?.pnl_sol ?? 'N/A'}</td>
-                  <td style={{ textAlign: 'center' }}>{w.on_chain_data?.win_rate ?? 'N/A'}</td>
-                  <td style={{ textAlign: 'center' }}>{w.on_chain_data?.total_trades ?? 'N/A'}</td>
-                  <td style={{ textAlign: 'center' }}>{w.ai_insights?.overall_smart_score ?? 'N/A'}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <Button color="error" size="small" onClick={() => removeFromWatchlist(w.id)}>Remove</Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Box>
-      )}
-    </Container>
-  );
-}
-
-function WalletDetailModal({ open, onClose, walletId }: { open: boolean, onClose: () => void, walletId: string | null }) {
-  const [wallet, setWallet] = React.useState<any | null>(null);
-  const [tab, setTab] = React.useState(0);
-  const [copyOpen, setCopyOpen] = React.useState(false);
-  React.useEffect(() => {
-    if (open && walletId) {
-      setWallet(null); // Reset for spinner
-      axios.get(`http://localhost:8000/wallets/${walletId}`)
-        .then(res => setWallet(res.data))
-        .catch(() => setWallet(null));
-    }
-  }, [open, walletId]);
-  const handleCopy = () => {
-    if (walletId) {
-      navigator.clipboard.writeText(walletId);
-      setCopyOpen(true);
-    }
-  };
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 2 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          Wallet: <span style={{ fontFamily: 'monospace', marginLeft: 4 }}>{walletId}</span>
-          <Tooltip title="Copy Wallet Address">
-            <IconButton size="small" onClick={handleCopy}>
-              <ContentCopyIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </span>
-        <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
-      </DialogTitle>
-      <DialogContent>
-        {!wallet ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 180 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle1">PnL (SOL): {wallet.on_chain_data?.pnl_sol ?? 'N/A'}</Typography>
-              <Typography variant="subtitle1">Win Rate: {wallet.on_chain_data?.win_rate ?? 'N/A'}</Typography>
-              <Typography variant="subtitle1">Total Trades: {wallet.on_chain_data?.total_trades ?? 'N/A'}</Typography>
-              <Typography variant="subtitle1">Total Volume (SOL): {wallet.on_chain_data?.total_volume_sol ?? 'N/A'}</Typography>
-            </Box>
-            <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
-              <Tab label="Overview" />
-              <Tab label="Trade History" />
-              <Tab label="Portfolio" />
-              <Tab label="Copytraders" />
-            </Tabs>
-            {tab === 0 && (
-              <Box>
-                <Typography>Overview charts and stats coming soon.</Typography>
-              </Box>
-            )}
-            {tab === 1 && (
-              <Box>
-                <Typography>Trade history table coming soon.</Typography>
-              </Box>
-            )}
-            {tab === 2 && (
-              <Box>
-                <Typography>Portfolio details coming soon.</Typography>
-              </Box>
-            )}
-            {tab === 3 && (
-              <Box>
-                <Typography>Copytrader scan and results coming soon.</Typography>
-              </Box>
-            )}
-          </>
-        )}
-        <Snackbar
-          open={copyOpen}
-          autoHideDuration={1200}
-          onClose={() => setCopyOpen(false)}
-          message="Wallet address copied!"
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        />
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function WalletExplorerPage() {
-  const [wallets, setWallets] = React.useState<any[]>([]);
-  const [search, setSearch] = React.useState('');
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [selected, setSelected] = React.useState<any | null>(null);
-  // Advanced filter state
-  const [pnlRange, setPnlRange] = React.useState<[number, number]>([0, 100]);
-  const [winRateRange, setWinRateRange] = React.useState<[number, number]>([0, 100]);
-  const [smartScoreRange, setSmartScoreRange] = React.useState<[number, number]>([0, 100]);
-  const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
-  const [lastActive, setLastActive] = React.useState<string>('');
-  const [detailOpen, setDetailOpen] = React.useState(false);
-  const [detailWalletId, setDetailWalletId] = React.useState<string | null>(null);
-  const [watchlist, setWatchlist] = React.useState<string[]>([]);
-  const [progress, setProgress] = React.useState<string | null>(null);
-  const [progressStep, setProgressStep] = React.useState<number>(0);
-  const progressSteps = [
-    'Running Discovery...',
-    'Running On-Chain Analyzer...',
-    'Running ML Processor...',
-    'Refreshing wallet data...'
+// Main App Layout
+function MainAppLayout() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const menuItems = [
+    { label: 'Dashboard', path: '/dashboard', icon: '📊' },
+    { label: 'Top Tokens', path: '/top-tokens', icon: '⭐' },
+    { label: 'Settings', path: '/settings', icon: '⚙️' },
+    { label: 'Discovery', path: '/discovery', icon: '🔍' },
+    { label: 'Analytics', path: '/analytics', icon: '📈' },
+    { label: 'Wallet Finder', path: '/wallet-finder', icon: '👛' },
+    { label: 'Copytrade Finder', path: '/copytrade-finder', icon: '🤖' },
+    { label: 'On-Chain Analyzer', path: '/onchain-analyzer', icon: '🔗' },
+    { label: 'ML Processor', path: '/ml-processor', icon: '🧠' },
   ];
 
-  // Placeholder: fetch wallets from backend
-  const fetchWallets = () => {
-    setLoading(true);
-    axios.get('http://localhost:8000/wallets')
-      .then(res => {
-        setWallets(res.data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError('Failed to load wallets.');
-        setLoading(false);
-      });
-  };
-
-  React.useEffect(() => {
-    fetchWallets();
-  }, []);
-
-  // Extract all ML tags from data for checkboxes
-  const allTags = Array.from(new Set(wallets.flatMap(w => w?.ai_insights?.tags_ml || []))).filter(Boolean);
-
-  // Action handlers (real backend calls)
-  const handleDiscover = async () => {
-    setProgressStep(0);
-    setProgress(progressSteps[0]);
-    setError(null);
-    try {
-      await axios.post('http://localhost:8000/run-discovery');
-      setProgressStep(1);
-      setProgress(progressSteps[1]);
-      await axios.post('http://localhost:8000/run-onchain-analysis');
-      setProgressStep(2);
-      setProgress(progressSteps[2]);
-      await axios.post('http://localhost:8000/ml-process');
-      setProgressStep(3);
-      setProgress(progressSteps[3]);
-      await new Promise(res => setTimeout(res, 800));
-      fetchWallets();
-      setProgressStep(0);
-      setProgress(null);
-    } catch (e) {
-      setError('Failed to run discovery and analysis.');
-      setProgressStep(0);
-      setProgress(null);
-    }
-  };
-  const handleRefreshAnalytics = async () => {
-    setProgressStep(1);
-    setProgress(progressSteps[1]);
-    setError(null);
-    try {
-      await axios.post('http://localhost:8000/run-onchain-analysis');
-      setProgressStep(2);
-      setProgress(progressSteps[2]);
-      await axios.post('http://localhost:8000/ml-process');
-      setProgressStep(3);
-      setProgress(progressSteps[3]);
-      await new Promise(res => setTimeout(res, 800));
-      fetchWallets();
-      setProgressStep(0);
-      setProgress(null);
-    } catch (e) {
-      setError('Failed to refresh analytics.');
-      setProgressStep(0);
-      setProgress(null);
-    }
-  };
-
-  // Filtered wallets
-  const filteredWallets = wallets.filter(w => {
-    // Search
-    if (search && !w.id?.toLowerCase().includes(search.toLowerCase())) return false;
-    // PnL
-    const pnl = typeof w?.on_chain_data?.pnl_sol === 'number' ? w.on_chain_data.pnl_sol : 0;
-    if (pnl < pnlRange[0] || pnl > pnlRange[1]) return false;
-    // Win Rate
-    const winRate = typeof w?.on_chain_data?.win_rate === 'number' ? w.on_chain_data.win_rate : 0;
-    if (winRate < winRateRange[0] || winRate > winRateRange[1]) return false;
-    // Smart Score
-    const smartScore = typeof w?.ai_insights?.overall_smart_score === 'number' ? w.ai_insights.overall_smart_score : 0;
-    if (smartScore < smartScoreRange[0] || smartScore > smartScoreRange[1]) return false;
-    // ML Tags
-    if (selectedTags.length > 0 && !(w?.ai_insights?.tags_ml || []).some((tag: string) => selectedTags.includes(tag))) return false;
-    // Last Active (simple string match for now)
-    if (lastActive && (!w?.on_chain_data?.last_active || !w.on_chain_data.last_active.includes(lastActive))) return false;
-    return true;
-  });
-
-  // Load watchlist from localStorage on mount
-  React.useEffect(() => {
-    const stored = localStorage.getItem('solens_watchlist');
-    setWatchlist(stored ? JSON.parse(stored) : []);
-  }, []);
-
-  // Add/remove from watchlist (local only for now, and persist to localStorage)
-  const toggleWatchlist = (walletId: string) => {
-    setWatchlist(prev => {
-      let updated;
-      if (prev.includes(walletId)) {
-        updated = prev.filter(id => id !== walletId);
-      } else {
-        updated = [...prev, walletId];
-      }
-      localStorage.setItem('solens_watchlist', JSON.stringify(updated));
-      return updated;
-    });
-  };
-
   return (
-    <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>Wallet Explorer</Typography>
-      {/* Action Bar */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-        <TextField
-          label="Search by Wallet Address"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          fullWidth
-        />
-        <Button variant="contained" color="primary" onClick={handleDiscover} disabled={loading || !!progress}>
-          Discover New Wallets
-        </Button>
-        <Button variant="contained" color="secondary" onClick={handleRefreshAnalytics} disabled={loading || !!progress}>
-          Refresh Analytics
-        </Button>
-      </Box>
-      {/* Progress Bar */}
-      {progress && (
-        <Box sx={{ mb: 2 }}>
-          <Typography sx={{ mb: 1 }}>{progress}</Typography>
-          <LinearProgress variant="determinate" value={progressStep * 33.33 + 10} sx={{ height: 8, borderRadius: 2, background: '#222', '& .MuiLinearProgress-bar': { background: progressStep === 0 ? '#42a5f5' : progressStep === 1 ? '#7e57c2' : progressStep === 2 ? '#66bb6a' : '#ffa726' } }} />
-        </Box>
-      )}
-      {/* Advanced Filters Panel */}
-      <Box sx={{ display: 'flex', gap: 4, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-        <Box sx={{ minWidth: 200 }}>
-          <Typography gutterBottom>PnL (SOL)</Typography>
-          <Slider
-            value={pnlRange}
-            onChange={(_, v) => setPnlRange(v as [number, number])}
-            min={Math.min(0, ...wallets.map(w => w?.on_chain_data?.pnl_sol ?? 0))}
-            max={Math.max(100, ...wallets.map(w => w?.on_chain_data?.pnl_sol ?? 100))}
-            valueLabelDisplay="auto"
+    <div style={{ 
+      display: 'flex', 
+      fontFamily: '"DM Sans", sans-serif', 
+      minHeight: '100vh', 
+      minWidth: '100vw', 
+      height: '100vh', 
+      width: '100vw', 
+      boxSizing: 'border-box' 
+    }}>
+      {/* Sidebar */}
+      <div style={{
+        width: drawerWidth,
+        background: 'radial-gradient(ellipse at 60% 40%, #101a2b 0%, #0a1220 60%, #050a18 100%)',
+        color: '#fff',
+        borderRight: 'none',
+        padding: 0,
+        fontFamily: '"DM Sans", sans-serif',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {/* Logo */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          padding: '24px 16px', 
+          marginBottom: 16 
+        }}>
+          <img 
+            src={solensLogo} 
+            alt="Solens Logo" 
+            style={{ height: 48, marginBottom: 8, cursor: 'pointer' }} 
+            onClick={() => navigate('/dashboard')} 
           />
-        </Box>
-        <Box sx={{ minWidth: 200 }}>
-          <Typography gutterBottom>Win Rate (%)</Typography>
-          <Slider
-            value={winRateRange}
-            onChange={(_, v) => setWinRateRange(v as [number, number])}
-            min={0}
-            max={100}
-            valueLabelDisplay="auto"
-          />
-        </Box>
-        <Box sx={{ minWidth: 200 }}>
-          <Typography gutterBottom>Smart Score</Typography>
-          <Slider
-            value={smartScoreRange}
-            onChange={(_, v) => setSmartScoreRange(v as [number, number])}
-            min={0}
-            max={100}
-            valueLabelDisplay="auto"
-          />
-        </Box>
-        <Box>
-          <Typography gutterBottom>ML Tags</Typography>
-          <FormGroup row>
-            {allTags.map(tag => (
-              <FormControlLabel
-                key={tag}
-                control={<Checkbox checked={selectedTags.includes(tag)} onChange={e => {
-                  if (e.target.checked) setSelectedTags([...selectedTags, tag]);
-                  else setSelectedTags(selectedTags.filter(t => t !== tag));
-                }} />}
-                label={tag}
-              />
-            ))}
-          </FormGroup>
-        </Box>
-        <Box>
-          <Typography gutterBottom>Last Active</Typography>
-          <TextField
-            select
-            value={lastActive}
-            onChange={e => setLastActive(e.target.value)}
-            SelectProps={{ native: true }}
-            size="small"
-            sx={{ minWidth: 120 }}
-          >
-            <option value="">Any</option>
-            <option value="24h">Last 24h</option>
-            <option value="7d">Last 7 Days</option>
-            <option value="30d">Last 30 Days</option>
-          </TextField>
-        </Box>
-      </Box>
-      {loading ? (
-        <Typography>Loading...</Typography>
-      ) : error ? (
-        <Typography color="error">{error}</Typography>
-      ) : (
-        <Box sx={{ overflowX: 'auto', maxHeight: 500 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', background: 'rgba(0,0,0,0.1)', tableLayout: 'fixed', fontSize: 15 }}>
-            <thead>
-              <tr>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 40, textAlign: 'center' }}></th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 220, textAlign: 'left' }}>Wallet</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 100, textAlign: 'right' }}>PnL (SOL)</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 100, textAlign: 'right' }}>Win Rate</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 110, textAlign: 'right' }}>Smart Score</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 160, textAlign: 'left' }}>ML Tags</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 80, textAlign: 'right' }}>Trades</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 2, border: '1px solid #333', padding: '6px 8px', background: '#181f2a', color: '#fff', width: 120, textAlign: 'right' }}>Last Active</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredWallets.length === 0 ? (
-                <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', color: '#b0bec5', padding: 24 }}>
-                    No results found. Try adjusting your filters.
-                  </td>
-                </tr>
-              ) : filteredWallets.map((w, i) => {
-                const isSelected = detailWalletId === w.id && detailOpen;
-                return (
-                  <tr
-                    key={w?.id || i}
-                    style={{
-                      cursor: 'pointer',
-                      transition: 'background 0.2s',
-                      background: isSelected ? '#26304a' : undefined,
-                    }}
-                    onClick={() => { setDetailWalletId(w.id); setDetailOpen(true); }}
-                    onMouseOver={e => e.currentTarget.style.background='#232b3e'}
-                    onMouseOut={e => e.currentTarget.style.background=''}
-                  >
-                    <td style={{ border: '1px solid #333', padding: '6px 8px', textAlign: 'center' }} onClick={e => { e.stopPropagation(); toggleWatchlist(w.id); }}>
-                      <Tooltip title={watchlist.includes(w.id) ? 'Remove from Watchlist' : 'Add to Watchlist'}>
-                        {watchlist.includes(w.id)
-                          ? <StarIcon sx={{ color: '#ffd600', cursor: 'pointer' }} />
-                          : <StarBorderIcon sx={{ color: '#b0bec5', cursor: 'pointer', '&:hover': { color: '#ffd600' } }} />
-                        }
-                      </Tooltip>
-                    </td>
-                    <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff' }}>
-                      <Tooltip title={w?.id}><span>{w?.id?.slice(0, 20)}...</span></Tooltip>
-                    </td>
-                    <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', textAlign: 'right' }}>{typeof w?.on_chain_data?.pnl_sol === 'number' ? w.on_chain_data.pnl_sol.toFixed(2) : ''}</td>
-                    <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', textAlign: 'right' }}>{typeof w?.on_chain_data?.win_rate === 'number' ? w.on_chain_data.win_rate.toFixed(2) : ''}</td>
-                    <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', textAlign: 'right' }}>{typeof w?.ai_insights?.overall_smart_score === 'number' ? w.ai_insights.overall_smart_score.toFixed(2) : ''}</td>
-                    <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff' }}>
-                      <Tooltip title={w?.ai_insights?.tags_ml?.join(', ')}><span>{w?.ai_insights?.tags_ml ? w.ai_insights.tags_ml.join(', ') : ''}</span></Tooltip>
-                    </td>
-                    <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', textAlign: 'right' }}>
-                      <Tooltip title={w?.on_chain_data?.total_trades}><span>{typeof w?.on_chain_data?.total_trades === 'number' ? w.on_chain_data.total_trades : ''}</span></Tooltip>
-                    </td>
-                    <td style={{ border: '1px solid #333', padding: '6px 8px', color: '#fff', textAlign: 'right' }}>
-                      <Tooltip title={w?.on_chain_data?.last_active}><span>{w?.on_chain_data?.last_active ? w.on_chain_data.last_active : ''}</span></Tooltip>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </Box>
-      )}
-      {/* Wallet Detail Modal */}
-      <WalletDetailModal open={detailOpen} onClose={() => setDetailOpen(false)} walletId={detailWalletId} />
-    </Container>
+          <div style={{ 
+            color: '#b0bec5', 
+            fontWeight: 500, 
+            fontSize: 14, 
+            letterSpacing: 1, 
+            fontFamily: '"DM Sans", sans-serif', 
+            marginTop: 8, 
+            textAlign: 'center' 
+          }}>
+            AI Powered Wallet Finder
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <div style={{ flex: 1 }}>
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <div key={item.label}>
+                <Link
+                  to={item.path}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '12px 16px',
+                    color: isActive ? '#42a5f5' : '#fff',
+                    textDecoration: 'none',
+                    background: isActive ? 'rgba(33, 150, 243, 0.15)' : 'none',
+                    fontWeight: isActive ? 700 : 400,
+                    transition: 'background 0.2s, color 0.2s',
+                    fontFamily: '"DM Sans", sans-serif',
+                    fontSize: 16
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(33, 150, 243, 0.10)'}
+                  onMouseLeave={e => e.currentTarget.style.background = isActive ? 'rgba(33, 150, 243, 0.15)' : 'none'}
+                >
+                  <span style={{ marginRight: 12, fontSize: 20 }}>{item.icon}</span>
+                  {item.label}
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div style={{ 
+        flex: 1, 
+        minHeight: '100vh', 
+        minWidth: 0, 
+        background: 'radial-gradient(ellipse at 60% 40%, #101a2b 0%, #0a1220 60%, #050a18 100%)', 
+        position: 'relative', 
+        fontFamily: '"DM Sans", sans-serif', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        boxSizing: 'border-box' 
+      }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 0,
+          background: 'radial-gradient(ellipse at 60% 40%, #101a2b 0%, #0a1220 60%, #050a18 100%)',
+          pointerEvents: 'none',
+        }} />
+        
+        <div style={{ 
+          position: 'relative', 
+          zIndex: 1, 
+          flex: 1, 
+          width: '100%', 
+          maxWidth: '100vw', 
+          padding: '0 24px', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'flex-start', 
+          boxSizing: 'border-box' 
+        }}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/top-tokens" element={<TopTokensPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/discovery" element={<DiscoveryPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/wallet-finder" element={<WalletFinderPage />} />
+            <Route path="/copytrade-finder" element={<CopytradeFinderPage />} />
+            <Route path="/onchain-analyzer" element={<OnChainAnalyzerPage />} />
+            <Route path="/ml-processor" element={<MLProcessorPage />} />
+          </Routes>
+        </div>
+      </div>
+    </div>
   );
 }
 
+// Main App Component
 function App() {
   return (
     <Router>
@@ -1630,221 +1567,5 @@ function App() {
     </Router>
   );
 }
-
-function MainAppLayout() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  return (
-    <Box sx={{ display: 'flex', fontFamily: '"DM Sans", sans-serif', minHeight: '100vh', minWidth: '100vw', height: '100vh', width: '100vw', boxSizing: 'border-box' }}>
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: { xs: 70, sm: drawerWidth },
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: {
-            width: { xs: 70, sm: drawerWidth },
-            boxSizing: 'border-box',
-            background: 'radial-gradient(ellipse at 60% 40%, #101a2b 0%, #0a1220 60%, #050a18 100%)',
-            color: '#fff',
-            borderRight: 'none',
-            px: 0,
-            pt: 0,
-            fontFamily: '"DM Sans", sans-serif',
-            minHeight: '100vh',
-          },
-        }}
-      >
-        {/* Logo at the top */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: { xs: 2, sm: 3 }, mb: 2 }}>
-          <img src={solensLogo} alt="Solens Logo" style={{ height: 48, marginBottom: 8, cursor: 'pointer' }} onClick={() => navigate('/')} />
-          <Typography variant="subtitle2" sx={{ color: '#b0bec5', fontWeight: 500, fontSize: 14, letterSpacing: 1, fontFamily: '"DM Sans", sans-serif', mt: 1, display: { xs: 'none', sm: 'block' } }}>
-            AI Powered Wallet Finder
-          </Typography>
-        </Box>
-        {/* Main navigation */}
-        <List sx={{ mt: 2 }}>
-          {mainNavItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
-                <ListItemButton
-                  component={Link}
-                  to={item.path}
-                  sx={{
-                    borderRadius: 2,
-                    mx: 2,
-                    py: 1.2,
-                    background: isActive ? 'rgba(33, 150, 243, 0.15)' : 'none',
-                    color: isActive ? '#4fc3f7' : '#fff',
-                    fontWeight: isActive ? 700 : 400,
-                    '&:hover': {
-                      background: 'rgba(33, 150, 243, 0.10)',
-                      color: '#4fc3f7',
-                    },
-                    fontFamily: '"DM Sans", sans-serif',
-                  }}
-                >
-                  <ListItemIcon sx={{ color: isActive ? '#4fc3f7' : '#fff', minWidth: 36 }}>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} sx={{ '.MuiTypography-root': { fontFamily: '"DM Sans", sans-serif', fontWeight: isActive ? 700 : 400, fontSize: 18, display: { xs: 'none', sm: 'block' } } }} />
-                </ListItemButton>
-              </ListItem>
-            );
-          })}
-        </List>
-        {/* Advanced Tools section */}
-        <Box sx={{ mt: 4, mb: 1, px: 2 }}>
-          <Typography variant="subtitle2" sx={{ color: '#7e8ba3', fontWeight: 700, fontSize: 13, letterSpacing: 1, mb: 1, textTransform: 'uppercase' }}>
-            Advanced Tools
-          </Typography>
-        </Box>
-        <List>
-          {advancedNavItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
-                <ListItemButton
-                  component={Link}
-                  to={item.path}
-                  sx={{
-                    borderRadius: 2,
-                    mx: 2,
-                    py: 1.2,
-                    background: isActive ? 'rgba(33, 150, 243, 0.15)' : 'none',
-                    color: isActive ? '#4fc3f7' : '#fff',
-                    fontWeight: isActive ? 700 : 400,
-                    '&:hover': {
-                      background: 'rgba(33, 150, 243, 0.10)',
-                      color: '#4fc3f7',
-                    },
-                    fontFamily: '"DM Sans", sans-serif',
-                  }}
-                >
-                  <ListItemIcon sx={{ color: isActive ? '#4fc3f7' : '#fff', minWidth: 36 }}>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.text} sx={{ '.MuiTypography-root': { fontFamily: '"DM Sans", sans-serif', fontWeight: isActive ? 700 : 400, fontSize: 18, display: { xs: 'none', sm: 'block' } } }} />
-                </ListItemButton>
-              </ListItem>
-            );
-          })}
-        </List>
-      </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, minHeight: '100vh', minWidth: 0, bgcolor: 'radial-gradient(ellipse at 60% 40%, #101a2b 0%, #0a1220 60%, #050a18 100%)', position: 'relative', fontFamily: '"DM Sans", sans-serif', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
-        {/* Glowing background for main content */}
-        <Box sx={{
-          position: 'absolute',
-          inset: 0,
-          zIndex: 0,
-          background: 'radial-gradient(ellipse at 60% 40%, #101a2b 0%, #0a1220 60%, #050a18 100%)',
-          pointerEvents: 'none',
-        }} />
-        <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, background: 'transparent', boxShadow: 'none', color: '#fff', fontFamily: '"DM Sans", sans-serif' }}>
-          <Toolbar />
-        </AppBar>
-        <Toolbar />
-        <Box sx={{ position: 'relative', zIndex: 1, flex: 1, width: '100%', maxWidth: '100vw', p: { xs: 1, sm: 2, md: 6 }, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', boxSizing: 'border-box' }}>
-          <ThemeProvider theme={muiTheme}>
-            <Routes>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/wallet-explorer" element={<WalletExplorerPage />} />
-              <Route path="/watchlists" element={<WatchlistsPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/discovery" element={<DiscoveryPage />} />
-              <Route path="/analytics" element={<AnalyticsPage />} />
-              <Route path="/wallet-finder" element={<WalletFinderPage />} />
-              <Route path="/copytrade-finder" element={<CopytradeFinderPage />} />
-              <Route path="/onchain-analyzer" element={<OnChainAnalyzerPage />} />
-              <Route path="/ml-processor" element={<MLProcessorPage />} />
-            </Routes>
-          </ThemeProvider>
-        </Box>
-      </Box>
-    </Box>
-  );
-}
-
-// Add a custom MUI theme for light gray placeholder
-const muiTheme = createTheme({
-  typography: {
-    fontFamily: '"DM Sans", sans-serif',
-  },
-  components: {
-    MuiInputBase: {
-      styleOverrides: {
-        input: {
-          '::placeholder': {
-            color: '#b0bec5',
-            opacity: 1,
-          },
-          color: '#b0bec5',
-          fontFamily: '"DM Sans", sans-serif',
-        },
-        root: {
-          'input::placeholder': {
-            color: '#b0bec5',
-            opacity: 1,
-          },
-          color: '#b0bec5',
-          fontFamily: '"DM Sans", sans-serif',
-        },
-      },
-    },
-    MuiOutlinedInput: {
-      styleOverrides: {
-        input: {
-          '::placeholder': {
-            color: '#b0bec5',
-            opacity: 1,
-          },
-          color: '#b0bec5',
-          fontFamily: '"DM Sans", sans-serif',
-        },
-        root: {
-          color: '#b0bec5',
-          fontFamily: '"DM Sans", sans-serif',
-        },
-      },
-    },
-    MuiInputLabel: {
-      styleOverrides: {
-        root: {
-          color: '#b0bec5',
-          fontFamily: '"DM Sans", sans-serif',
-        },
-      },
-    },
-    MuiFormLabel: {
-      styleOverrides: {
-        root: {
-          color: '#b0bec5',
-          fontFamily: '"DM Sans", sans-serif',
-        },
-      },
-    },
-    MuiFormHelperText: {
-      styleOverrides: {
-        root: {
-          color: '#b0bec5',
-          fontFamily: '"DM Sans", sans-serif',
-        },
-      },
-    },
-    MuiTypography: {
-      styleOverrides: {
-        root: {
-          color: '#fff',
-          fontFamily: '"DM Sans", sans-serif',
-        },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          backgroundImage: 'none',
-          backgroundColor: 'transparent',
-          boxShadow: 'none',
-        },
-      },
-    },
-  },
-});
 
 export default App;

@@ -15,41 +15,38 @@ db = client["solens_ai"]
 
 # --- FEATURE EXTRACTION ---
 def extract_features(wallet):
-    gmgn = wallet.get('gmgn_data', {})
-    onchain = wallet.get('on_chain_data', {})
+    # Use root-level fields from discovery and on_chain_data
     features = {}
-    # GMGN features
-    features['gmgn_pnl_7d'] = gmgn.get('pnl_7d', 0)
-    features['gmgn_winrate_7d'] = gmgn.get('winrate_7d', 0)
-    features['gmgn_copy_trading_score'] = gmgn.get('copy_trading_score', 0)
-    features['gmgn_risk_honeypot_ratio'] = gmgn.get('risk', {}).get('token_honeypot_ratio', 0)
-    features['gmgn_risk_fast_tx_ratio'] = gmgn.get('risk', {}).get('fast_tx_ratio', 0)
-    features['gmgn_txs_30d'] = gmgn.get('txs_30d', 0)
+    # Discovery/root features
+    features['profit'] = float(wallet.get('profit', 0))
+    features['quality_score'] = float(wallet.get('quality_score', 0))
+    features['profit_change'] = float(wallet.get('profit_change', 0))
+    features['quality_tier'] = 1 if wallet.get('quality_tier', '') == 'high' else 0
     # On-chain features
-    features['onchain_pnl_sol'] = onchain.get('pnl_sol', 0)
-    features['onchain_win_rate'] = onchain.get('win_rate', 0)
-    features['onchain_total_trades'] = onchain.get('total_trades', 0)
-    features['onchain_total_volume_sol'] = onchain.get('total_volume_sol', 0)
-    features['onchain_sol_balance_change'] = onchain.get('sol_balance_change', 0)
-    features['onchain_incomplete_sells'] = onchain.get('incomplete_sells', 0)
+    onchain = wallet.get('on_chain_data', {})
+    features['onchain_pnl_sol'] = float(onchain.get('pnl_sol', 0))
+    features['onchain_win_rate'] = float(onchain.get('win_rate', 0))
+    features['onchain_total_trades'] = float(onchain.get('total_trades', 0))
+    features['onchain_total_volume_sol'] = float(onchain.get('total_volume_sol', 0))
+    features['onchain_incomplete_sells'] = float(onchain.get('incomplete_sells', 0))
     return features
 
 # --- SMART SCORE CALCULATION ---
 def compute_smart_score(feat, norm):
     # Weighted sum (weights can be tuned)
     score = (
-        0.3 * norm['gmgn_copy_trading_score'] +
-        0.2 * norm['gmgn_winrate_7d'] +
+        0.3 * norm['quality_score'] +
         0.2 * norm['onchain_win_rate'] +
-        0.1 * norm['gmgn_pnl_7d'] +
+        0.2 * norm['profit'] +
         0.1 * norm['onchain_pnl_sol'] +
-        0.1 * (1 - norm['gmgn_risk_fast_tx_ratio'])
+        0.1 * norm['onchain_total_trades'] +
+        0.1 * norm['quality_tier']
     )
     return float(np.clip(score, 0, 1))
 
 def compute_risk_score(feat, norm):
-    # Simple risk score: average of risk ratios
-    return float(np.clip((norm['gmgn_risk_honeypot_ratio'] + norm['gmgn_risk_fast_tx_ratio']) / 2, 0, 1))
+    # Simple risk score: higher incomplete sells = higher risk
+    return float(np.clip(norm['onchain_incomplete_sells'], 0, 1))
 
 # --- CATEGORY LABELS ---
 CATEGORY_LABELS = [
@@ -59,17 +56,16 @@ CATEGORY_LABELS = [
 ]
 
 def main():
-    # 1. Query wallets with both gmgn_data and on_chain_data
+    # 1. Query wallets with both discovery fields and on_chain_data
     wallets = list(db.wallets.find({}))
     selected = []
     wallet_ids = []
     for doc in wallets:
-        data = doc
-        if 'gmgn_data' in data and 'on_chain_data' in data:
-            selected.append(data)
+        if 'on_chain_data' in doc and 'profit' in doc:
+            selected.append(doc)
             wallet_ids.append(doc['_id'])
     if not selected:
-        print('No wallets with both gmgn_data and on_chain_data found.')
+        print('No wallets with both discovery fields and on_chain_data found.')
         return
     # 2. Extract features
     feature_list = [extract_features(w) for w in selected]
@@ -91,9 +87,9 @@ def main():
     # 6. Write back to MongoDB
     for i, doc_id in enumerate(wallet_ids):
         ai_insights = {
-            'overall_smart_score': smart_scores[i],
-            'risk_score': risk_scores[i],
-            'tags_ml': [CATEGORY_LABELS[clusters[i]]],
+            'overall_smart_score': smart_scores[i] if i < len(smart_scores) else 0,
+            'risk_score': risk_scores[i] if i < len(risk_scores) else 0,
+            'tags_ml': [CATEGORY_LABELS[clusters[i]]] if i < len(clusters) else [],
             'last_ml_inference': datetime.utcnow()
         }
         db.wallets.update_one(
@@ -101,6 +97,16 @@ def main():
             {"$set": {"ai_insights": ai_insights}},
             upsert=True
         )
+
+    # Ensure all wallets have ai_insights.risk_score (set to 0 if missing)
+    for doc in db.wallets.find({}):
+        if 'ai_insights' not in doc or 'risk_score' not in doc['ai_insights']:
+            db.wallets.update_one(
+                {"_id": doc['_id']},
+                {"$set": {"ai_insights.risk_score": 0}},
+                upsert=True
+            )
+
     print(f'Processed {len(wallet_ids)} wallets and updated ai_insights.')
 
 if __name__ == '__main__':
