@@ -21,10 +21,10 @@ interface TopTokensData {
 }
 
 const tabOptions = [
-  { label: 'Top Performers', key: 'top_performers' },
-  { label: 'By Liquidity', key: 'top_by_liquidity' },
-  { label: 'By Market Cap', key: 'top_by_market_cap' },
-  { label: 'By Holders', key: 'top_by_holders' },
+  { label: '[TOP_PERFORMERS]', key: 'top_performers' },
+  { label: '[BY_LIQUIDITY]', key: 'top_by_liquidity' },
+  { label: '[BY_MARKET_CAP]', key: 'top_by_market_cap' },
+  { label: '[BY_HOLDERS]', key: 'top_by_holders' },
 ];
 
 const TopTokensSection: React.FC = () => {
@@ -42,7 +42,7 @@ const TopTokensSection: React.FC = () => {
       setLastRefresh(new Date());
       setError(null);
     } catch (err) {
-      setError('Failed to fetch top tokens data');
+      setError('[ERROR] Failed to fetch token database');
     } finally {
       setLoading(false);
     }
@@ -66,86 +66,187 @@ const TopTokensSection: React.FC = () => {
   };
 
   const getRugRatioColor = (ratio: number): string => {
-    if (ratio < 0.1) return '#4caf50';
-    if (ratio < 0.3) return '#ff9800';
-    return '#f44336';
+    if (ratio < 0.1) return '#00ff41';
+    if (ratio < 0.3) return '#ffff00';
+    return '#ff6b6b';
   };
 
   const getPriceChangeColor = (change: number): string => {
-    return change >= 0 ? '#4caf50' : '#f44336';
+    return change >= 0 ? '#00ff41' : '#ff6b6b';
   };
 
   const renderTable = (tokens: Token[]) => (
     <div style={{ overflowX: 'auto', marginTop: 16 }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: '#181f2a', color: '#fff', borderRadius: 8, overflow: 'hidden' }}>
-        <thead style={{ background: '#232b3a' }}>
-          <tr>
-            <th style={{ padding: 10, textAlign: 'left' }}>Rank</th>
-            <th style={{ padding: 10, textAlign: 'left' }}>Token</th>
-            <th style={{ padding: 10 }}>Liquidity</th>
-            <th style={{ padding: 10 }}>Market Cap</th>
-            <th style={{ padding: 10 }}>Holders</th>
-            <th style={{ padding: 10 }}>24h Change</th>
-            <th style={{ padding: 10 }}>Rug Ratio</th>
-          </tr>
-        </thead>
-        <tbody>
-          {tokens.map((token, idx) => (
-            <tr key={token.address} style={{ borderBottom: '1px solid #232b3a', background: idx % 2 === 0 ? '#181f2a' : '#1e2533' }}>
-              <td style={{ padding: 10, fontWeight: 700 }}>#{idx + 1}</td>
-              <td style={{ padding: 10 }}>
-                <div style={{ fontWeight: 600 }}>{token.symbol}</div>
-                <div style={{ fontSize: 12, color: '#b0bec5' }}>{token.address.slice(0, 6)}...{token.address.slice(-4)}</div>
-              </td>
-              <td style={{ padding: 10, textAlign: 'right' }}>{formatCurrency(token.liquidity)}</td>
-              <td style={{ padding: 10, textAlign: 'right' }}>{formatCurrency(token.market_cap)}</td>
-              <td style={{ padding: 10, textAlign: 'right' }}>{formatNumber(token.holders)}</td>
-              <td style={{ padding: 10, textAlign: 'right', color: getPriceChangeColor(token.price_change_24h), fontWeight: 600 }}>
-                {token.price_change_24h >= 0 ? '+' : ''}{token.price_change_24h.toFixed(1)}%
-              </td>
-              <td style={{ padding: 10, textAlign: 'right' }}>
-                <span style={{ background: getRugRatioColor(token.rug_ratio), color: '#fff', borderRadius: 6, padding: '2px 8px', fontWeight: 600, fontSize: 13 }}>
-                  {(token.rug_ratio * 100).toFixed(1)}%
-                </span>
-              </td>
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.02)',
+        border: '1px solid #333333',
+        borderRadius: 0,
+        overflow: 'hidden'
+      }}>
+        <table style={{ 
+          width: '100%', 
+          borderCollapse: 'collapse', 
+          background: 'transparent', 
+          color: '#ffffff',
+          fontFamily: '"Courier New", monospace'
+        }}>
+          <thead style={{ background: 'rgba(0, 255, 65, 0.1)' }}>
+            <tr>
+              <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333', fontSize: 13 }}>RANK</th>
+              <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333', fontSize: 13 }}>TOKEN</th>
+              <th style={{ padding: '12px', textAlign: 'right', color: '#00ff41', borderBottom: '1px solid #333333', fontSize: 13 }}>LIQUIDITY</th>
+              <th style={{ padding: '12px', textAlign: 'right', color: '#00ff41', borderBottom: '1px solid #333333', fontSize: 13 }}>MARKET_CAP</th>
+              <th style={{ padding: '12px', textAlign: 'right', color: '#00ff41', borderBottom: '1px solid #333333', fontSize: 13 }}>HOLDERS</th>
+              <th style={{ padding: '12px', textAlign: 'right', color: '#00ff41', borderBottom: '1px solid #333333', fontSize: 13 }}>24H_CHANGE</th>
+              <th style={{ padding: '12px', textAlign: 'right', color: '#00ff41', borderBottom: '1px solid #333333', fontSize: 13 }}>RUG_RATIO</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {tokens.map((token, idx) => (
+              <tr key={token.address} style={{ 
+                borderBottom: '1px solid #333333',
+                background: 'transparent'
+              }}>
+                <td style={{ padding: '10px', fontWeight: 700, fontSize: 13 }}>#{idx + 1}</td>
+                <td style={{ padding: '10px' }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{token.symbol}</div>
+                  <div style={{ fontSize: 11, color: '#cccccc' }}>{token.address.slice(0, 6)}...{token.address.slice(-4)}</div>
+                </td>
+                <td style={{ padding: '10px', textAlign: 'right', fontSize: 13 }}>{formatCurrency(token.liquidity)}</td>
+                <td style={{ padding: '10px', textAlign: 'right', fontSize: 13 }}>{formatCurrency(token.market_cap)}</td>
+                <td style={{ padding: '10px', textAlign: 'right', fontSize: 13 }}>{formatNumber(token.holders)}</td>
+                <td style={{ 
+                  padding: '10px', 
+                  textAlign: 'right', 
+                  color: getPriceChangeColor(token.price_change_24h), 
+                  fontWeight: 600,
+                  fontSize: 13
+                }}>
+                  {token.price_change_24h >= 0 ? '+' : ''}{token.price_change_24h.toFixed(1)}%
+                </td>
+                <td style={{ padding: '10px', textAlign: 'right' }}>
+                  <span style={{ 
+                    background: getRugRatioColor(token.rug_ratio), 
+                    color: '#000000', 
+                    borderRadius: 0, 
+                    padding: '2px 6px', 
+                    fontWeight: 600, 
+                    fontSize: 11,
+                    border: `1px solid ${getRugRatioColor(token.rug_ratio)}`,
+                    fontFamily: '"Courier New", monospace'
+                  }}>
+                    {(token.rug_ratio * 100).toFixed(1)}%
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 
   return (
-    <div style={{ background: '#101a2b', borderRadius: 10, padding: 24, boxShadow: '0 2px 16px 0 #0004', margin: '0 auto', maxWidth: 1100 }}>
+    <div style={{ 
+      background: 'rgba(255, 255, 255, 0.02)', 
+      borderRadius: 0, 
+      padding: 24, 
+      border: '1px solid #333333',
+      margin: '0 auto', 
+      maxWidth: 1100,
+      fontFamily: '"Courier New", monospace'
+    }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <h2 style={{ margin: 0, color: '#fff', fontWeight: 800, fontSize: 28 }}>Top Tokens</h2>
-        <div style={{ fontSize: 13, color: '#b0bec5' }}>
-          Last updated: {lastRefresh.toLocaleTimeString()} <span title="✅ Real: Address, Symbol, Liquidity, Market Cap, Holders, Rug Ratio | 📊 Calculated: 24h Price Change, Volume" style={{ color: '#42a5f5', border: '1px solid #42a5f5', borderRadius: 4, padding: '2px 8px', marginLeft: 8, cursor: 'help', background: '#181f2a' }}>Real + Calculated</span>
+        <h2 style={{ 
+          margin: 0, 
+          color: '#00ff41', 
+          fontWeight: 700, 
+          fontSize: 20,
+          fontFamily: '"Courier New", monospace',
+          letterSpacing: '1px',
+          textTransform: 'uppercase'
+        }}>[TOKEN_REGISTRY]</h2>
+        <div style={{ fontSize: 11, color: '#cccccc', fontFamily: '"Courier New", monospace' }}>
+          LAST_UPDATE: {lastRefresh.toLocaleTimeString()} 
+          <span 
+            title="Real Data: Address, Symbol, Liquidity, Market Cap, Holders, Rug Ratio | Calculated: 24h Price Change, Volume" 
+            style={{ 
+              color: '#00ff41', 
+              border: '1px solid #00ff41', 
+              borderRadius: 0, 
+              padding: '2px 6px', 
+              marginLeft: 8, 
+              cursor: 'help', 
+              background: 'rgba(0, 255, 65, 0.1)',
+              fontSize: 10
+            }}
+          >
+            [REAL+CALC]
+          </span>
         </div>
       </div>
+      
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         {tabOptions.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             style={{
-              padding: '8px 18px',
-              borderRadius: 6,
-              border: 'none',
-              background: tab === t.key ? '#42a5f5' : '#232b3a',
-              color: tab === t.key ? '#fff' : '#b0bec5',
-              fontWeight: 700,
-              fontSize: 15,
+              padding: '8px 16px',
+              borderRadius: 0,
+              border: tab === t.key ? '1px solid #00ff41' : '1px solid #333333',
+              background: tab === t.key ? 'rgba(0, 255, 65, 0.1)' : '#000000',
+              color: tab === t.key ? '#00ff41' : '#cccccc',
+              fontWeight: 600,
+              fontSize: 12,
               cursor: 'pointer',
-              transition: 'background 0.2s, color 0.2s',
+              transition: 'all 0.2s',
+              fontFamily: '"Courier New", monospace',
+            }}
+            onMouseEnter={e => {
+              if (tab !== t.key) {
+                e.currentTarget.style.background = 'rgba(0, 255, 65, 0.05)';
+                e.currentTarget.style.color = '#00ff41';
+              }
+            }}
+            onMouseLeave={e => {
+              if (tab !== t.key) {
+                e.currentTarget.style.background = '#000000';
+                e.currentTarget.style.color = '#cccccc';
+              }
             }}
           >
             {t.label}
           </button>
         ))}
       </div>
-      {loading && <div style={{ color: '#b0bec5', padding: 24, textAlign: 'center' }}>Loading top tokens...</div>}
-      {error && <div style={{ color: '#f44336', padding: 24, textAlign: 'center' }}>{error}</div>}
+      
+      {loading && (
+        <div style={{ 
+          color: '#00ff41', 
+          padding: 24, 
+          textAlign: 'center',
+          fontFamily: '"Courier New", monospace',
+          fontSize: 14
+        }}>
+          [LOADING_TOKEN_DATABASE...]
+        </div>
+      )}
+      
+      {error && (
+        <div style={{ 
+          color: '#ff6b6b', 
+          padding: 24, 
+          textAlign: 'center',
+          fontFamily: '"Courier New", monospace',
+          fontSize: 14,
+          border: '1px solid #ff6b6b',
+          background: 'rgba(255, 107, 107, 0.1)'
+        }}>
+          {error}
+        </div>
+      )}
+      
       {tokensData && renderTable(tokensData[tab as keyof TopTokensData] as Token[])}
     </div>
   );

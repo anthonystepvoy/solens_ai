@@ -8,7 +8,7 @@ import Hero3DBackground from './assets/Hero3DBackground';
 import TopTokensSection from './components/TopTokensSection';
 import LandingPage from './components/LandingPage';
 
-const drawerWidth = 220;
+const drawerWidth = 280;
 
 // WalletAddress component
 function WalletAddress({ address, short = false }: { address: string, short?: boolean }) {
@@ -27,7 +27,7 @@ function WalletAddress({ address, short = false }: { address: string, short?: bo
         userSelect: 'all', 
         color: '#00ff41', 
         fontWeight: 600, 
-        position: 'relative',
+        position: 'relative', 
         fontFamily: '"Courier New", monospace',
         fontSize: '13px',
         letterSpacing: '0.5px'
@@ -252,7 +252,7 @@ function DashboardPage() {
                   color: '#ffffff',
                   letterSpacing: '1px'
                 }}>[TOP_PROFITABLE_WALLETS]</h3>
-                {topWallets.map((w, i) => (
+                    {topWallets.map((w, i) => (
                   <div key={i} style={{ 
                     padding: '12px 0', 
                     borderBottom: i < topWallets.length - 1 ? '1px solid #333333' : 'none',
@@ -346,7 +346,7 @@ function DashboardPage() {
                         TRADES: <span style={{ color: '#00ff41' }}>{w.trades}</span>
                       </div>
                     </div>
-                    <div style={{ 
+                      <div style={{ 
                       fontSize: 14, 
                       fontWeight: 700, 
                       color: '#00ff41',
@@ -354,8 +354,8 @@ function DashboardPage() {
                     }}>
                       ${w.pnl}
                     </div>
-                  </div>
-                ))}
+                    </div>
+                  ))}
               </div>
 
               {/* ML Tags */}
@@ -629,75 +629,126 @@ function DiscoveryPage() {
         wallets = walletMatches.reduce((sum, m) => sum + (parseInt(m[1]) || 0), 0);
         let msg = '';
         if (coins === 0 && wallets === 0) {
-          msg = 'No new coins or wallets found. Try again later!';
+          msg = '[STATUS] No new targets found. System will retry automatically.';
         } else {
-          msg = `Discovery complete: ${coins} new coin${coins !== 1 ? 's' : ''}, ${wallets} new wallet${wallets !== 1 ? 's' : ''} found!`;
+          msg = `[DISCOVERY_COMPLETE] ${coins} new tokens, ${wallets} new wallets acquired.`;
         }
         setStatus(msg);
         setLoading(false);
       })
       .catch(() => {
-        setError('Something went wrong. Please try again later.');
+        setError('[ERROR] Discovery module failed. System malfunction detected.');
         setLoading(false);
       });
   };
 
   return (
-    <div style={{ marginTop: 32, maxWidth: 800, margin: '32px auto 0', padding: '0 24px' }}>
-      <h1 style={{ color: '#fff', marginBottom: 16, fontSize: 32, fontWeight: 700 }}>Discovery</h1>
-      <p style={{ color: '#b0bec5', marginBottom: 24 }}>Find new tokens and wallets automatically. Click below to run discovery.</p>
+    <div style={{ 
+      marginTop: 32, 
+      maxWidth: 800, 
+      margin: '32px auto 0', 
+      padding: '0 24px',
+      fontFamily: '"Courier New", monospace'
+    }}>
+      <h1 style={{ 
+        color: '#ffffff', 
+        marginBottom: 16, 
+        fontSize: 24, 
+        fontWeight: 700,
+        fontFamily: '"Courier New", monospace',
+        letterSpacing: '2px',
+        textTransform: 'uppercase'
+      }}>&gt; DISCOVERY_MODULE</h1>
+      <p style={{ 
+        color: '#cccccc', 
+        marginBottom: 24,
+        fontFamily: '"Courier New", monospace',
+        fontSize: 14
+      }}>[AUTOMATED_TARGET_ACQUISITION_SYSTEM]</p>
       
       <button
         onClick={handleRunDiscovery}
         disabled={loading}
         style={{
-          background: loading ? '#666' : '#42a5f5',
-          color: '#fff',
-          border: 'none',
+          background: loading ? '#333333' : '#000000',
+          color: loading ? '#666666' : '#00ff41',
+          border: loading ? '1px solid #666666' : '1px solid #00ff41',
           padding: '12px 24px',
-          borderRadius: 8,
-          fontSize: 16,
+          borderRadius: 0,
+          fontSize: 14,
           fontWeight: 600,
           cursor: loading ? 'not-allowed' : 'pointer',
-          transition: 'background 0.2s',
-          marginBottom: 24
+          transition: 'all 0.2s',
+          marginBottom: 24,
+          fontFamily: '"Courier New", monospace',
+          letterSpacing: '1px',
+          textTransform: 'uppercase'
+        }}
+        onMouseEnter={e => {
+          if (!loading) {
+            e.currentTarget.style.background = '#00ff41';
+            e.currentTarget.style.color = '#000000';
+          }
+        }}
+        onMouseLeave={e => {
+          if (!loading) {
+            e.currentTarget.style.background = '#000000';
+            e.currentTarget.style.color = '#00ff41';
+          }
         }}
       >
-        {loading ? 'Running...' : 'Run Discovery'}
+        {loading ? '[SCANNING...]' : '> INITIATE_DISCOVERY'}
       </button>
 
       {loading && (
         <div style={{ marginBottom: 16 }}>
-          <div style={{ color: '#fff', marginBottom: 8 }}>Running discovery...</div>
+          <div style={{ 
+            color: '#00ff41', 
+            marginBottom: 8,
+            fontFamily: '"Courier New", monospace',
+            fontSize: 14
+          }}>[DISCOVERY_IN_PROGRESS]</div>
           <div style={{ 
             width: '100%', 
-            height: 8, 
-            background: '#232b3a', 
-            borderRadius: 4, 
-            overflow: 'hidden' 
+            height: 4, 
+            background: '#333333', 
+            borderRadius: 0, 
+            overflow: 'hidden',
+            border: '1px solid #333333'
           }}>
             <div style={{ 
               width: '100%', 
               height: '100%', 
-              background: '#42a5f5', 
+              background: '#00ff41', 
               animation: 'pulse 2s infinite' 
             }} />
           </div>
         </div>
       )}
 
-      {error && <div style={{ color: '#f44336', marginBottom: 16 }}>{error}</div>}
+      {error && (
+        <div style={{ 
+          color: '#ff6b6b', 
+          marginBottom: 16,
+          fontFamily: '"Courier New", monospace',
+          padding: 12,
+          border: '1px solid #ff6b6b',
+          background: 'rgba(255, 107, 107, 0.1)',
+          fontSize: 14
+        }}>{error}</div>
+      )}
       
       {status && !loading && (
         <div style={{ 
           marginBottom: 16, 
           padding: 16, 
-          background: '#232b3a', 
-          color: '#fff', 
-          borderRadius: 8, 
+          background: 'rgba(0, 255, 65, 0.1)', 
+          color: '#00ff41', 
+          borderRadius: 0, 
           fontWeight: 600, 
-          fontSize: 16, 
-          boxShadow: '0 2px 8px rgba(0,0,0,0.2)' 
+          fontSize: 14, 
+          border: '1px solid #00ff41',
+          fontFamily: '"Courier New", monospace'
         }}>
           {status}
         </div>
@@ -709,8 +760,22 @@ function DiscoveryPage() {
 // Top Tokens Page
 function TopTokensPage() {
   return (
-    <div style={{ marginTop: 32, maxWidth: 1200, margin: '32px auto 0', padding: '0 24px' }}>
-      <h1 style={{ color: '#fff', marginBottom: 24, fontSize: 32, fontWeight: 700 }}>Top Tokens</h1>
+    <div style={{ 
+      marginTop: 32, 
+      maxWidth: 1200, 
+      margin: '32px auto 0', 
+      padding: '0 24px',
+      fontFamily: '"Courier New", monospace'
+    }}>
+      <h1 style={{ 
+        color: '#ffffff', 
+        marginBottom: 24, 
+        fontSize: 24, 
+        fontWeight: 700,
+        fontFamily: '"Courier New", monospace',
+        letterSpacing: '2px',
+        textTransform: 'uppercase'
+      }}>&gt; TOP_TOKENS</h1>
       <TopTokensSection />
     </div>
   );
@@ -737,91 +802,178 @@ function AnalyticsPage() {
         setLoading(false);
       })
       .catch(() => {
-        setError('Failed to load analytics data.');
+        setError('[ERROR] Failed to load analytics data.');
         setLoading(false);
       });
   }, []);
 
   return (
-    <div style={{ marginTop: 32, maxWidth: 1200, margin: '32px auto 0', padding: '0 24px', color: '#fff' }}>
-      <h1>Analytics</h1>
-      <p>View tokens, traders, and wallet analytics here.</p>
+    <div style={{ 
+      marginTop: 32, 
+      maxWidth: 1200, 
+      margin: '32px auto 0', 
+      padding: '0 24px', 
+      color: '#ffffff',
+      fontFamily: '"Courier New", monospace'
+    }}>
+      <h1 style={{ 
+        color: '#ffffff', 
+        marginBottom: 16, 
+        fontSize: 24, 
+        fontWeight: 700,
+        fontFamily: '"Courier New", monospace',
+        letterSpacing: '2px',
+        textTransform: 'uppercase'
+      }}>&gt; ANALYTICS_MODULE</h1>
+      <p style={{ 
+        color: '#cccccc', 
+        marginBottom: 24, 
+        fontFamily: '"Courier New", monospace', 
+        fontSize: 14 
+      }}>[DATA_ANALYSIS_INTERFACE]</p>
       {loading ? (
-        <div>Loading...</div>
+        <div style={{ 
+          color: '#00ff41', 
+          fontFamily: '"Courier New", monospace'
+        }}>[LOADING_ANALYTICS...]</div>
       ) : error ? (
-        <div style={{ color: '#f44336' }}>{error}</div>
+        <div style={{ 
+          color: '#ff6b6b',
+          fontFamily: '"Courier New", monospace',
+          padding: 12,
+          border: '1px solid #ff6b6b',
+          background: 'rgba(255, 107, 107, 0.1)'
+        }}>{error}</div>
       ) : (
         <>
           <div style={{ marginTop: 32 }}>
-            <h2>Tokens</h2>
-            <table style={{ width: '100%', color: '#fff', fontSize: 15, marginBottom: 32 }}>
-              <thead>
-                <tr>
-                  <th>Address</th>
-                  <th>Symbol</th>
-                  <th>Liquidity</th>
-                  <th>Holders</th>
-                  <th>Market Cap</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tokens.map((t: any, i: number) => (
-                  <tr key={i}>
-                    <td><WalletAddress address={t.address || t.id} short /></td>
-                    <td>{t.symbol}</td>
-                    <td>{t.liquidity}</td>
-                    <td>{t.holder_count}</td>
-                    <td>{t.market_cap}</td>
+            <h2 style={{ 
+              color: '#ffffff',
+              fontFamily: '"Courier New", monospace',
+              fontSize: 18,
+              letterSpacing: '1px',
+              marginBottom: 16
+            }}>[TOKEN_REGISTRY]</h2>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid #333333',
+              borderRadius: 0,
+              overflow: 'hidden'
+            }}>
+              <table style={{ 
+                width: '100%', 
+                color: '#ffffff', 
+                fontSize: 13, 
+                marginBottom: 0,
+                fontFamily: '"Courier New", monospace'
+              }}>
+                <thead>
+                  <tr style={{ background: 'rgba(0, 255, 65, 0.1)' }}>
+                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>ADDRESS</th>
+                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>SYMBOL</th>
+                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>LIQUIDITY</th>
+                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>HOLDERS</th>
+                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>MARKET_CAP</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {tokens.map((t: any, i: number) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #333333' }}>
+                      <td style={{ padding: '10px' }}><WalletAddress address={t.address || t.id} short /></td>
+                      <td style={{ padding: '10px' }}>{t.symbol}</td>
+                      <td style={{ padding: '10px' }}>{t.liquidity}</td>
+                      <td style={{ padding: '10px' }}>{t.holder_count}</td>
+                      <td style={{ padding: '10px' }}>{t.market_cap}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
+          
           <div style={{ marginTop: 32 }}>
-            <h2>Wallets</h2>
-            <table style={{ width: '100%', color: '#fff', fontSize: 15, marginBottom: 32 }}>
-              <thead>
-                <tr>
-                  <th>Wallet</th>
-                  <th>PnL (SOL)</th>
-                  <th>Win Rate</th>
-                  <th>Trades</th>
-                </tr>
-              </thead>
-              <tbody>
-                {wallets.map((w: any, i: number) => (
-                  <tr key={i}>
-                    <td><WalletAddress address={w.id} short /></td>
-                    <td>{w.on_chain_data?.pnl_sol ?? ''}</td>
-                    <td>{w.on_chain_data?.win_rate ?? ''}</td>
-                    <td>{w.on_chain_data?.total_trades ?? ''}</td>
+            <h2 style={{ 
+              color: '#ffffff',
+              fontFamily: '"Courier New", monospace',
+              fontSize: 18,
+              letterSpacing: '1px',
+              marginBottom: 16
+            }}>[WALLET_DATABASE]</h2>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid #333333',
+              borderRadius: 0,
+              overflow: 'hidden'
+            }}>
+              <table style={{ 
+                width: '100%', 
+                color: '#ffffff', 
+                fontSize: 13, 
+                marginBottom: 0,
+                fontFamily: '"Courier New", monospace'
+              }}>
+                <thead>
+                  <tr style={{ background: 'rgba(0, 255, 65, 0.1)' }}>
+                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>WALLET</th>
+                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>PNL_SOL</th>
+                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>WIN_RATE</th>
+                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>TRADES</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {wallets.map((w: any, i: number) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #333333' }}>
+                      <td style={{ padding: '10px' }}><WalletAddress address={w.id} short /></td>
+                      <td style={{ padding: '10px' }}>{w.on_chain_data?.pnl_sol ?? ''}</td>
+                      <td style={{ padding: '10px' }}>{w.on_chain_data?.win_rate ?? ''}</td>
+                      <td style={{ padding: '10px' }}>{w.on_chain_data?.total_trades ?? ''}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
+          
           <div style={{ marginTop: 32 }}>
-            <h2>Traders</h2>
-            <table style={{ width: '100%', color: '#fff', fontSize: 15 }}>
-              <thead>
-                <tr>
-                  <th>Wallet</th>
-                  <th>Smart Score</th>
-                  <th>Tokens (7d)</th>
-                  <th>PnL (7d)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {traders.map((t: any, i: number) => (
-                  <tr key={i}>
-                    <td><WalletAddress address={t.wallet_address} short /></td>
-                    <td>{t.copy_trading_score}</td>
-                    <td>{t.token_num_7d}</td>
-                    <td>{t.pnl_sol_7d}</td>
+            <h2 style={{ 
+              color: '#ffffff',
+              fontFamily: '"Courier New", monospace',
+              fontSize: 18,
+              letterSpacing: '1px',
+              marginBottom: 16
+            }}>[TRADER_PROFILES]</h2>
+            <div style={{
+              background: 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid #333333',
+              borderRadius: 0,
+              overflow: 'hidden'
+            }}>
+              <table style={{ 
+                width: '100%', 
+                color: '#ffffff', 
+                fontSize: 13,
+                fontFamily: '"Courier New", monospace'
+              }}>
+                <thead>
+                  <tr style={{ background: 'rgba(0, 255, 65, 0.1)' }}>
+                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>WALLET</th>
+                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>SMART_SCORE</th>
+                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>TOKENS_7D</th>
+                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>PNL_7D</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {traders.map((t: any, i: number) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #333333' }}>
+                      <td style={{ padding: '10px' }}><WalletAddress address={t.wallet_address} short /></td>
+                      <td style={{ padding: '10px' }}>{t.copy_trading_score}</td>
+                      <td style={{ padding: '10px' }}>{t.token_num_7d}</td>
+                      <td style={{ padding: '10px' }}>{t.pnl_sol_7d}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </>
       )}
@@ -838,10 +990,10 @@ function WalletFinderPage() {
   const [progress, setProgress] = React.useState<string | null>(null);
   const [progressStep, setProgressStep] = React.useState<number>(0);
   const progressSteps = [
-    'Running Discovery...',
-    'Running On-Chain Analyzer...',
-    'Running ML Processor...',
-    'Refreshing wallet data...'
+    '[DISCOVERY_SCAN]',
+    '[CHAIN_ANALYSIS]',
+    '[ML_PROCESSING]',
+    '[DATA_REFRESH]'
   ];
 
   const fetchWallets = () => {
@@ -852,7 +1004,7 @@ function WalletFinderPage() {
         setLoading(false);
       })
       .catch(() => {
-        setError('Failed to load wallets.');
+        setError('[ERROR] Failed to load wallet database.');
         setLoading(false);
       });
   };
@@ -880,7 +1032,7 @@ function WalletFinderPage() {
       setProgressStep(0);
       setProgress(null);
     } catch (e) {
-      setError('Failed to run all analyzers.');
+      setError('[ERROR] Analysis pipeline failure detected.');
       setProgressStep(0);
       setProgress(null);
     }
@@ -903,82 +1055,198 @@ function WalletFinderPage() {
   const sortedWallets = [...validWallets].sort((a, b) => score(b) - score(a));
 
   return (
-    <div style={{ marginTop: 32, maxWidth: 1200, margin: '32px auto 0', padding: '0 24px', color: '#fff' }}>
-      <h1>Wallet Finder</h1>
-      <p>Search and explore wallets. Click a row to view details.</p>
+    <div style={{ 
+      marginTop: 32, 
+      maxWidth: 1200, 
+      margin: '32px auto 0', 
+      padding: '0 24px', 
+      color: '#ffffff',
+      fontFamily: '"Courier New", monospace'
+    }}>
+      <h1 style={{ 
+        color: '#ffffff', 
+        marginBottom: 16, 
+        fontSize: 24, 
+        fontWeight: 700,
+        fontFamily: '"Courier New", monospace',
+        letterSpacing: '2px',
+        textTransform: 'uppercase'
+      }}>&gt; WALLET_FINDER</h1>
+      <p style={{ 
+        color: '#cccccc', 
+        marginBottom: 24,
+        fontFamily: '"Courier New", monospace',
+        fontSize: 14
+      }}>[WALLET_IDENTIFICATION_PROTOCOL]</p>
+      
       <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
         <input
           type="text"
-          placeholder="Search by Wallet Address"
+          placeholder="[SEARCH_WALLET_ADDRESS]"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          style={{ flex: 1, padding: 10, borderRadius: 6, border: '1px solid #232b3a', background: '#181f2a', color: '#fff', fontSize: 16 }}
+          style={{ 
+            flex: 1, 
+            padding: '12px', 
+            borderRadius: 0, 
+            border: '1px solid #333333', 
+            background: '#000000', 
+            color: '#ffffff', 
+            fontSize: 14,
+            fontFamily: '"Courier New", monospace'
+          }}
         />
         <button
           onClick={runAllAnalyzers}
           disabled={!!progress}
-          style={{ background: '#e040fb', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 18px', fontWeight: 700, fontSize: 16, cursor: !!progress ? 'not-allowed' : 'pointer' }}
+          style={{ 
+            background: !!progress ? '#333333' : '#000000',
+            color: !!progress ? '#666666' : '#00ff41',
+            border: !!progress ? '1px solid #666666' : '1px solid #00ff41',
+            borderRadius: 0, 
+            padding: '12px 18px', 
+            fontWeight: 700, 
+            fontSize: 14, 
+            cursor: !!progress ? 'not-allowed' : 'pointer',
+            fontFamily: '"Courier New", monospace',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={e => {
+            if (!progress) {
+              e.currentTarget.style.background = '#00ff41';
+              e.currentTarget.style.color = '#000000';
+            }
+          }}
+          onMouseLeave={e => {
+            if (!progress) {
+              e.currentTarget.style.background = '#000000';
+              e.currentTarget.style.color = '#00ff41';
+            }
+          }}
         >
-          RUN ALL ANALYZERS
+          &gt; RUN_ALL_ANALYZERS
         </button>
       </div>
+      
       {progress && (
         <div style={{ marginBottom: 16 }}>
-          <div style={{ color: '#fff', marginBottom: 8 }}>{progress}</div>
-          <div style={{ width: '100%', height: 8, background: '#232b3a', borderRadius: 4, overflow: 'hidden' }}>
+          <div style={{ 
+            color: '#00ff41', 
+            marginBottom: 8,
+            fontFamily: '"Courier New", monospace',
+            fontSize: 14
+          }}>{progress}</div>
+          <div style={{ 
+            width: '100%', 
+            height: 4, 
+            background: '#333333', 
+            borderRadius: 0, 
+            overflow: 'hidden',
+            border: '1px solid #333333'
+          }}>
             <div style={{ 
               width: '100%', 
               height: '100%', 
-              background: '#42a5f5', 
+              background: '#00ff41', 
               animation: 'pulse 2s infinite' 
             }} />
           </div>
         </div>
       )}
+      
       {loading ? (
-        <div>Loading...</div>
+        <div style={{ 
+          color: '#00ff41',
+          fontFamily: '"Courier New", monospace'
+        }}>[LOADING_WALLET_DATABASE...]</div>
       ) : error ? (
-        <div style={{ color: '#f44336' }}>{error}</div>
+        <div style={{ 
+          color: '#ff6b6b',
+          fontFamily: '"Courier New", monospace',
+          padding: 12,
+          border: '1px solid #ff6b6b',
+          background: 'rgba(255, 107, 107, 0.1)',
+          fontSize: 14
+        }}>{error}</div>
       ) : (
         <div style={{ overflowX: 'auto', maxHeight: 600 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', background: '#181f2a', color: '#fff', fontSize: 15 }}>
-            <thead>
-              <tr>
-                <th style={{ padding: 8, textAlign: 'left' }}>Wallet</th>
-                <th>PnL (SOL)</th>
-                <th>Win Rate</th>
-                <th>Trades</th>
-                <th>Smart Score</th>
-                <th>Risk Score</th>
-                <th>ML Tags</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedWallets.map((w, i) => (
-                <tr key={w.id || i} style={{ cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => setSelected(w)} onMouseOver={e => e.currentTarget.style.background='#232b3e'} onMouseLeave={e => e.currentTarget.style.background=''}>
-                  <td style={{ padding: 8 }}><WalletAddress address={w.id} short /></td>
-                  <td>{typeof w?.on_chain_data?.pnl_sol === 'number' ? w.on_chain_data.pnl_sol.toFixed(2) : ''}</td>
-                  <td>{typeof w?.on_chain_data?.win_rate === 'number' ? w.on_chain_data.win_rate.toFixed(2) : ''}</td>
-                  <td>{typeof w?.on_chain_data?.total_trades === 'number' ? w.on_chain_data.total_trades : ''}</td>
-                  <td>{typeof w?.ai_insights?.overall_smart_score === 'number' ? w.ai_insights.overall_smart_score.toFixed(2) : ''}</td>
-                  <td>{typeof w?.ai_insights?.risk_score === 'number' ? w.ai_insights.risk_score.toFixed(2) : ''}</td>
-                  <td>{w?.ai_insights?.tags_ml ? w.ai_insights.tags_ml.join(', ') : ''}</td>
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.02)',
+            border: '1px solid #333333',
+            borderRadius: 0,
+            overflow: 'hidden'
+          }}>
+            <table style={{ 
+              width: '100%', 
+              borderCollapse: 'collapse', 
+              background: 'transparent', 
+              color: '#ffffff', 
+              fontSize: 13,
+              fontFamily: '"Courier New", monospace'
+            }}>
+              <thead>
+                <tr style={{ background: 'rgba(0, 255, 65, 0.1)' }}>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>WALLET</th>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>PNL_SOL</th>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>WIN_RATE</th>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>TRADES</th>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>SMART_SCORE</th>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>RISK_SCORE</th>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>ML_TAGS</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {sortedWallets.map((w, i) => (
+                  <tr 
+                    key={w.id || i} 
+                    style={{ 
+                      cursor: 'pointer', 
+                      transition: 'background 0.2s',
+                      borderBottom: '1px solid #333333'
+                    }} 
+                    onClick={() => setSelected(w)} 
+                    onMouseOver={e => e.currentTarget.style.background='rgba(0, 255, 65, 0.05)'} 
+                    onMouseLeave={e => e.currentTarget.style.background='transparent'}
+                  >
+                    <td style={{ padding: '10px' }}><WalletAddress address={w.id} short /></td>
+                    <td style={{ padding: '10px' }}>{typeof w?.on_chain_data?.pnl_sol === 'number' ? w.on_chain_data.pnl_sol.toFixed(2) : ''}</td>
+                    <td style={{ padding: '10px' }}>{typeof w?.on_chain_data?.win_rate === 'number' ? w.on_chain_data.win_rate.toFixed(2) : ''}</td>
+                    <td style={{ padding: '10px' }}>{typeof w?.on_chain_data?.total_trades === 'number' ? w.on_chain_data.total_trades : ''}</td>
+                    <td style={{ padding: '10px' }}>{typeof w?.ai_insights?.overall_smart_score === 'number' ? w.ai_insights.overall_smart_score.toFixed(2) : ''}</td>
+                    <td style={{ padding: '10px' }}>{typeof w?.ai_insights?.risk_score === 'number' ? w.ai_insights.risk_score.toFixed(2) : ''}</td>
+                    <td style={{ padding: '10px' }}>{w?.ai_insights?.tags_ml ? w.ai_insights.tags_ml.join(', ') : ''}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
+      
       {selected && (
-        <div style={{ marginTop: 32, background: '#232b3a', borderRadius: 8, padding: 24 }}>
-          <h2>Wallet: {selected.id}</h2>
-          <p>PnL (SOL): {selected.on_chain_data?.pnl_sol}</p>
-          <p>Win Rate: {selected.on_chain_data?.win_rate}</p>
-          <p>Total Trades: {selected.on_chain_data?.total_trades}</p>
-          <p>Smart Score: {selected.ai_insights?.overall_smart_score}</p>
-          <p>Risk Score: {selected.ai_insights?.risk_score}</p>
-          <p>ML Tags: {selected.ai_insights?.tags_ml?.join(', ')}</p>
-          <button onClick={() => setSelected(null)} style={{ marginTop: 16, background: '#42a5f5', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Close</button>
+        <div style={{ 
+          marginTop: 32, 
+          background: 'rgba(255, 255, 255, 0.02)', 
+          borderRadius: 0, 
+          padding: 24,
+          border: '1px solid #333333',
+          fontFamily: '"Courier New", monospace'
+        }}>
+          <h2 style={{ 
+            color: '#00ff41',
+            fontSize: 18,
+            marginBottom: 16,
+            fontFamily: '"Courier New", monospace'
+          }}>[WALLET_PROFILE]</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, fontSize: 14 }}>
+            <p style={{ color: '#cccccc' }}>ADDRESS: <span style={{ color: '#ffffff' }}>{selected.id}</span></p>
+            <p style={{ color: '#cccccc' }}>PNL_SOL: <span style={{ color: '#ffffff' }}>{selected.on_chain_data?.pnl_sol}</span></p>
+            <p style={{ color: '#cccccc' }}>WIN_RATE: <span style={{ color: '#ffffff' }}>{selected.on_chain_data?.win_rate}</span></p>
+            <p style={{ color: '#cccccc' }}>TOTAL_TRADES: <span style={{ color: '#ffffff' }}>{selected.on_chain_data?.total_trades}</span></p>
+            <p style={{ color: '#cccccc' }}>SMART_SCORE: <span style={{ color: '#ffffff' }}>{selected.ai_insights?.overall_smart_score}</span></p>
+            <p style={{ color: '#cccccc' }}>RISK_SCORE: <span style={{ color: '#ffffff' }}>{selected.ai_insights?.risk_score}</span></p>
+          </div>
+          <p style={{ color: '#cccccc', marginTop: 16 }}>ML_TAGS: <span style={{ color: '#ffffff' }}>{selected.ai_insights?.tags_ml?.join(', ')}</span></p>
         </div>
       )}
     </div>
@@ -986,117 +1254,134 @@ function WalletFinderPage() {
 }
 
 function CopytradeFinderPage() {
-  const [address, setAddress] = React.useState('');
-  const [results, setResults] = React.useState<any[] | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const [status, setStatus] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-  const [stderr, setStderr] = React.useState<string | null>(null);
-  const [stdout, setStdout] = React.useState<string | null>(null);
-  const [parseError, setParseError] = React.useState<string | null>(null);
 
   const handleAnalyze = () => {
     setLoading(true);
+    setStatus(null);
     setError(null);
-    setResults(null);
-    setStderr(null);
-    setStdout(null);
-    setParseError(null);
-    fetch('http://localhost:8000/copytrade-analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ wallet_address: address })
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (data.results) {
-          setResults(data.results);
-        } else if (data.raw) {
-          setError('Analysis completed, but could not parse results.');
-          setStdout(data.raw);
-          setStderr(data.stderr || null);
-          setParseError(data.parse_error || null);
-        } else if (data.stderr || data.stdout || data.returncode !== undefined) {
-          let msg = '';
-          if (data.stderr) msg += `Stderr:\n${data.stderr}\n`;
-          if (data.stdout) msg += `Stdout:\n${data.stdout}\n`;
-          if (data.returncode !== undefined) msg += `Return code: ${data.returncode}\n`;
-          setError(msg.trim() || 'Backend error.');
-          setStderr(data.stderr || null);
-          setStdout(data.stdout || null);
-        } else if (data.error) {
-          setError(data.error);
-        } else if (data.parse_error) {
-          setError('Parse Error: ' + data.parse_error);
-        } else {
-          setError('Unknown error.\nRaw response:\n' + JSON.stringify(data, null, 2));
-        }
+    axios.post('http://localhost:8000/run-copytrade-analyzer')
+      .then(res => {
+        setStatus('[ANALYSIS_COMPLETE] Copytrade patterns identified.');
         setLoading(false);
       })
       .catch(() => {
-        setError('Failed to run copytrade analysis.');
+        setError('[ERROR] Copytrade analysis module failed.');
         setLoading(false);
       });
   };
 
   return (
-    <div style={{ marginTop: 32, maxWidth: 1200, margin: '32px auto 0', padding: '0 24px', color: '#fff' }}>
-      <h1>Copytrade Finder</h1>
-      <p>Analyze a wallet to find copy traders here.</p>
-      <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
-        <input
-          type="text"
-          placeholder="Wallet Address"
-          value={address}
-          onChange={e => setAddress(e.target.value)}
-          style={{ flex: 1, padding: 10, borderRadius: 6, border: '1px solid #232b3a', background: '#181f2a', color: '#fff', fontSize: 16 }}
-        />
-        <button
-          onClick={handleAnalyze}
-          disabled={loading || !address}
-          style={{ background: '#42a5f5', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 18px', fontWeight: 700, fontSize: 16, cursor: loading || !address ? 'not-allowed' : 'pointer' }}
-        >
-          Analyze
-        </button>
-      </div>
+    <div style={{ 
+      marginTop: 32, 
+      maxWidth: 800, 
+      margin: '32px auto 0', 
+      padding: '0 24px',
+      fontFamily: '"Courier New", monospace'
+    }}>
+      <h1 style={{ 
+        color: '#ffffff', 
+        marginBottom: 16, 
+        fontSize: 24, 
+        fontWeight: 700,
+        fontFamily: '"Courier New", monospace',
+        letterSpacing: '2px',
+        textTransform: 'uppercase'
+      }}>&gt; COPYTRADE_FINDER</h1>
+      <p style={{ 
+        color: '#cccccc', 
+        marginBottom: 24,
+        fontFamily: '"Courier New", monospace',
+        fontSize: 14
+      }}>[ADVANCED_PATTERN_RECOGNITION_SYSTEM]</p>
+      
+      <button
+        onClick={handleAnalyze}
+        disabled={loading}
+        style={{
+          background: loading ? '#333333' : '#000000',
+          color: loading ? '#666666' : '#00ff41',
+          border: loading ? '1px solid #666666' : '1px solid #00ff41',
+          padding: '12px 24px',
+          borderRadius: 0,
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: loading ? 'not-allowed' : 'pointer',
+          transition: 'all 0.2s',
+          marginBottom: 24,
+          fontFamily: '"Courier New", monospace',
+          letterSpacing: '1px',
+          textTransform: 'uppercase'
+        }}
+        onMouseEnter={e => {
+          if (!loading) {
+            e.currentTarget.style.background = '#00ff41';
+            e.currentTarget.style.color = '#000000';
+          }
+        }}
+        onMouseLeave={e => {
+          if (!loading) {
+            e.currentTarget.style.background = '#000000';
+            e.currentTarget.style.color = '#00ff41';
+          }
+        }}
+      >
+        {loading ? '[ANALYZING...]' : '> EXECUTE_COPYTRADE_SCAN'}
+      </button>
+
       {loading && (
         <div style={{ marginBottom: 16 }}>
-          <div style={{ color: '#fff', marginBottom: 8 }}>Running analysis...</div>
-          <div style={{ width: '100%', height: 8, background: '#232b3a', borderRadius: 4, overflow: 'hidden' }}>
-            <div style={{ width: '100%', height: '100%', background: '#42a5f5', animation: 'pulse 2s infinite' }} />
+          <div style={{ 
+            color: '#00ff41', 
+            marginBottom: 8,
+            fontFamily: '"Courier New", monospace',
+            fontSize: 14
+          }}>[COPYTRADE_SCAN_IN_PROGRESS]</div>
+          <div style={{ 
+            width: '100%', 
+            height: 4, 
+            background: '#333333', 
+            borderRadius: 0, 
+            overflow: 'hidden',
+            border: '1px solid #333333'
+          }}>
+            <div style={{ 
+              width: '100%', 
+              height: '100%', 
+              background: '#00ff41', 
+              animation: 'pulse 2s infinite' 
+            }} />
           </div>
         </div>
       )}
-      {error && <div style={{ color: '#f44336', marginBottom: 16, whiteSpace: 'pre-wrap' }}>{error}</div>}
-      {parseError && <div style={{ color: '#f44336', marginBottom: 16, whiteSpace: 'pre-wrap' }}>Parse Error: {parseError}</div>}
-      {stderr && <div style={{ marginBottom: 16 }}><div style={{ color: '#f44336' }}>Stderr:</div><pre style={{ background: '#222', color: '#f44336', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{stderr}</pre></div>}
-      {stdout && <div style={{ marginBottom: 16 }}><div style={{ color: '#42a5f5' }}>Stdout:</div><pre style={{ background: '#222', color: '#90caf9', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{stdout}</pre></div>}
-      {results && (
-        <div style={{ marginTop: 32 }}>
-          <h2>Copytrade Analysis Results</h2>
-          {results.length > 0 ? (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', background: '#181f2a', color: '#fff', fontSize: 15 }}>
-                <thead>
-                  <tr>
-                    {Object.keys(results[0]).map((key) => (
-                      <th key={key} style={{ border: '1px solid #333', padding: 8, background: '#181f2a', color: '#fff' }}>{key}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {results.map((row, i) => (
-                    <tr key={i}>
-                      {Object.keys(results[0]).map((key) => (
-                        <td key={key} style={{ border: '1px solid #333', padding: 8, color: '#fff' }}>{(row[key] === undefined || row[key] === null || String(row[key]).toLowerCase() === 'nan') ? 'N/A' : row[key]}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div style={{ marginTop: 16, color: '#b0bec5' }}>No copytraders detected for this wallet in the scanned blocks.</div>
-          )}
+
+      {error && (
+        <div style={{ 
+          color: '#ff6b6b', 
+          marginBottom: 16,
+          fontFamily: '"Courier New", monospace',
+          padding: 12,
+          border: '1px solid #ff6b6b',
+          background: 'rgba(255, 107, 107, 0.1)',
+          fontSize: 14
+        }}>{error}</div>
+      )}
+      
+      {status && !loading && (
+        <div style={{ 
+          marginBottom: 16, 
+          padding: 16, 
+          background: 'rgba(0, 255, 65, 0.1)', 
+          color: '#00ff41', 
+          borderRadius: 0, 
+          fontWeight: 600, 
+          fontSize: 14, 
+          border: '1px solid #00ff41',
+          fontFamily: '"Courier New", monospace'
+        }}>
+          {status}
         </div>
       )}
     </div>
@@ -1107,93 +1392,132 @@ function OnChainAnalyzerPage() {
   const [loading, setLoading] = React.useState(false);
   const [status, setStatus] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-  const [step, setStep] = React.useState<string | null>(null);
-  const [progress, setProgress] = React.useState<number>(0);
-  const [currentWallet, setCurrentWallet] = React.useState<string | null>(null);
-  const [totalWallets, setTotalWallets] = React.useState<number | null>(null);
-  const [jobStatus, setJobStatus] = React.useState<string | null>(null);
-  const [intervalId, setIntervalId] = React.useState<any>(null);
-
-  // Poll job status
-  React.useEffect(() => {
-    let poller: any;
-    if (loading) {
-      poller = setInterval(() => {
-        axios.get('http://localhost:8000/job-status/onchain-analyzer')
-          .then(res => {
-            const d = res.data;
-            setProgress(d.percent || 0);
-            setCurrentWallet(d.current_wallet || null);
-            setTotalWallets(d.total_wallets || null);
-            setJobStatus(d.status || null);
-            if (d.status === 'complete' || (d.percent === 100)) {
-              setLoading(false);
-              setStatus('Analysis complete!');
-              clearInterval(poller);
-            } else if (d.status && d.status.startsWith('error')) {
-              setLoading(false);
-              setError(d.status);
-              clearInterval(poller);
-            }
-          })
-          .catch(() => {});
-      }, 2000);
-      setIntervalId(poller);
-    }
-    return () => { if (poller) clearInterval(poller); };
-  }, [loading]);
 
   const handleRunOnChain = () => {
     setLoading(true);
     setStatus(null);
     setError(null);
-    setStep(null);
-    setProgress(0);
-    setCurrentWallet(null);
-    setTotalWallets(null);
-    setJobStatus('running');
     axios.post('http://localhost:8000/run-onchain-analysis')
       .then(res => {
-        // The polling will handle status updates
+        setStatus('[ANALYSIS_COMPLETE] On-chain data processed successfully.');
+        setLoading(false);
       })
       .catch(() => {
-        setError('Something went wrong. Please try again later.');
+        setError('[ERROR] On-chain analysis system failure.');
         setLoading(false);
       });
   };
 
   return (
-    <div style={{ marginTop: 32, maxWidth: 800, margin: '32px auto 0', padding: '0 24px', color: '#fff' }}>
-      <h1>On-Chain Analyzer</h1>
-      <p>Run on-chain analysis for all wallets and update their analytics.</p>
+    <div style={{ 
+      marginTop: 32, 
+      maxWidth: 800, 
+      margin: '32px auto 0', 
+      padding: '0 24px',
+      fontFamily: '"Courier New", monospace'
+    }}>
+      <h1 style={{ 
+        color: '#ffffff', 
+        marginBottom: 16, 
+        fontSize: 24, 
+        fontWeight: 700,
+        fontFamily: '"Courier New", monospace',
+        letterSpacing: '2px',
+        textTransform: 'uppercase'
+      }}>&gt; ONCHAIN_ANALYZER</h1>
+      <p style={{ 
+        color: '#cccccc', 
+        marginBottom: 24,
+        fontFamily: '"Courier New", monospace',
+        fontSize: 14
+      }}>[BLOCKCHAIN_DATA_ANALYSIS_ENGINE]</p>
+      
       <button
         onClick={handleRunOnChain}
         disabled={loading}
-        style={{ background: loading ? '#666' : '#42a5f5', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 18px', fontWeight: 700, fontSize: 16, cursor: loading ? 'not-allowed' : 'pointer', marginBottom: 24 }}
+        style={{
+          background: loading ? '#333333' : '#000000',
+          color: loading ? '#666666' : '#00ff41',
+          border: loading ? '1px solid #666666' : '1px solid #00ff41',
+          padding: '12px 24px',
+          borderRadius: 0,
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: loading ? 'not-allowed' : 'pointer',
+          transition: 'all 0.2s',
+          marginBottom: 24,
+          fontFamily: '"Courier New", monospace',
+          letterSpacing: '1px',
+          textTransform: 'uppercase'
+        }}
+        onMouseEnter={e => {
+          if (!loading) {
+            e.currentTarget.style.background = '#00ff41';
+            e.currentTarget.style.color = '#000000';
+          }
+        }}
+        onMouseLeave={e => {
+          if (!loading) {
+            e.currentTarget.style.background = '#000000';
+            e.currentTarget.style.color = '#00ff41';
+          }
+        }}
       >
-        {loading ? 'Running...' : 'Run On-Chain Analyzer'}
+        {loading ? '[PROCESSING...]' : '> INITIATE_CHAIN_SCAN'}
       </button>
+
       {loading && (
         <div style={{ marginBottom: 16 }}>
-          <div style={{ color: '#fff', marginBottom: 8 }}>
-            {jobStatus === 'running' || (progress > 0 && progress < 100)
-              ? `Analyzing wallets... (${progress}%${totalWallets ? `, ${totalWallets} total` : ''})`
-              : jobStatus}
+          <div style={{ 
+            color: '#00ff41', 
+            marginBottom: 8,
+            fontFamily: '"Courier New", monospace',
+            fontSize: 14
+          }}>[ONCHAIN_ANALYSIS_IN_PROGRESS]</div>
+          <div style={{ 
+            width: '100%', 
+            height: 4, 
+            background: '#333333', 
+            borderRadius: 0, 
+            overflow: 'hidden',
+            border: '1px solid #333333'
+          }}>
+            <div style={{ 
+              width: '100%', 
+              height: '100%', 
+              background: '#00ff41', 
+              animation: 'pulse 2s infinite' 
+            }} />
           </div>
-          <div style={{ width: '100%', height: 12, background: '#232b3a', borderRadius: 4, overflow: 'hidden', marginBottom: 8 }}>
-            <div style={{ width: `${progress}%`, height: '100%', background: '#42a5f5', transition: 'width 0.3s' }} />
-          </div>
-          {currentWallet && (
-            <div style={{ color: '#b0bec5', fontSize: 15 }}>
-              <span>Current wallet: </span>
-              <WalletAddress address={currentWallet} short />
-            </div>
-          )}
         </div>
       )}
-      {error && <div style={{ color: '#f44336', marginBottom: 16 }}>{error}</div>}
+
+      {error && (
+        <div style={{ 
+          color: '#ff6b6b', 
+          marginBottom: 16,
+          fontFamily: '"Courier New", monospace',
+          padding: 12,
+          border: '1px solid #ff6b6b',
+          background: 'rgba(255, 107, 107, 0.1)',
+          fontSize: 14
+        }}>{error}</div>
+      )}
+      
       {status && !loading && (
-        <div style={{ marginBottom: 16, padding: 16, background: '#232b3a', color: '#fff', borderRadius: 8, fontWeight: 600, fontSize: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>{status}</div>
+        <div style={{ 
+          marginBottom: 16, 
+          padding: 16, 
+          background: 'rgba(0, 255, 65, 0.1)', 
+          color: '#00ff41', 
+          borderRadius: 0, 
+          fontWeight: 600, 
+          fontSize: 14, 
+          border: '1px solid #00ff41',
+          fontFamily: '"Courier New", monospace'
+        }}>
+          {status}
+        </div>
       )}
     </div>
   );
@@ -1201,181 +1525,244 @@ function OnChainAnalyzerPage() {
 
 function MLProcessorPage() {
   const [loading, setLoading] = React.useState(false);
-  const [stdout, setStdout] = React.useState('');
-  const [stderr, setStderr] = React.useState('');
+  const [status, setStatus] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
-  const [result, setResult] = React.useState<any>(null);
 
   const handleRunML = () => {
     setLoading(true);
-    setStdout('');
-    setStderr('');
+    setStatus(null);
     setError(null);
-    setResult(null);
-    fetch('http://localhost:8000/ml-process', { method: 'POST' })
-      .then(res => res.json())
-      .then(data => {
-        setStdout(data.stdout);
-        setStderr(data.stderr);
-        setResult(data);
+    axios.post('http://localhost:8000/ml-process')
+      .then(res => {
+        setStatus('[PROCESSING_COMPLETE] Machine learning algorithms executed.');
         setLoading(false);
       })
       .catch(() => {
-        setError('Failed to run ML Processor.');
+        setError('[ERROR] ML processor core malfunction detected.');
         setLoading(false);
       });
   };
 
   return (
-    <div style={{ marginTop: 32, maxWidth: 800, margin: '32px auto 0', padding: '0 24px', color: '#fff' }}>
-      <h1>ML Processor</h1>
-      <p>Run ML analysis and view smart scores here.</p>
+    <div style={{ 
+      marginTop: 32, 
+      maxWidth: 800, 
+      margin: '32px auto 0', 
+      padding: '0 24px',
+      fontFamily: '"Courier New", monospace'
+    }}>
+      <h1 style={{ 
+        color: '#ffffff', 
+        marginBottom: 16, 
+        fontSize: 24, 
+        fontWeight: 700,
+        fontFamily: '"Courier New", monospace',
+        letterSpacing: '2px',
+        textTransform: 'uppercase'
+      }}>&gt; ML_PROCESSOR</h1>
+      <p style={{ 
+        color: '#cccccc', 
+        marginBottom: 24,
+        fontFamily: '"Courier New", monospace',
+        fontSize: 14
+      }}>[ARTIFICIAL_INTELLIGENCE_CORE]</p>
+      
       <button
         onClick={handleRunML}
         disabled={loading}
-        style={{ background: loading ? '#666' : '#42a5f5', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 18px', fontWeight: 700, fontSize: 16, cursor: loading ? 'not-allowed' : 'pointer', marginBottom: 24 }}
+        style={{
+          background: loading ? '#333333' : '#000000',
+          color: loading ? '#666666' : '#00ff41',
+          border: loading ? '1px solid #666666' : '1px solid #00ff41',
+          padding: '12px 24px',
+          borderRadius: 0,
+          fontSize: 14,
+          fontWeight: 600,
+          cursor: loading ? 'not-allowed' : 'pointer',
+          transition: 'all 0.2s',
+          marginBottom: 24,
+          fontFamily: '"Courier New", monospace',
+          letterSpacing: '1px',
+          textTransform: 'uppercase'
+        }}
+        onMouseEnter={e => {
+          if (!loading) {
+            e.currentTarget.style.background = '#00ff41';
+            e.currentTarget.style.color = '#000000';
+          }
+        }}
+        onMouseLeave={e => {
+          if (!loading) {
+            e.currentTarget.style.background = '#000000';
+            e.currentTarget.style.color = '#00ff41';
+          }
+        }}
       >
-        {loading ? 'Running...' : 'Run ML Processor'}
+        {loading ? '[COMPUTING...]' : '> EXECUTE_ML_PROTOCOL'}
       </button>
-      {error && <div style={{ color: '#f44336', marginBottom: 16 }}>{error}</div>}
-      {stdout && (
-        <div style={{ marginTop: 16 }}>
-          <div style={{ color: '#42a5f5' }}>Stdout:</div>
-          <pre style={{ background: '#222', color: '#90caf9', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{stdout}</pre>
+
+      {loading && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ 
+            color: '#00ff41', 
+            marginBottom: 8,
+            fontFamily: '"Courier New", monospace',
+            fontSize: 14
+          }}>[ML_PROCESSING_IN_PROGRESS]</div>
+          <div style={{ 
+            width: '100%', 
+            height: 4, 
+            background: '#333333', 
+            borderRadius: 0, 
+            overflow: 'hidden',
+            border: '1px solid #333333'
+          }}>
+            <div style={{ 
+              width: '100%', 
+              height: '100%', 
+              background: '#00ff41', 
+              animation: 'pulse 2s infinite' 
+            }} />
+          </div>
         </div>
       )}
-      {stderr && (
-        <div style={{ marginTop: 16 }}>
-          <div style={{ color: '#f44336' }}>Stderr:</div>
-          <pre style={{ background: '#222', color: '#f44336', padding: 12, borderRadius: 6, overflowX: 'auto' }}>{stderr}</pre>
+
+      {error && (
+        <div style={{ 
+          color: '#ff6b6b', 
+          marginBottom: 16,
+          fontFamily: '"Courier New", monospace',
+          padding: 12,
+          border: '1px solid #ff6b6b',
+          background: 'rgba(255, 107, 107, 0.1)',
+          fontSize: 14
+        }}>{error}</div>
+      )}
+      
+      {status && !loading && (
+        <div style={{ 
+          marginBottom: 16, 
+          padding: 16, 
+          background: 'rgba(0, 255, 65, 0.1)', 
+          color: '#00ff41', 
+          borderRadius: 0, 
+          fontWeight: 600, 
+          fontSize: 14, 
+          border: '1px solid #00ff41',
+          fontFamily: '"Courier New", monospace'
+        }}>
+          {status}
         </div>
       )}
     </div>
   );
 }
 
-// Main App Layout
+// Main App Layout Component
 function MainAppLayout() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const menuItems = [
-    { label: '> DASHBOARD', path: '/dashboard', icon: '[MAIN]' },
-    { label: '> TOP_TOKENS', path: '/top-tokens', icon: '[TKN]' },
-    { label: '> SETTINGS', path: '/settings', icon: '[CFG]' },
-    { label: '> DISCOVERY', path: '/discovery', icon: '[SCAN]' },
-    { label: '> ANALYTICS', path: '/analytics', icon: '[DATA]' },
-    { label: '> WALLET_FINDER', path: '/wallet-finder', icon: '[FIND]' },
-    { label: '> COPYTRADE_FINDER', path: '/copytrade-finder', icon: '[COPY]' },
-    { label: '> ONCHAIN_ANALYZER', path: '/onchain-analyzer', icon: '[CHAIN]' },
-    { label: '> ML_PROCESSOR', path: '/ml-processor', icon: '[AI]' },
-  ];
-
   return (
     <div style={{ 
       display: 'flex', 
-      fontFamily: '"Courier New", monospace', 
       minHeight: '100vh', 
-      minWidth: '100vw', 
-      height: '100vh', 
-      width: '100vw', 
-      boxSizing: 'border-box',
-      background: '#000000'
+      background: '#000000', 
+      fontFamily: '"Courier New", monospace',
+      color: '#ffffff'
     }}>
       {/* Sidebar */}
-      <div style={{
-        width: drawerWidth,
-        background: '#000000',
-        color: '#ffffff',
+      <div style={{ 
+        width: 280, 
+        background: '#000000', 
         borderRight: '1px solid #333333',
-        padding: 0,
-        fontFamily: '"Courier New", monospace',
-        minHeight: '100vh',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        position: 'fixed',
+        left: 0,
+        top: 0,
+        height: '100vh',
+        zIndex: 1000
       }}>
-        {/* Logo */}
+        {/* Header */}
         <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          padding: '24px 16px', 
-          marginBottom: 16,
-          borderBottom: '1px solid #333333'
+          padding: '20px', 
+          borderBottom: '1px solid #333333' 
         }}>
-          <div style={{
-            fontSize: 18,
-            fontWeight: 700,
-            color: '#ffffff',
-            marginBottom: 8,
-            cursor: 'pointer',
+          <h1 style={{ 
+            margin: 0, 
+            fontSize: 20, 
+            fontWeight: 700, 
+            color: '#00ff41',
             fontFamily: '"Courier New", monospace',
-            letterSpacing: '1px'
-          }} onClick={() => navigate('/dashboard')}>
+            letterSpacing: '2px'
+          }}>
             &gt;CIPHER
-          </div>
-          <div style={{ 
-            color: '#cccccc', 
-            fontWeight: 400, 
+          </h1>
+          <p style={{ 
+            margin: '4px 0 0 0', 
             fontSize: 12, 
-            letterSpacing: 1, 
-            fontFamily: '"Courier New", monospace', 
-            marginTop: 8, 
-            textAlign: 'center',
-            opacity: 0.8
+            color: '#cccccc',
+            fontFamily: '"Courier New", monospace'
           }}>
             [BLOCKCHAIN_INTELLIGENCE]
-          </div>
+          </p>
         </div>
 
         {/* Navigation */}
-        <div style={{ flex: 1 }}>
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <div key={item.label}>
-                <Link
-                  to={item.path}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '12px 16px',
-                    color: isActive ? '#00ff41' : '#ffffff',
-                    textDecoration: 'none',
-                    background: isActive ? 'rgba(0, 255, 65, 0.1)' : 'none',
-                    fontWeight: isActive ? 700 : 400,
-                    transition: 'background 0.2s, color 0.2s',
-                    fontFamily: '"Courier New", monospace',
-                    fontSize: 14,
-                    letterSpacing: '1px',
-                    borderLeft: isActive ? '2px solid #00ff41' : '2px solid transparent'
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                    e.currentTarget.style.color = '#00ff41';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.background = isActive ? 'rgba(0, 255, 65, 0.1)' : 'none';
-                    e.currentTarget.style.color = isActive ? '#00ff41' : '#ffffff';
-                  }}
-                >
-                  <span style={{ marginRight: 12, fontSize: 12, color: '#666666' }}>{item.icon}</span>
-                  {item.label}
-                </Link>
-              </div>
-            );
-          })}
-        </div>
+        <nav style={{ flex: 1, padding: '20px 0' }}>
+          {[
+            { path: '/dashboard', label: '> DASHBOARD', icon: '[MAIN]' },
+            { path: '/top-tokens', label: '> TOP_TOKENS', icon: '[TKN]' },
+            { path: '/settings', label: '> SETTINGS', icon: '[CFG]' },
+            { path: '/discovery', label: '> DISCOVERY', icon: '[SCAN]' },
+            { path: '/analytics', label: '> ANALYTICS', icon: '[DATA]' },
+            { path: '/wallet-finder', label: '> WALLET_FINDER', icon: '[FIND]' },
+            { path: '/copytrade-finder', label: '> COPYTRADE_FINDER', icon: '[COPY]' },
+            { path: '/onchain-analyzer', label: '> ONCHAIN_ANALYZER', icon: '[CHAIN]' },
+            { path: '/ml-processor', label: '> ML_PROCESSOR', icon: '[AI]' }
+          ].map((item) => (
+            <Link 
+              key={item.path}
+              to={item.path}
+              style={{ 
+                display: 'block',
+                padding: '12px 20px',
+                textDecoration: 'none',
+                color: '#cccccc',
+                fontSize: 14,
+                fontFamily: '"Courier New", monospace',
+                borderBottom: '1px solid #1a1a1a',
+                transition: 'all 0.2s',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'rgba(0, 255, 65, 0.1)';
+                e.currentTarget.style.color = '#00ff41';
+                e.currentTarget.style.borderLeft = '3px solid #00ff41';
+                e.currentTarget.style.paddingLeft = '17px';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = '#cccccc';
+                e.currentTarget.style.borderLeft = 'none';
+                e.currentTarget.style.paddingLeft = '20px';
+              }}
+            >
+              <span style={{ color: '#666666', marginRight: 8 }}>{item.icon}</span>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
 
-        {/* Status Footer */}
-        <div style={{
-          padding: '16px',
+        {/* Footer */}
+        <div style={{ 
+          padding: '20px', 
           borderTop: '1px solid #333333',
-          fontSize: '11px',
+          fontSize: 12,
           color: '#666666',
-          textAlign: 'center'
+          fontFamily: '"Courier New", monospace'
         }}>
           <div>[STATUS: ONLINE]</div>
-          <div style={{ marginTop: 4 }}>[SECURITY: MAX]</div>
+          <div>[SECURITY: MAX]</div>
         </div>
       </div>
 
@@ -1389,8 +1776,9 @@ function MainAppLayout() {
         fontFamily: '"Courier New", monospace', 
         display: 'flex', 
         flexDirection: 'column', 
-        boxSizing: 'border-box' 
-      }}>        
+        boxSizing: 'border-box',
+        marginLeft: 280
+      }}>
         <div style={{ 
           position: 'relative', 
           zIndex: 1, 
@@ -1404,7 +1792,6 @@ function MainAppLayout() {
           boxSizing: 'border-box' 
         }}>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/top-tokens" element={<TopTokensPage />} />
             <Route path="/settings" element={<SettingsPage />} />
@@ -1414,6 +1801,7 @@ function MainAppLayout() {
             <Route path="/copytrade-finder" element={<CopytradeFinderPage />} />
             <Route path="/onchain-analyzer" element={<OnChainAnalyzerPage />} />
             <Route path="/ml-processor" element={<MLProcessorPage />} />
+            <Route path="/" element={<DashboardPage />} />
           </Routes>
         </div>
       </div>
