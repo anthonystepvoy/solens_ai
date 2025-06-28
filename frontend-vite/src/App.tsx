@@ -6,6 +6,7 @@ import '@fontsource/dm-sans/400.css';
 import '@fontsource/dm-sans/700.css';
 import Hero3DBackground from './assets/Hero3DBackground';
 import TopTokensSection from './components/TopTokensSection';
+import LandingPage from './components/LandingPage';
 
 const drawerWidth = 220;
 
@@ -21,13 +22,36 @@ function WalletAddress({ address, short = false }: { address: string, short?: bo
   };
   return (
     <span
-      style={{ cursor: 'pointer', userSelect: 'all', color: '#42a5f5', fontWeight: 500, position: 'relative' }}
+      style={{ 
+        cursor: 'pointer', 
+        userSelect: 'all', 
+        color: '#00ff41', 
+        fontWeight: 600, 
+        position: 'relative',
+        fontFamily: '"Courier New", monospace',
+        fontSize: '13px',
+        letterSpacing: '0.5px'
+      }}
       onClick={handleCopy}
-      title="Click to copy"
+      title="[CLICK_TO_COPY]"
     >
       {display}
       {copied && (
-        <span style={{ marginLeft: 8, color: '#42a5f5', fontWeight: 600, fontSize: 14, background: '#232b3a', borderRadius: 4, padding: '2px 6px', position: 'absolute', left: '100%', top: '50%', transform: 'translateY(-50%)' }}>Copied!</span>
+        <span style={{ 
+          marginLeft: 8, 
+          color: '#ffffff', 
+          fontWeight: 600, 
+          fontSize: 12, 
+          background: '#000000', 
+          border: '1px solid #00ff41',
+          borderRadius: 0, 
+          padding: '2px 6px', 
+          position: 'absolute', 
+          left: '100%', 
+          top: '50%', 
+          transform: 'translateY(-50%)',
+          fontFamily: '"Courier New", monospace'
+        }}>[COPIED]</span>
       )}
     </span>
   );
@@ -80,10 +104,10 @@ function DashboardPage() {
       .catch(() => {
         // Fallback to mock data
         setMetrics([
-          { label: 'Total Wallets Tracked', value: '1,452' },
-          { label: 'New Wallets Today', value: '+56' },
-          { label: 'Total PnL Tracked', value: '$1.2M' },
-          { label: 'Most Profitable Token (24h)', value: '$WIF' },
+          { label: 'TOTAL_WALLETS_TRACKED', value: '1,452' },
+          { label: 'NEW_WALLETS_TODAY', value: '+56' },
+          { label: 'TOTAL_PNL_TRACKED', value: '$1.2M' },
+          { label: 'TOP_TOKEN_24H', value: '$WIF' },
         ]);
         setTopWallets([
           { address: '3AFgYGwEFZ27QGQzGGVL...', pnl: '120,000', winRate: '92%', smartScore: 98 },
@@ -106,28 +130,28 @@ function DashboardPage() {
           { token: '$JUP', volume: 65000 },
           { token: '$DOG', volume: 54000 },
         ]);
-        setMlTags(['Pro Trader', 'Meme Coin Sniper', 'High Volume', 'Long-Term Holder', 'Scalper']);
+        setMlTags(['PRO_TRADER', 'MEME_SNIPER', 'HIGH_VOLUME', 'LONG_TERM', 'SCALPER']);
         setLoading(false);
-        setError('Failed to load live dashboard data. Showing mock data.');
+        setError('[WARNING] Failed to load live data. Displaying mock dataset.');
         setLastUpdate(null);
         setNextUpdate(null);
       });
   }, []);
 
   function getRelativeTime(iso: string | null) {
-    if (!iso) return 'unknown';
+    if (!iso) return 'UNKNOWN';
     const now = new Date();
     const then = new Date(iso);
     const diff = Math.floor((now.getTime() - then.getTime()) / 1000);
-    if (diff < 60) return `${diff} seconds ago`;
-    if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+    if (diff < 60) return `${diff}s AGO`;
+    if (diff < 3600) return `${Math.floor(diff / 60)}m AGO`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h AGO`;
     return then.toUTCString();
   }
 
   return (
-    <div style={{ marginTop: 32, position: 'relative', maxWidth: 1200, margin: '32px auto 0', padding: '0 24px' }}>
-      {/* Floating Info Bar */}
+    <div style={{ marginTop: 32, position: 'relative', maxWidth: 1200, margin: '32px auto 0', padding: '0 24px', fontFamily: '"Courier New", monospace' }}>
+      {/* Status Info Bar */}
       <div style={{
         position: 'fixed',
         top: 24,
@@ -135,179 +159,233 @@ function DashboardPage() {
         zIndex: 10,
         minWidth: 320,
         maxWidth: 420,
-        background: '#26304a',
-        color: '#e3f2fd',
-        borderRadius: 8,
-        border: '1px solid #3a4663',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+        background: 'rgba(0, 0, 0, 0.9)',
+        color: '#ffffff',
+        borderRadius: 0,
+        border: '1px solid #333333',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
         padding: 16,
         display: 'flex',
         flexDirection: 'column',
         gap: 4,
-        fontSize: 15,
+        fontSize: 12,
         alignItems: 'flex-start',
+        fontFamily: '"Courier New", monospace'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-          <span style={{ color: '#42a5f5', marginRight: 8 }}>ℹ️</span>
-          <span style={{ fontWeight: 600, color: '#b3e5fc', fontSize: 15 }}>Auto-updates every hour</span>
+          <span style={{ color: '#00ff41', marginRight: 8 }}>[SYS]</span>
+          <span style={{ fontWeight: 600, color: '#ffffff', fontSize: 14 }}>AUTO_UPDATE_ACTIVE</span>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: 14 }}>
-          <span><b>Last update:</b> <span style={{ color: '#fff' }}>{getRelativeTime(lastUpdate)}</span> <span style={{ color: '#b0bec5', fontSize: 13, marginLeft: 6 }}>({lastUpdate ? new Date(lastUpdate).toUTCString() : 'unknown'})</span></span>
-          <span><b>Next update:</b> <span style={{ color: '#fff' }}>{nextUpdate || 'unknown'}</span></span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: 12 }}>
+          <span><span style={{ color: '#cccccc' }}>LAST_UPDATE:</span> <span style={{ color: '#00ff41' }}>{getRelativeTime(lastUpdate)}</span></span>
+          <span><span style={{ color: '#cccccc' }}>NEXT_UPDATE:</span> <span style={{ color: '#00ff41' }}>{nextUpdate || 'UNKNOWN'}</span></span>
         </div>
       </div>
 
-      <h1 style={{ color: '#fff', marginBottom: 24, fontSize: 32, fontWeight: 700 }}>Dashboard</h1>
+      <h1 style={{ 
+        color: '#ffffff', 
+        marginBottom: 24, 
+        fontSize: 24, 
+        fontWeight: 700, 
+        fontFamily: '"Courier New", monospace',
+        letterSpacing: '2px',
+        textTransform: 'uppercase'
+      }}>&gt; MAIN_DASHBOARD</h1>
       
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
-          <div style={{ color: '#42a5f5', fontSize: 18 }}>Loading...</div>
+          <div style={{ 
+            color: '#00ff41', 
+            fontSize: 16,
+            fontFamily: '"Courier New", monospace'
+          }}>[LOADING_DATA...]</div>
         </div>
       ) : (
         <div>
-          {error && <div style={{ color: '#f44336', marginBottom: 16 }}>{error}</div>}
+          {error && <div style={{ 
+            color: '#ff6b6b', 
+            marginBottom: 16,
+            fontFamily: '"Courier New", monospace',
+            fontSize: 14,
+            padding: 12,
+            border: '1px solid #ff6b6b',
+            background: 'rgba(255, 107, 107, 0.1)'
+          }}>{error}</div>}
           
           {/* Key Metrics Row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16, marginBottom: 32 }}>
             {metrics.map((m, i) => (
               <div key={i} style={{ 
-                background: '#181f2a', 
-                color: '#fff', 
-                borderRadius: 12, 
+                background: 'rgba(255, 255, 255, 0.02)', 
+                color: '#ffffff', 
+                borderRadius: 0, 
                 padding: 24, 
-                boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-                border: '1px solid #232b3a'
-              }}>
-                <div style={{ fontWeight: 700, fontSize: 24, marginBottom: 8 }}>{m.value}</div>
-                <div style={{ color: '#b0bec5', fontSize: 14 }}>{m.label}</div>
+                border: '1px solid #333333',
+                fontFamily: '"Courier New", monospace',
+                transition: 'border-color 0.3s ease'
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = '#00ff41'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = '#333333'}
+              >
+                <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 8, color: '#00ff41' }}>{m.value}</div>
+                <div style={{ color: '#cccccc', fontSize: 12, letterSpacing: '1px' }}>[{m.label}]</div>
               </div>
             ))}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-            {/* Leaderboards */}
+            {/* Top Wallets */}
             <div>
               <div style={{ 
-                background: '#181f2a', 
-                color: '#fff', 
-                borderRadius: 12, 
+                background: 'rgba(255, 255, 255, 0.02)', 
+                color: '#ffffff', 
+                borderRadius: 0, 
                 padding: 24, 
-                boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-                border: '1px solid #232b3a',
-                marginBottom: 16
+                border: '1px solid #333333',
+                marginBottom: 16,
+                fontFamily: '"Courier New", monospace'
               }}>
-                <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>Top 5 Most Profitable Wallets (All Time)</h3>
-                <table style={{ width: '100%', color: '#fff', fontSize: 14 }}>
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: 'left', padding: 8, borderBottom: '1px solid #232b3a' }}>Wallet</th>
-                      <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #232b3a' }}>PnL</th>
-                      <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #232b3a' }}>Win Rate</th>
-                      <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #232b3a' }}>Smart Score</th>
-                      <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #232b3a' }}>Risk Score</th>
-                      <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #232b3a' }}>ML Tags</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topWallets.map((w, i) => (
-                      <tr key={w.address || i}>
-                        <td style={{ textAlign: 'left', padding: 8 }}><WalletAddress address={w.address} short /></td>
-                        <td style={{ textAlign: 'right', padding: 8 }}>{w.pnl}</td>
-                        <td style={{ textAlign: 'right', padding: 8 }}>{w.winRate}</td>
-                        <td style={{ textAlign: 'right', padding: 8 }}>{w.smartScore}</td>
-                        <td style={{ textAlign: 'right', padding: 8 }}>{getRiskLabel(w.riskScore ?? w.ai_insights?.risk_score)}</td>
-                        <td style={{ textAlign: 'right', padding: 8 }}>{w.mlTags ?? (w.ai_insights?.tags_ml?.join(', ') ?? w.quality_tier ?? '')}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <h3 style={{ 
+                  marginBottom: 16, 
+                  fontSize: 16, 
+                  fontWeight: 600,
+                  color: '#ffffff',
+                  letterSpacing: '1px'
+                }}>[TOP_PROFITABLE_WALLETS]</h3>
+                {topWallets.map((w, i) => (
+                  <div key={i} style={{ 
+                    padding: '12px 0', 
+                    borderBottom: i < topWallets.length - 1 ? '1px solid #333333' : 'none',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 14, marginBottom: 4 }}>
+                        <WalletAddress address={w.address} short={true} />
+                      </div>
+                      <div style={{ fontSize: 12, color: '#cccccc' }}>
+                        SCORE: <span style={{ color: '#00ff41' }}>{w.smartScore}</span> | 
+                        WIN_RATE: <span style={{ color: '#00ff41' }}>{w.winRate}</span>
+                      </div>
+                    </div>
+                    <div style={{ 
+                      fontSize: 14, 
+                      fontWeight: 700, 
+                      color: '#00ff41',
+                      textAlign: 'right'
+                    }}>
+                      ${w.pnl}
+                    </div>
+                  </div>
+                ))}
               </div>
 
+              {/* Trending Tokens */}
               <div style={{ 
-                background: '#181f2a', 
-                color: '#fff', 
-                borderRadius: 12, 
+                background: 'rgba(255, 255, 255, 0.02)', 
+                color: '#ffffff', 
+                borderRadius: 0, 
                 padding: 24, 
-                boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-                border: '1px solid #232b3a'
+                border: '1px solid #333333',
+                fontFamily: '"Courier New", monospace'
               }}>
-                <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>Top 5 "On Fire" Wallets (24h)</h3>
-                <table style={{ width: '100%', color: '#fff', fontSize: 14 }}>
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: 'left', padding: 8, borderBottom: '1px solid #232b3a' }}>Wallet</th>
-                      <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #232b3a' }}>PnL (24h)</th>
-                      <th style={{ textAlign: 'right', padding: 8, borderBottom: '1px solid #232b3a' }}>Trades</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {onFireWallets.map((w, i) => (
-                      <tr key={i} style={{ cursor: 'pointer', transition: 'background 0.2s' }} 
-                        onClick={() => {
-                          navigator.clipboard.writeText(w.address);
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background='#232b3a'} 
-                        onMouseLeave={e => e.currentTarget.style.background=''}
-                      >
-                        <td style={{ textAlign: 'left', padding: 8 }}>
-                          <WalletAddress address={w.address} short />
-                        </td>
-                        <td style={{ textAlign: 'right', padding: 8 }}>{w.pnl}</td>
-                        <td style={{ textAlign: 'right', padding: 8 }}>{w.trades}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <h3 style={{ 
+                  marginBottom: 16, 
+                  fontSize: 16, 
+                  fontWeight: 600,
+                  color: '#ffffff',
+                  letterSpacing: '1px'
+                }}>[TRENDING_TOKENS]</h3>
+                {trendingTokens.map((t, i) => (
+                  <div key={i} style={{ 
+                    padding: '8px 0', 
+                    borderBottom: i < trendingTokens.length - 1 ? '1px solid #333333' : 'none',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{t.token}</div>
+                    <div style={{ fontSize: 12, color: '#00ff41' }}>VOL: ${t.volume.toLocaleString()}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Market Trends */}
+            {/* On Fire Wallets & ML Tags */}
             <div>
               <div style={{ 
-                background: '#181f2a', 
-                color: '#fff', 
-                borderRadius: 12, 
+                background: 'rgba(255, 255, 255, 0.02)', 
+                color: '#ffffff', 
+                borderRadius: 0, 
                 padding: 24, 
-                boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-                border: '1px solid #232b3a',
-                marginBottom: 16
+                border: '1px solid #333333',
+                marginBottom: 16,
+                fontFamily: '"Courier New", monospace'
               }}>
-                <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>Trending Tokens by Volume</h3>
-                <div style={{ display: 'flex', alignItems: 'flex-end', height: 120, gap: 8 }}>
-                  {trendingTokens.map((t, i) => (
-                    <div key={i} style={{ width: 36, textAlign: 'center' }}>
-                      <div style={{ 
-                        background: '#42a5f5', 
-                        height: `${t.volume / 1500}px`, 
-                        borderRadius: 4, 
-                        marginBottom: 8, 
-                        transition: 'height 0.3s' 
-                      }} />
-                      <div style={{ color: '#fff', fontSize: 12 }}>{t.token}</div>
+                <h3 style={{ 
+                  marginBottom: 16, 
+                  fontSize: 16, 
+                  fontWeight: 600,
+                  color: '#ffffff',
+                  letterSpacing: '1px'
+                }}>[HOT_WALLETS_24H]</h3>
+                {onFireWallets.map((w, i) => (
+                  <div key={i} style={{ 
+                    padding: '12px 0', 
+                    borderBottom: i < onFireWallets.length - 1 ? '1px solid #333333' : 'none',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 14, marginBottom: 4 }}>
+                        <WalletAddress address={w.address} short={true} />
+                      </div>
+                      <div style={{ fontSize: 12, color: '#cccccc' }}>
+                        TRADES: <span style={{ color: '#00ff41' }}>{w.trades}</span>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                    <div style={{ 
+                      fontSize: 14, 
+                      fontWeight: 700, 
+                      color: '#00ff41',
+                      textAlign: 'right'
+                    }}>
+                      ${w.pnl}
+                    </div>
+                  </div>
+                ))}
               </div>
 
+              {/* ML Tags */}
               <div style={{ 
-                background: '#181f2a', 
-                color: '#fff', 
-                borderRadius: 12, 
+                background: 'rgba(255, 255, 255, 0.02)', 
+                color: '#ffffff', 
+                borderRadius: 0, 
                 padding: 24, 
-                boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-                border: '1px solid #232b3a'
+                border: '1px solid #333333',
+                fontFamily: '"Courier New", monospace'
               }}>
-                <h3 style={{ marginBottom: 16, fontSize: 18, fontWeight: 600 }}>ML Tag Cloud</h3>
+                <h3 style={{ 
+                  marginBottom: 16, 
+                  fontSize: 16, 
+                  fontWeight: 600,
+                  color: '#ffffff',
+                  letterSpacing: '1px'
+                }}>[ML_CATEGORIES]</h3>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {mlTags.map((tag, i) => (
-                    <div key={i} style={{ 
-                      background: '#26304a', 
-                      color: '#42a5f5', 
-                      padding: '4px 12px', 
-                      borderRadius: 8, 
-                      fontWeight: 600, 
-                      fontSize: 14 
-                    }}>{tag}</div>
+                    <span key={i} style={{ 
+                      background: 'rgba(0, 255, 65, 0.1)', 
+                      color: '#00ff41', 
+                      padding: '6px 12px', 
+                      fontSize: 12,
+                      border: '1px solid #00ff41',
+                      letterSpacing: '1px'
+                    }}>
+                      {tag}
+                    </span>
                   ))}
                 </div>
               </div>
@@ -378,9 +456,17 @@ function SettingsPage() {
   };
 
   return (
-    <div style={{ marginTop: 32, maxWidth: 800, margin: '32px auto 0', padding: '0 24px' }}>
-      <h1 style={{ color: '#fff', marginBottom: 16, fontSize: 32, fontWeight: 700 }}>Settings</h1>
-      <p style={{ color: '#b0bec5', marginBottom: 24 }}>Configure your discovery thresholds and filters here.</p>
+    <div style={{ marginTop: 32, maxWidth: 800, margin: '32px auto 0', padding: '0 24px', fontFamily: '"Courier New", monospace' }}>
+      <h1 style={{ 
+        color: '#ffffff', 
+        marginBottom: 16, 
+        fontSize: 24, 
+        fontWeight: 700,
+        fontFamily: '"Courier New", monospace',
+        letterSpacing: '2px',
+        textTransform: 'uppercase'
+      }}>&gt; SYSTEM_CONFIG</h1>
+      <p style={{ color: '#cccccc', marginBottom: 24, fontFamily: '"Courier New", monospace', fontSize: 14 }}>[CONFIGURE_DISCOVERY_PARAMETERS]</p>
       
       {loading ? (
         <div style={{ color: '#b0bec5' }}>Loading...</div>
@@ -389,7 +475,14 @@ function SettingsPage() {
       ) : (
         <div style={{ maxWidth: 400 }}>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', color: '#fff', marginBottom: 8 }}>Min Liquidity</label>
+            <label style={{ 
+              display: 'block', 
+              color: '#ffffff', 
+              marginBottom: 8,
+              fontFamily: '"Courier New", monospace',
+              fontSize: 14,
+              letterSpacing: '1px'
+            }}>[MIN_LIQUIDITY]</label>
             <input
               type="number"
               value={minLiquidity}
@@ -397,11 +490,12 @@ function SettingsPage() {
               style={{
                 width: '100%',
                 padding: '12px',
-                borderRadius: 8,
-                border: '1px solid #232b3a',
-                background: '#181f2a',
-                color: '#fff',
-                fontSize: 16
+                borderRadius: 0,
+                border: '1px solid #333333',
+                background: '#000000',
+                color: '#ffffff',
+                fontSize: 14,
+                fontFamily: '"Courier New", monospace'
               }}
             />
           </div>
@@ -482,20 +576,29 @@ function SettingsPage() {
           <button
             onClick={handleSave}
             style={{
-              background: '#42a5f5',
-              color: '#fff',
-              border: 'none',
+              background: '#000000',
+              color: '#00ff41',
+              border: '1px solid #00ff41',
               padding: '12px 24px',
-              borderRadius: 8,
-              fontSize: 16,
+              borderRadius: 0,
+              fontSize: 14,
               fontWeight: 600,
               cursor: 'pointer',
-              transition: 'background 0.2s'
+              transition: 'all 0.2s',
+              fontFamily: '"Courier New", monospace',
+              letterSpacing: '1px',
+              textTransform: 'uppercase'
             }}
-            onMouseEnter={e => e.currentTarget.style.background = '#1976d2'}
-            onMouseLeave={e => e.currentTarget.style.background = '#42a5f5'}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = '#00ff41';
+              e.currentTarget.style.color = '#000000';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = '#000000';
+              e.currentTarget.style.color = '#00ff41';
+            }}
           >
-            Save
+            &gt; SAVE_CONFIG
           </button>
 
           {success && <div style={{ color: '#4caf50', marginTop: 16 }}>Settings saved!</div>}
@@ -1151,298 +1254,41 @@ function MLProcessorPage() {
   );
 }
 
-// Landing Page
-function LandingPage() {
-  const navigate = useNavigate();
-
-  return (
-    <div style={{ 
-      minHeight: '100vh', 
-      background: 'radial-gradient(ellipse at 60% 40%, #101a2b 0%, #0a1220 60%, #050a18 100%)',
-      fontFamily: '"DM Sans", sans-serif',
-      color: '#fff',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      {/* Background Animation */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'radial-gradient(ellipse at 60% 40%, #101a2b 0%, #0a1220 60%, #050a18 100%)',
-        zIndex: 0
-      }} />
-      
-      {/* Header */}
-      <header style={{
-        position: 'relative',
-        zIndex: 10,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '24px 48px',
-        maxWidth: 1400,
-        margin: '0 auto'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <img src={solensLogo} alt="Solens" style={{ height: 40 }} />
-          <span style={{ fontSize: 24, fontWeight: 700, color: '#fff' }}>Solens AI</span>
-        </div>
-        <button
-          onClick={() => navigate('/dashboard')}
-          style={{
-            background: '#42a5f5',
-            color: '#fff',
-            border: 'none',
-            padding: '12px 24px',
-            borderRadius: 8,
-            fontSize: 16,
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'background 0.2s'
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = '#1976d2'}
-          onMouseLeave={e => e.currentTarget.style.background = '#42a5f5'}
-        >
-          Launch App
-        </button>
-      </header>
-
-      {/* Hero Section */}
-      <section style={{
-        position: 'relative',
-        zIndex: 10,
-        textAlign: 'center',
-        padding: '120px 24px 80px',
-        maxWidth: 1200,
-        margin: '0 auto'
-      }}>
-        <h1 style={{
-          fontSize: 'clamp(48px, 8vw, 72px)',
-          fontWeight: 700,
-          marginBottom: 24,
-          background: 'linear-gradient(135deg, #42a5f5 0%, #e040fb 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text'
-        }}>
-          AI-Powered Wallet Discovery
-        </h1>
-        <p style={{
-          fontSize: 'clamp(18px, 4vw, 24px)',
-          color: '#b0bec5',
-          marginBottom: 48,
-          maxWidth: 800,
-          marginLeft: 'auto',
-          marginRight: 'auto',
-          lineHeight: 1.6
-        }}>
-          Discover profitable wallets, analyze trading patterns, and find the best copy trading opportunities on Solana
-        </p>
-        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => navigate('/dashboard')}
-            style={{
-              background: 'linear-gradient(135deg, #42a5f5 0%, #1976d2 100%)',
-              color: '#fff',
-              border: 'none',
-              padding: '16px 32px',
-              borderRadius: 12,
-              fontSize: 18,
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              boxShadow: '0 8px 32px rgba(66, 165, 245, 0.3)'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 12px 40px rgba(66, 165, 245, 0.4)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 8px 32px rgba(66, 165, 245, 0.3)';
-            }}
-          >
-            Get Started
-          </button>
-          <button
-            onClick={() => navigate('/wallet-finder')}
-            style={{
-              background: 'transparent',
-              color: '#42a5f5',
-              border: '2px solid #42a5f5',
-              padding: '16px 32px',
-              borderRadius: 12,
-              fontSize: 18,
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'background 0.2s, color 0.2s'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = '#42a5f5';
-              e.currentTarget.style.color = '#fff';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = '#42a5f5';
-            }}
-          >
-            Explore Wallets
-          </button>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section style={{
-        position: 'relative',
-        zIndex: 10,
-        padding: '80px 24px',
-        maxWidth: 1200,
-        margin: '0 auto'
-      }}>
-        <h2 style={{
-          fontSize: 48,
-          fontWeight: 700,
-          textAlign: 'center',
-          marginBottom: 64,
-          color: '#fff'
-        }}>
-          Powerful Features
-        </h2>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: 32
-        }}>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            padding: 32,
-            borderRadius: 16,
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
-            <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 16, color: '#fff' }}>Smart Discovery</h3>
-            <p style={{ color: '#b0bec5', lineHeight: 1.6 }}>
-              Automatically discover new tokens and profitable wallets using advanced algorithms
-            </p>
-          </div>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            padding: 32,
-            borderRadius: 16,
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
-            <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 16, color: '#fff' }}>On-Chain Analytics</h3>
-            <p style={{ color: '#b0bec5', lineHeight: 1.6 }}>
-              Deep analysis of wallet performance, PnL, win rates, and trading patterns
-            </p>
-          </div>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            padding: 32,
-            borderRadius: 16,
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🤖</div>
-            <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 16, color: '#fff' }}>AI Insights</h3>
-            <p style={{ color: '#b0bec5', lineHeight: 1.6 }}>
-              Machine learning powered smart scores and risk assessment for every wallet
-            </p>
-          </div>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            padding: 32,
-            borderRadius: 16,
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📈</div>
-            <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 16, color: '#fff' }}>Copy Trading</h3>
-            <p style={{ color: '#b0bec5', lineHeight: 1.6 }}>
-              Find the best copy trading opportunities and track successful traders
-            </p>
-          </div>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            padding: 32,
-            borderRadius: 16,
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>⚡</div>
-            <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 16, color: '#fff' }}>Real-Time Data</h3>
-            <p style={{ color: '#b0bec5', lineHeight: 1.6 }}>
-              Live updates on token prices, wallet performance, and market trends
-            </p>
-          </div>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            padding: 32,
-            borderRadius: 16,
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            backdropFilter: 'blur(10px)'
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🎯</div>
-            <h3 style={{ fontSize: 24, fontWeight: 600, marginBottom: 16, color: '#fff' }}>Advanced Filtering</h3>
-            <p style={{ color: '#b0bec5', lineHeight: 1.6 }}>
-              Filter wallets by performance metrics, risk levels, and trading strategies
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer style={{
-        position: 'relative',
-        zIndex: 10,
-        textAlign: 'center',
-        padding: '48px 24px',
-        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-        color: '#b0bec5'
-      }}>
-        <p>&copy; 2024 Solens AI. All rights reserved.</p>
-      </footer>
-    </div>
-  );
-}
-
 // Main App Layout
 function MainAppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const menuItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: '📊' },
-    { label: 'Top Tokens', path: '/top-tokens', icon: '⭐' },
-    { label: 'Settings', path: '/settings', icon: '⚙️' },
-    { label: 'Discovery', path: '/discovery', icon: '🔍' },
-    { label: 'Analytics', path: '/analytics', icon: '📈' },
-    { label: 'Wallet Finder', path: '/wallet-finder', icon: '👛' },
-    { label: 'Copytrade Finder', path: '/copytrade-finder', icon: '🤖' },
-    { label: 'On-Chain Analyzer', path: '/onchain-analyzer', icon: '🔗' },
-    { label: 'ML Processor', path: '/ml-processor', icon: '🧠' },
+    { label: '> DASHBOARD', path: '/dashboard', icon: '[MAIN]' },
+    { label: '> TOP_TOKENS', path: '/top-tokens', icon: '[TKN]' },
+    { label: '> SETTINGS', path: '/settings', icon: '[CFG]' },
+    { label: '> DISCOVERY', path: '/discovery', icon: '[SCAN]' },
+    { label: '> ANALYTICS', path: '/analytics', icon: '[DATA]' },
+    { label: '> WALLET_FINDER', path: '/wallet-finder', icon: '[FIND]' },
+    { label: '> COPYTRADE_FINDER', path: '/copytrade-finder', icon: '[COPY]' },
+    { label: '> ONCHAIN_ANALYZER', path: '/onchain-analyzer', icon: '[CHAIN]' },
+    { label: '> ML_PROCESSOR', path: '/ml-processor', icon: '[AI]' },
   ];
 
   return (
     <div style={{ 
       display: 'flex', 
-      fontFamily: '"DM Sans", sans-serif', 
+      fontFamily: '"Courier New", monospace', 
       minHeight: '100vh', 
       minWidth: '100vw', 
       height: '100vh', 
       width: '100vw', 
-      boxSizing: 'border-box' 
+      boxSizing: 'border-box',
+      background: '#000000'
     }}>
       {/* Sidebar */}
       <div style={{
         width: drawerWidth,
-        background: 'radial-gradient(ellipse at 60% 40%, #101a2b 0%, #0a1220 60%, #050a18 100%)',
-        color: '#fff',
-        borderRight: 'none',
+        background: '#000000',
+        color: '#ffffff',
+        borderRight: '1px solid #333333',
         padding: 0,
-        fontFamily: '"DM Sans", sans-serif',
+        fontFamily: '"Courier New", monospace',
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column'
@@ -1453,24 +1299,31 @@ function MainAppLayout() {
           flexDirection: 'column', 
           alignItems: 'center', 
           padding: '24px 16px', 
-          marginBottom: 16 
+          marginBottom: 16,
+          borderBottom: '1px solid #333333'
         }}>
-          <img 
-            src={solensLogo} 
-            alt="Solens Logo" 
-            style={{ height: 48, marginBottom: 8, cursor: 'pointer' }} 
-            onClick={() => navigate('/dashboard')} 
-          />
+          <div style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: '#ffffff',
+            marginBottom: 8,
+            cursor: 'pointer',
+            fontFamily: '"Courier New", monospace',
+            letterSpacing: '1px'
+          }} onClick={() => navigate('/dashboard')}>
+            &gt;CIPHER
+          </div>
           <div style={{ 
-            color: '#b0bec5', 
-            fontWeight: 500, 
-            fontSize: 14, 
+            color: '#cccccc', 
+            fontWeight: 400, 
+            fontSize: 12, 
             letterSpacing: 1, 
-            fontFamily: '"DM Sans", sans-serif', 
+            fontFamily: '"Courier New", monospace', 
             marginTop: 8, 
-            textAlign: 'center' 
+            textAlign: 'center',
+            opacity: 0.8
           }}>
-            AI Powered Wallet Finder
+            [BLOCKCHAIN_INTELLIGENCE]
           </div>
         </div>
 
@@ -1486,23 +1339,43 @@ function MainAppLayout() {
                     display: 'flex',
                     alignItems: 'center',
                     padding: '12px 16px',
-                    color: isActive ? '#42a5f5' : '#fff',
+                    color: isActive ? '#00ff41' : '#ffffff',
                     textDecoration: 'none',
-                    background: isActive ? 'rgba(33, 150, 243, 0.15)' : 'none',
+                    background: isActive ? 'rgba(0, 255, 65, 0.1)' : 'none',
                     fontWeight: isActive ? 700 : 400,
                     transition: 'background 0.2s, color 0.2s',
-                    fontFamily: '"DM Sans", sans-serif',
-                    fontSize: 16
+                    fontFamily: '"Courier New", monospace',
+                    fontSize: 14,
+                    letterSpacing: '1px',
+                    borderLeft: isActive ? '2px solid #00ff41' : '2px solid transparent'
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(33, 150, 243, 0.10)'}
-                  onMouseLeave={e => e.currentTarget.style.background = isActive ? 'rgba(33, 150, 243, 0.15)' : 'none'}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                    e.currentTarget.style.color = '#00ff41';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = isActive ? 'rgba(0, 255, 65, 0.1)' : 'none';
+                    e.currentTarget.style.color = isActive ? '#00ff41' : '#ffffff';
+                  }}
                 >
-                  <span style={{ marginRight: 12, fontSize: 20 }}>{item.icon}</span>
+                  <span style={{ marginRight: 12, fontSize: 12, color: '#666666' }}>{item.icon}</span>
                   {item.label}
                 </Link>
               </div>
             );
           })}
+        </div>
+
+        {/* Status Footer */}
+        <div style={{
+          padding: '16px',
+          borderTop: '1px solid #333333',
+          fontSize: '11px',
+          color: '#666666',
+          textAlign: 'center'
+        }}>
+          <div>[STATUS: ONLINE]</div>
+          <div style={{ marginTop: 4 }}>[SECURITY: MAX]</div>
         </div>
       </div>
 
@@ -1511,21 +1384,13 @@ function MainAppLayout() {
         flex: 1, 
         minHeight: '100vh', 
         minWidth: 0, 
-        background: 'radial-gradient(ellipse at 60% 40%, #101a2b 0%, #0a1220 60%, #050a18 100%)', 
+        background: '#000000', 
         position: 'relative', 
-        fontFamily: '"DM Sans", sans-serif', 
+        fontFamily: '"Courier New", monospace', 
         display: 'flex', 
         flexDirection: 'column', 
         boxSizing: 'border-box' 
-      }}>
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          zIndex: 0,
-          background: 'radial-gradient(ellipse at 60% 40%, #101a2b 0%, #0a1220 60%, #050a18 100%)',
-          pointerEvents: 'none',
-        }} />
-        
+      }}>        
         <div style={{ 
           position: 'relative', 
           zIndex: 1, 

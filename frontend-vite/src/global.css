@@ -2,7 +2,7 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: radial-gradient(ellipse at 60% 40%, #101a2b 0%, #0a1220 60%, #050a18 100%);
+  background: #000000;
   font-family: 'DM Sans', sans-serif;
   color: #b0bec5;
 } 
