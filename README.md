@@ -1,32 +1,34 @@
-# Solens AI - Trader Discovery Platform
+# CIPHER - Blockchain Intelligence Platform
 
-A comprehensive platform for discovering and analyzing cryptocurrency traders using AI-powered insights.
+A real-time blockchain intelligence platform for discovering, analyzing, and tracking wallets and tokens with advanced ML scoring and a retro terminal-inspired UI.
 
 ## 🚀 Features
 
-- **Trader Discovery**: Automatically find high-performing traders from top tokens
-- **Smart Scoring**: AI-powered copy trading scores for trader evaluation
-- **Real-time Analysis**: On-chain analysis of trader performance
-- **Modern Web Interface**: React TypeScript frontend with 3D visualizations
-- **RESTful API**: FastAPI backend for scalable data processing
-- **ML Processing**: Advanced machine learning for trader analysis
+- **Real-Time Wallet & Token Discovery**: Powered by GMGN, always up-to-date
+- **1-Minute Token Ranking**: Live top tokens, updated every minute
+- **ML-Based Scoring**: Automated risk and smart scores for every wallet
+- **Copytrade Finder**: Detects unique copytraders and patterns
+- **Wallet & Token Watchlists**: Add, remove, and monitor, with local persistence and export/import
+- **Settings & Security**: Session timeout, clear data, export/import watchlists
+- **Retro/Terminal UI**: Fast, keyboard-friendly, and visually unique
+- **FastAPI Backend**: Robust API, MongoDB Atlas for scalable data
+- **Vite + React Frontend**: Modern, fast, and easy to develop
+- **Roadmap**: API service, phone app, real-time token analysis, secret integration
 
-## 📁 Project Structure
+## 🗂️ Project Structure
 
 ```
-solens_ai/
-├── frontend-vite/     # React TypeScript frontend (Vite)
+cipher-ai/
+├── frontend-vite/     # Vite + React frontend (retro terminal UI)
 │   ├── src/          # Source code
-│   ├── public/       # Static assets
-│   ├── assets/       # 3D models and images
+│   ├── public/       # Static assets (bgvid.webm, favicon.ico, etc)
 │   └── package.json  # Frontend dependencies
-├── backend/          # Backend services and scrapers
-│   ├── js_scrapers/  # JavaScript scrapers
+├── backend/          # Scrapers and ML scripts
+│   ├── js_scrapers/  # Node.js scrapers (GMGN, tokens, wallets)
 │   └── python_scripts/ # Python ML and analysis scripts
-├── backend-api/      # FastAPI backend service
-├── backend_api/      # Alternative API structure
-├── config/           # Configuration files
-└── data/             # Data storage
+├── backend_api/      # FastAPI backend service
+├── config/           # Configuration files (MongoDB, etc)
+└── data/             # Data storage (if any)
 ```
 
 ## 🛠️ Setup
@@ -34,7 +36,7 @@ solens_ai/
 ### Prerequisites
 - Python 3.8+
 - Node.js 16+
-- Google Cloud Firestore credentials
+- MongoDB Atlas account/URI
 
 ### Installation
 
@@ -51,95 +53,79 @@ solens_ai/
 
 3. **Install Node.js dependencies**
    ```bash
+   cd backend/js_scrapers
    npm install
-   ```
-
-4. **Install Frontend dependencies**
-   ```bash
+   cd ../../..
    cd frontend-vite
    npm install
    cd ..
    ```
 
-5. **Configure credentials**
-   - Place your Firestore service account key in `config/solensai-service-account.json`
-   - Or configure environment variables for deployment
+4. **Configure MongoDB**
+   - Set your MongoDB Atlas URI in the backend and scrapers (see `MONGO_URI` in code or use environment variables)
 
 ### Running the Application
 
-1. **Start the Frontend (Development)**
+1. **Start the Frontend**
    ```bash
    cd frontend-vite
    npm run dev
+   # Visit http://localhost:5173
    ```
-   The frontend will be available at `http://localhost:5173`
 
 2. **Start the Backend API**
    ```bash
-   # Option 1: Using backend-api
-   cd backend-api
-   python main.py
-   
-   # Option 2: Using backend_api
    cd backend_api
-   python main.py
+   uvicorn main:app --reload
+   # API at http://localhost:8000
    ```
 
-3. **Run discovery scripts**
+3. **Run Scrapers & ML Jobs**
    ```bash
-   # Discover traders from top tokens
+   # 1-minute token ranking (auto-updates MongoDB)
+   node backend/js_scrapers/fetch_minute_rank.js
+
+   # GMGN wallet/token discovery
    node backend/js_scrapers/gmgn_coins_traders.js
-   
-   # Analyze wallet performance
    node backend/js_scrapers/gmgn_wallet_scraper.js
-   
-   # Run ML processing
+
+   # ML scoring
    python backend/python_scripts/ml_processor.py
-   
-   # Run on-chain analysis
+   ```
+
+4. **(Optional) On-chain analysis**
+   ```bash
    python backend/python_scripts/on_chain_analyzer.py
    ```
 
-## 🔧 Configuration
+## ⚡ Key Features & Pages
 
-The application uses Google Cloud Firestore for data storage. Make sure to:
-- Set up a Firestore database
-- Configure your service account credentials
-- Set appropriate security rules
+- **Dashboard**: Live stats, top/risky/hot wallets, trending tokens
+- **Tokens**: 1-minute ranking, registry, watchlist, history
+- **Wallets**: Search, sort, watchlist, ML scores, copyable addresses
+- **Copytrade Finder**: Unique copytrader detection, CSV/JSON export
+- **Settings**: Security, export/import, session timeout, clear data
+- **Retro UI**: Terminal-style, keyboard-friendly, custom scrollbars
 
-## 📊 Usage
+## 🧠 ML & Analytics
+- **ML Processor**: Auto-runs after discovery, tags/risk/smart scores
+- **All scoring and tags are based on GMGN and on-chain data**
+- **No on-chain analyzer logic in frontend—backend only**
 
-1. **Discover Traders**: Use the discovery page to find new traders from trending tokens
-2. **Analyze Performance**: View detailed trader analysis and copy trading scores
-3. **Monitor Activity**: Track trader activity and performance over time
-4. **3D Visualization**: Interactive 3D wallet models and data visualization
+## 🔒 Security & Data
+- All sensitive config (MongoDB URI, etc) is in `config/` or env vars
+- Local watchlists are stored in browser localStorage
+- No user data leaves your device unless you export it
 
-## 🎨 Frontend Features
-
-- **React 18** with TypeScript for type safety
-- **Vite** for fast development and building
-- **Three.js** for 3D visualizations
-- **Modern UI** with responsive design
-- **Real-time updates** from backend API
-
-## 🔧 Backend Features
-
-- **FastAPI** for high-performance API
-- **Machine Learning** processing pipeline
-- **On-chain analysis** for trader evaluation
-- **Scalable architecture** for production deployment
-
-## 🔒 Security
-
-- Service account keys are excluded from version control
-- Sensitive configuration is handled via environment variables
-- Data access is controlled through Firestore security rules
-- API endpoints are secured with authentication
+## 📱 Roadmap
+- **API Service**: Public endpoints for analytics (coming soon)
+- **Phone App**: Follow wallets/tokens from your phone
+- **Real-Time Token Analysis**: Sub-second updates, advanced stats
+- **Secret Integration**: Major partnership (details soon!)
 
 ## 🤝 Contributing
-
-This is a private repository for collaboration. Please coordinate with the project maintainer for contributions.
+- Private repo. For access or contributions, contact the maintainer.
+- PRs and issues are welcome for bugfixes and improvements.
 
 ## 📄 License
-
-Private project - All rights reserved.
+Private project – All rights reserved.
