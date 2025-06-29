@@ -4,7 +4,7 @@ A real-time blockchain intelligence platform for discovering, analyzing, and tra
 
 ## 🚀 Features
 
-- **Real-Time Wallet & Token Discovery**: Powered by GMGN, always up-to-date
+- **Real-Time Wallet & Token Discovery**: Now powered by a dynamic pipeline that always discovers the freshest tokens and wallets from the latest 1-minute rank snapshot
 - **1-Minute Token Ranking**: Live top tokens, updated every minute
 - **ML-Based Scoring**: Automated risk and smart scores for every wallet
 - **Copytrade Finder**: Detects unique copytraders and patterns
@@ -13,6 +13,9 @@ A real-time blockchain intelligence platform for discovering, analyzing, and tra
 - **Retro/Terminal UI**: Fast, keyboard-friendly, and visually unique
 - **FastAPI Backend**: Robust API, MongoDB Atlas for scalable data
 - **Vite + React Frontend**: Modern, fast, and easy to develop
+- **Smart Token Filtering**: Only the highest-quality tokens (by liquidity, market cap, holders, rug ratio) are processed for wallet discovery
+- **Wallet Info Enrichment**: Each discovered wallet is enriched with detailed info for better analytics
+- **Fully Real-Time Dashboard**: Frontend and backend always reflect the latest data after each discovery run
 - **Roadmap**: API service, phone app, real-time token analysis, secret integration
 
 ## 🗂️ Project Structure
@@ -85,8 +88,10 @@ cipher-ai/
    # 1-minute token ranking (auto-updates MongoDB)
    node backend/js_scrapers/fetch_minute_rank.js
 
-   # GMGN wallet/token discovery
+   # GMGN wallet/token discovery (now uses latest 1-minute snapshot and smart filtering)
    node backend/js_scrapers/gmgn_coins_traders.js
+
+   # Wallet info enrichment (fetches detailed info for each discovered wallet)
    node backend/js_scrapers/gmgn_wallet_scraper.js
 
    # ML scoring
@@ -100,7 +105,7 @@ cipher-ai/
 
 ## ⚡ Key Features & Pages
 
-- **Dashboard**: Live stats, top/risky/hot wallets, trending tokens
+- **Dashboard**: Live stats, top/risky/hot wallets, trending tokens (always up-to-date)
 - **Tokens**: 1-minute ranking, registry, watchlist, history
 - **Wallets**: Search, sort, watchlist, ML scores, copyable addresses
 - **Copytrade Finder**: Unique copytrader detection, CSV/JSON export
@@ -111,6 +116,12 @@ cipher-ai/
 - **ML Processor**: Auto-runs after discovery, tags/risk/smart scores
 - **All scoring and tags are based on GMGN and on-chain data**
 - **No on-chain analyzer logic in frontend—backend only**
+
+## 🔄 Real-Time Pipeline Improvements
+- **Discovery script now always processes the freshest tokens from the latest 1-minute snapshot**
+- **Smart filtering ensures only high-quality tokens are processed**
+- **Wallet info is enriched immediately after discovery**
+- **Frontend dashboard and all token lists always reflect the latest data**
 
 ## 🔒 Security & Data
 - All sensitive config (MongoDB URI, etc) is in `config/` or env vars

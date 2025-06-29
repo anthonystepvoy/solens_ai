@@ -11,9 +11,12 @@ const client = new MongoClient(MONGO_URI);
 let db;
 
 async function scrapeWallets() {
+  console.log("=== GMGN Wallet Scraper: Starting ===");
   await client.connect();
+  console.log("Connected to MongoDB!");
   db = client.db("solens_ai");
 
+  console.log("Launching browser...");
   const browser = await puppeteer.launch({
     headless: "new",
     args: [
@@ -26,41 +29,30 @@ async function scrapeWallets() {
     defaultViewport: null,
     ignoreHTTPSErrors: true
   });
+  console.log("Browser launched!");
 
   const page = await browser.newPage();
   
-  // Set user agent
   await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
   try {
-    console.log("Fetching wallet data...");
+    console.log("Fetching initial wallet rankings...");
     
-    // First visit the main page to get cookies
     await page.goto("https://gmgn.ai", { waitUntil: "domcontentloaded", timeout: 30000 });
     
-    // Now fetch the wallet data using the page's fetch
-    const data = await page.evaluate(async () => {
+    const initialData = await page.evaluate(async () => {
       const response = await fetch(
         "https://gmgn.ai/defi/quotation/v1/rank/sol/wallets/7d?orderby=pnl_7d&direction=desc&device_id=c639da51-3f8d-47a3-b191-1b4092c52001&client_id=gmgn_web_20250613-2194-6838f94&from_app=gmgn&app_ver=20250613-2194-6838f94&tz_name=America%2FMontevideo&tz_offset=-10800&app_lang=en-US&fp_did=unknown&os=web",
         {
-          headers: {
-            "accept": "application/json",
-            "accept-language": "en-US,en;q=0.9",
-            "sec-ch-ua": "\"Google Chrome\";v=\"137\", \"Chromium\";v=\"137\", \";Not A Brand\";v=\"99\"",
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": "\"Windows\"",
-            "sec-fetch-dest": "empty",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-site": "same-origin"
-          }
+          headers: { "accept": "application/json" }
         }
       );
       return response.json();
     });
     
-    if (data.code === 0 && data.data && data.data.rank) {
+    if (initialData.code === 0 && initialData.data && initialData.data.rank) {
       // Filter wallets based on copy trading criteria
-      const profitableWallets = data.data.rank
+      const profitableWallets = initialData.data.rank
         .filter(wallet => {
           const minNonZeroProfitDays = 2;
           const minTokens7d = 1;
@@ -147,14 +139,53 @@ async function scrapeWallets() {
         console.log(`  - Fast Trade Ratio: ${wallet.risk.fast_tx_ratio * 100}%`);
         console.log(`  - No Buy Hold Ratio: ${wallet.risk.no_buy_hold_ratio * 100}%`);
       });
+
+      // Loop through each promising wallet to get detailed stats
+      for (const wallet of profitableWallets) {
+        const walletAddress = wallet.wallet_address;
+        const detailedStatsUrl = `https://gmgn.ai/api/v1/wallet_stat/sol/${walletAddress}/7d?device_id=b4e58a50-81f0-4ffb-850e-f433598a8c51&client_id=gmgn_web_20250628-487-0a3c13b&from_app=gmgn&app_ver=20250628-487-0a3c13b&tz_name=America%2FMontevideo&tz_offset=-10800&app_lang=en-US&fp_did=535415de390d0e8ab5b33b8fd73b2830&os=web&period=7d`;
+
+        try {
+          const detailedData = await page.evaluate(async (url) => {
+            const response = await fetch(url, { headers: { "accept": "application/json" } });
+            return response.json();
+          }, detailedStatsUrl);
+
+          let walletToSave = {
+            gmgn_data: { ...wallet }, // Save the original summary data
+            updated_at: new Date(),
+            discovered_by: ['GMGN_Wallet_Scraper']
+          };
+
+          if (detailedData && detailedData.code === 0) {
+            console.log(`✓ Successfully fetched details for wallet ${walletAddress.slice(0, 6)}...`);
+            // Add the new detailed stats to our wallet object
+            walletToSave.gmgn_detailed_stats = detailedData.data;
+          }
+
+          // Upsert the combined data into MongoDB
+          await db.collection("wallets").updateOne(
+            { _id: walletAddress },
+            { $set: walletToSave },
+            { upsert: true }
+          );
+
+        } catch (e) {
+          console.error(`Error fetching detailed stats for ${walletAddress}:`, e.message);
+        }
+        await new Promise(resolve => setTimeout(resolve, 300)); // Short delay
+      }
+      console.log(`Processing complete. All wallet data has been updated in MongoDB.`);
+
     } else {
-      console.error("Failed to get wallet data:", data);
+      console.error("Failed to get initial wallet data:", initialData);
     }
 
   } catch (error) {
     console.error("Error during scraping:", error);
   } finally {
     await browser.close();
+    console.log("=== GMGN Wallet Scraper: Finished ===");
   }
 }
 

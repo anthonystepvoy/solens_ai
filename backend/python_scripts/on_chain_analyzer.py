@@ -176,18 +176,19 @@ async def get_transactions_in_time_window(address, days_history=7, ui_callback=N
 def calculate_pnl_fifo(swap_transactions, wallet_address, ui_callback=None):
     # This function assumes transactions are sorted OLDEST to NEWEST
     total_pnl_sol, total_volume_sol, winning_trades, losing_trades, incomplete_sells = 0, 0, 0, 0, 0
-    token_portfolio = defaultdict(list) # Stores purchase lots: {'amount': float, 'cost_sol': float}
+    token_portfolio = defaultdict(list) # Stores purchase lots: {'amount': float, 'cost_sol': float, 'timestamp': int}
     swaps_by_token = defaultdict(list)
+    trade_holding_times = [] # NEW: To store holding times in seconds
+    traded_tokens = set() # NEW: To count unique traded tokens
 
     for tx in swap_transactions:
-        # We only care about SWAP transactions that were successful
         if tx.get("type") != "SWAP" or tx.get("transactionError"):
             continue
 
         transfers = tx.get("tokenTransfers", [])
         if len(transfers) < 2:
             continue
-            
+        
         sent_transfer = next((t for t in transfers if t.get("fromUserAccount") == wallet_address), None)
         received_transfer = next((t for t in transfers if t.get("toUserAccount") == wallet_address), None)
 
@@ -196,8 +197,9 @@ def calculate_pnl_fifo(swap_transactions, wallet_address, ui_callback=None):
 
         sent_mint, sent_amount = sent_transfer.get("mint"), sent_transfer.get("tokenAmount")
         received_mint, received_amount = received_transfer.get("mint"), received_transfer.get("tokenAmount")
+        tx_timestamp = tx.get("timestamp")
 
-        if not all([sent_mint, sent_amount, received_mint, received_amount]):
+        if not all([sent_mint, sent_amount, received_mint, received_amount, tx_timestamp]):
             continue
 
         is_buy = sent_mint == WRAPPED_SOL_MINT and received_mint != WRAPPED_SOL_MINT
@@ -206,75 +208,60 @@ def calculate_pnl_fifo(swap_transactions, wallet_address, ui_callback=None):
         if is_buy:
             buy_token_mint, buy_token_amount, sol_spent = received_mint, received_amount, sent_amount
             total_volume_sol += sol_spent
-            # Record the purchase in the portfolio
-            token_portfolio[buy_token_mint].append({'amount': buy_token_amount, 'cost_sol': sol_spent})
+            token_portfolio[buy_token_mint].append({'amount': buy_token_amount, 'cost_sol': sol_spent, 'timestamp': tx_timestamp})
             swaps_by_token[buy_token_mint].append(tx)
-            msg = f"      [BUY] {buy_token_amount:.4f} of {buy_token_mint[:6]} for {sol_spent:.4f} SOL"
-            if ui_callback: ui_callback(msg)
+            traded_tokens.add(buy_token_mint) # NEW
+            if ui_callback: ui_callback(f"      [BUY] {buy_token_amount:.4f} of {buy_token_mint[:6]} for {sol_spent:.4f} SOL")
 
         elif is_sell:
             sell_token_mint, sell_token_amount, sol_received = sent_mint, sent_amount, received_amount
             total_volume_sol += sol_received
+            traded_tokens.add(sell_token_mint) # NEW
 
-            # Check if we have any of this token in our portfolio
             if sell_token_mint in token_portfolio and token_portfolio[sell_token_mint]:
-                # FIFO: Sell from the oldest lots first
                 remaining_to_sell = sell_token_amount
                 lot_pnl = 0
                 
                 while remaining_to_sell > 0 and token_portfolio[sell_token_mint]:
-                    lot = token_portfolio[sell_token_mint][0]  # Get the oldest lot
-                    lot_amount = lot['amount']
-                    lot_cost = lot['cost_sol']
-                    
-                    if lot_amount <= remaining_to_sell:
-                        # Sell the entire lot
-                        sold_amount = lot_amount
-                        cost_basis = lot_cost
-                        token_portfolio[sell_token_mint].pop(0)  # Remove the lot
+                    lot = token_portfolio[sell_token_mint][0]
+                    holding_time_seconds = tx_timestamp - lot['timestamp']
+                    trade_holding_times.append(holding_time_seconds)
+
+                    if lot['amount'] <= remaining_to_sell:
+                        sold_amount = lot['amount']
+                        cost_basis = lot['cost_sol']
+                        token_portfolio[sell_token_mint].pop(0)
                     else:
-                        # Sell part of the lot
                         sold_amount = remaining_to_sell
-                        cost_basis = (lot_cost / lot_amount) * sold_amount
+                        cost_basis = (lot['cost_sol'] / lot['amount']) * sold_amount
                         lot['amount'] -= sold_amount
                         lot['cost_sol'] -= cost_basis
-                    
-                    # Calculate PnL for this lot
                     lot_pnl += sol_received * (sold_amount / sell_token_amount) - cost_basis
                     remaining_to_sell -= sold_amount
-                
-                if lot_pnl > 0:
-                    winning_trades += 1
-                else:
-                    losing_trades += 1
-                
+                if lot_pnl > 0: winning_trades += 1
+                else: losing_trades += 1
                 total_pnl_sol += lot_pnl
                 swaps_by_token[sell_token_mint].append(tx)
-                msg = f"      [SELL] {sell_token_amount:.4f} of {sell_token_mint[:6]} for {sol_received:.4f} SOL (PnL: {lot_pnl:.4f} SOL)"
-                if ui_callback: ui_callback(msg)
+                if ui_callback: ui_callback(f"      [SELL] {sell_token_amount:.4f} of {sell_token_mint[:6]} for {sol_received:.4f} SOL (PnL: {lot_pnl:.4f})")
             else:
-                # We're selling a token we don't have in our portfolio (incomplete sell)
                 incomplete_sells += 1
-                msg = f"      [INCOMPLETE SELL] {sell_token_amount:.4f} of {sell_token_mint[:6]} for {sol_received:.4f} SOL (no buy record)"
-                if ui_callback: ui_callback(msg)
 
-    # Calculate win rate
     total_trades = winning_trades + losing_trades
     win_rate = (winning_trades / total_trades * 100) if total_trades > 0 else 0
-
-    # Count swaps per token
-    token_swap_counts = {token: len(swaps) for token, swaps in swaps_by_token.items()}
+    avg_holding_duration_hours = (sum(trade_holding_times) / len(trade_holding_times) / 3600) if trade_holding_times else 0
+    token_diversity = len(traded_tokens)
 
     result = {
         'pnl_sol': total_pnl_sol,
         'win_rate': win_rate,
         'winning_trades': winning_trades,
         'losing_trades': losing_trades,
-        'incomplete_sells': incomplete_sells, # New metric
+        'incomplete_sells': incomplete_sells,
         'total_volume_sol': total_volume_sol,
-        'swap_count': sum(token_swap_counts.values()), # Total swaps (buy/sell)
-        'total_transactions': len(swap_transactions),
-        'analysis_period_days': 7
+        'swap_count': len(swap_transactions),
+        'analysis_period_days': 7,
+        'avg_holding_duration_hours': avg_holding_duration_hours,
+        'token_diversity': token_diversity
     }
 
     return result

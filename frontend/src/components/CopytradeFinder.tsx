@@ -26,23 +26,25 @@ const CopytradeFinder: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: '0 auto', padding: 24 }}>
-      <h2>Copytrade Finder</h2>
-      <p>Analyze a wallet to find copy traders here.</p>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: 24, fontFamily: '"Courier New", monospace', color: '#fff' }}>
+      <h2 style={{ color: '#00ff41', fontWeight: 700, letterSpacing: 1, fontFamily: 'inherit' }}>[COPYTRADE_FINDER]</h2>
+      <p style={{ color: '#cccccc', fontSize: 14, marginBottom: 24 }}>
+        Enter a wallet address to find inblock copytraders (wallets that copied this wallet in the same block).
+      </p>
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         <input
           type="text"
           value={wallet}
           onChange={e => setWallet(e.target.value)}
-          placeholder="Enter wallet address"
-          style={{ flex: 1, padding: 8, borderRadius: 4, border: '1px solid #444', background: '#181c24', color: '#fff' }}
+          placeholder="Enter wallet address to search for inblock copytraders"
+          style={{ flex: 1, padding: '12px', borderRadius: 0, border: '1px solid #00ff41', background: '#000', color: '#00ff41', fontFamily: 'inherit', fontSize: 14 }}
         />
         <button
           onClick={handleAnalyze}
           disabled={loading || !wallet}
-          style={{ padding: '8px 20px', borderRadius: 4, border: 'none', background: '#3399ff', color: '#fff', fontWeight: 'bold', cursor: 'pointer' }}
+          style={{ padding: '12px 24px', borderRadius: 0, border: '1px solid #00ff41', background: loading ? '#222' : '#000', color: loading ? '#666' : '#00ff41', fontWeight: 700, fontFamily: 'inherit', fontSize: 14, cursor: loading || !wallet ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
         >
-          {loading ? 'Analyzing...' : 'Analyze'}
+          {loading ? '[SCANNING...]' : '> SEARCH'}
         </button>
       </div>
       {error && <div style={{ color: 'red', marginBottom: 16 }}>{error}</div>}

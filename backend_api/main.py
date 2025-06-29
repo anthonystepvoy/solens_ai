@@ -1,24 +1,29 @@
 from fastapi import FastAPI, Request, BackgroundTasks, Body
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 import json
 import os
 import subprocess
 import io
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import traceback
 import math
 import numpy as np
 from dateutil import parser as date_parser
 from pymongo import MongoClient
 import random
+import asyncio
+import threading
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
+from collections import Counter
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # For development, allow all. Use ["http://localhost:5173"] for stricter security.
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -28,8 +33,20 @@ SETTINGS_FILE = os.path.join(os.path.dirname(__file__), 'discovery_settings.json
 
 # MongoDB Atlas connection
 MONGO_URI = "mongodb+srv://santowastaken:DGsmWd4ikXVNxA8@cluster0.vxseyuu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-client = MongoClient(MONGO_URI)
-db = client["solens_ai"]  # You can use any database name you want
+
+client = MongoClient(
+    MONGO_URI,
+    serverSelectionTimeoutMS=5000,
+    connectTimeoutMS=10000,
+    socketTimeoutMS=10000,
+    maxPoolSize=10,
+    retryWrites=True,
+    w='majority'
+)
+db = client["solens_ai"]
+
+# Background scheduler for automatic discovery
+scheduler = BackgroundScheduler()
 
 @app.get("/")
 def read_root():
@@ -74,10 +91,24 @@ def run_discovery():
         os.path.join(os.path.dirname(__file__), '../config/solensai-service-account.json')
     )
     try:
+        # Use UTF-8 encoding to handle Unicode characters properly
         result = subprocess.run(
             ['node', script_path],
-            capture_output=True, text=True, check=False, env=env
+            capture_output=True, 
+            text=True, 
+            encoding='utf-8',
+            errors='replace',  # Replace problematic characters instead of failing
+            check=False, 
+            env=env
         )
+        
+        # Print output to backend terminal for real-time feedback
+        print("--- Discovery Script Output ---")
+        print(result.stdout)
+        print("--- Discovery Script Errors (if any) ---")
+        print(result.stderr)
+        print("---------------------------------")
+        
         return {
             'stdout': result.stdout,
             'stderr': result.stderr,
@@ -145,44 +176,26 @@ def sanitize_json(obj):
 def copytrade_analyze(data: dict = Body(...)):
     wallet_address = data.get('wallet_address')
     if not wallet_address:
-        return JSONResponse(status_code=400, content={"error": "wallet_address is required"})
+        return PlainTextResponse("wallet_address is required", status_code=400)
     script_path = os.path.join(os.path.dirname(__file__), '../backend/python_scripts/copy_trader_analyzer.py')
     env = os.environ.copy()
-    env["FIREBASE_SERVICE_ACCOUNT_KEY_PATH"] = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '../config/solensai-service-account.json')
-    )
     try:
         result = subprocess.run(
             ['python', script_path, wallet_address],
-            capture_output=True, text=True, check=False, env=env
+            capture_output=True,
+            text=True,
+            env=env,
+            timeout=120
         )
-        if result.returncode == 0 and result.stdout:
+        if result.returncode == 0:
             try:
-                df = pd.read_csv(io.StringIO(result.stdout))
-                records = df.to_dict(orient="records")
-                print("[DEBUG] Parsed copytrade CSV records:", records)
-                records = sanitize_json(records)
-                return {"results": records}
-            except Exception as e:
-                return {
-                    "raw": result.stdout,
-                    "stderr": result.stderr,
-                    "parse_error": str(e),
-                    "traceback": traceback.format_exc()
-                }
-        return {
-            "stderr": result.stderr,
-            "stdout": result.stdout,
-            "returncode": result.returncode
-        }
+                return JSONResponse(json.loads(result.stdout))
+            except Exception:
+                return PlainTextResponse(result.stdout, status_code=200)
+        else:
+            return PlainTextResponse(result.stderr or "Script error", status_code=500)
     except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={
-                "error": str(e),
-                "traceback": traceback.format_exc()
-            }
-        )
+        return PlainTextResponse(str(e), status_code=500)
 
 @app.post("/ml-process")
 def ml_process():
@@ -194,7 +207,12 @@ def ml_process():
     try:
         result = subprocess.run(
             ['python', script_path],
-            capture_output=True, text=True, check=False, env=env
+            capture_output=True, 
+            text=True, 
+            encoding='utf-8',
+            errors='replace',
+            check=False, 
+            env=env
         )
         return {
             'stdout': result.stdout,
@@ -203,157 +221,125 @@ def ml_process():
         }
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
-
-@app.post("/run-onchain-analysis")
-def run_onchain_analysis():
-    script_path = os.path.join(os.path.dirname(__file__), '../backend/python_scripts/on_chain_analyzer.py')
-    env = os.environ.copy()
-    env["FIREBASE_SERVICE_ACCOUNT_KEY_PATH"] = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '../config/solensai-service-account.json')
-    )
-    try:
-        result = subprocess.run(
-            ['python', script_path],
-            capture_output=True, text=True, check=False, env=env
-        )
-        return {
-            'stdout': result.stdout,
-            'stderr': result.stderr,
-            'returncode': result.returncode
-        }
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
-
-@app.get("/job-status/onchain-analyzer")
-def get_onchain_analyzer_status():
-    doc = db.job_status.find_one({"job": "onchain_analyzer"})
-    if doc:
-        if '_id' in doc:
-            doc['_id'] = str(doc['_id'])  # Convert ObjectId to string
-        return doc
-    return {"status": "never_run"}
 
 @app.get("/dashboard-summary")
 def dashboard_summary():
-    print("[DEBUG] /dashboard-summary endpoint called")
     try:
-        wallets = []
-        for doc in db.wallets.find({}):
-            doc['id'] = str(doc['_id'])
-            del doc['_id']
-            wallets.append(doc)
-        tokens = []
-        for doc in db.tokens.find({}):
-            doc['id'] = str(doc['_id'])
-            del doc['_id']
-            tokens.append(doc)
-        print(f"[DEBUG] /dashboard-summary loaded {len(wallets)} wallets and {len(tokens)} tokens")
-        # Get last update time from job_status/discovery or job_status/onchain_analyzer
-        last_update = None
-        for job in ['discovery', 'onchain_analyzer', 'ml_processor']:
-            doc = db.job_status.find_one({"job": job})
-            if doc:
-                ts = doc.get('last_run')
-                if ts:
-                    if isinstance(ts, str):
-                        t = ts
-                    else:
-                        t = ts.isoformat() if hasattr(ts, 'isoformat') else str(ts)
-                    if not last_update or t > last_update:
-                        last_update = t
-        now = datetime.utcnow()
-        today = now.date()
-        def is_today(ts):
-            try:
-                dt = date_parser.parse(ts)
-                return dt.date() == today
-            except Exception:
-                return False
-        total_wallets = len(wallets)
-        new_wallets_today = sum(1 for w in wallets if is_today(w.get('created_at', '')))
-        total_pnl = sum(float(w.get('on_chain_data', {}).get('pnl_sol', 0) or 0) for w in wallets)
-        
-        # Most profitable token (24h)
-        most_prof_token = None
-        max_token_pnl = float('-inf')
-        for t in tokens:
-            pnl_24h = float(t.get('pnl_24h', 0) or 0)
-            if pnl_24h > max_token_pnl:
-                max_token_pnl = pnl_24h
-                most_prof_token = t.get('symbol', t.get('token', 'N/A'))
-        
-        metrics = [
-            {"label": "Total Wallets Tracked", "value": str(total_wallets)},
-            {"label": "New Wallets Today", "value": f"+{new_wallets_today}"},
-            {"label": "Total PnL Tracked", "value": f"{total_pnl:,.0f} SOL"},
-            {"label": "Most Profitable Token (24h)", "value": most_prof_token or 'N/A'},
-        ]
+        client.admin.command('ping')
+    except Exception as db_error:
+        print(f"[ERROR] MongoDB connection failed: {db_error}")
+        return JSONResponse(status_code=500, content={"error": "Database connection failed"})
 
-        # --- Top 5 Most Profitable Wallets (All Time) ---
-        def get_pnl(w):
-            return float(w.get('on_chain_data', {}).get('pnl_sol', 0) or 0)
-        def get_win_rate(w):
-            return float(w.get('on_chain_data', {}).get('win_rate', 0) or 0)
-        def get_smart_score(w):
-            return float(w.get('ai_insights', {}).get('overall_smart_score', 0) or 0)
-        topWallets = sorted(wallets, key=get_pnl, reverse=True)[:5]
-        topWallets = [
-            {
-                "address": w.get('id', ''),
-                "pnl": f"{get_pnl(w):,.0f}",
-                "winRate": f"{get_win_rate(w):.0f}%",
-                "smartScore": int(get_smart_score(w)),
-                # Add raw MongoDB fields for frontend fallback/debugging
-                "profit": w.get('profit', 0),
-                "win_rate": w.get('on_chain_data', {}).get('win_rate', 0),
-                "quality_score": w.get('quality_score', 0),
-                "quality_tier": w.get('quality_tier', ''),
-            }
-            for w in topWallets
-        ]
+    wallets = list(db.wallets.find({}))
+    latest_tokens = list(db.minute_rank_snapshots.find({}).sort("retrieved_at", -1).limit(20))
 
-        # --- Top 5 "On Fire" Wallets (24h) ---
-        def get_pnl_24h(w):
-            return float(w.get('on_chain_data', {}).get('pnl_24h', 0) or 0)
-        def get_trades_24h(w):
-            return int(w.get('on_chain_data', {}).get('trades_24h', 0) or 0)
-        onFireWallets = sorted(wallets, key=get_pnl_24h, reverse=True)[:5]
-        onFireWallets = [
-            {
-                "address": w.get('id', ''),
-                "pnl": f"{get_pnl_24h(w):,.0f}",
-                "trades": get_trades_24h(w),
-            }
-            for w in onFireWallets
-        ]
+    # --- NEW: Helper function for safe normalization ---
+    def normalize(values):
+        valid_values = [v for v in values if v is not None]
+        if not valid_values: return [0.0] * len(values)
+        min_val, max_val = min(valid_values), max(valid_values)
+        if max_val == min_val: return [0.0] * len(values)
+        return [((v - min_val) / (max_val - min_val)) if v is not None else 0.0 for v in values]
 
-        # --- Trending Tokens by Volume (24h) ---
-        trendingTokens = sorted(tokens, key=lambda t: float(t.get('volume_24h', 0) or 0), reverse=True)[:5]
-        trendingTokens = [
-            {"token": t.get('symbol', t.get('token', 'N/A')), "volume": float(t.get('volume_24h', 0) or 0)}
-            for t in trendingTokens
-        ]
+    # --- UPGRADED RANKING LOGIC (GMGN DATA ONLY) ---
 
-        # --- ML Tag Cloud ---
-        mlTags = set()
-        for w in wallets:
-            tags = w.get('ai_insights', {}).get('tags_ml', [])
-            if tags:
-                mlTags.update(tags)
-        mlTags = sorted(list(mlTags))
+    # 1. Top Profitable Wallets (filtered for 'great' wallets, fallback if empty)
+    great_wallets = [
+        w for w in wallets
+        if w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0) > 0
+        and w.get('gmgn_detailed_stats', {}).get('winrate', 0) > 0.5
+        and w.get('ai_insights', {}).get('overall_smart_score', 0) > 0.5
+        and (w.get('gmgn_detailed_stats', {}).get('buy_7d', 0) + w.get('gmgn_detailed_stats', {}).get('sell_7d', 0)) >= 10
+    ]
+    if not great_wallets:
+        # Fallback: show top 5 by smart score, no filters
+        great_wallets = sorted(
+            [w for w in wallets if w.get('ai_insights', {}).get('overall_smart_score')],
+            key=lambda w: w['ai_insights']['overall_smart_score'], reverse=True
+        )[:5]
+    top_wallets_sorted = sorted(
+        great_wallets,
+        key=lambda w: w['ai_insights']['overall_smart_score'], reverse=True)
+    
+    top_wallets_summary = [{
+        "address": w.get('_id'),
+        "pnl_7d": f"{w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0):.2f}%",
+        "winRate": f"{w.get('gmgn_detailed_stats', {}).get('winrate', 0) * 100:.0f}%",
+        "smartScore": f"{w.get('ai_insights', {}).get('overall_smart_score', 0) * 100:.0f}",
+        "riskScore": f"{w.get('ai_insights', {}).get('risk_score', 0) * 100:.0f}",
+        "ml_tags": w.get('ai_insights', {}).get('tags_ml', [])
+    } for w in top_wallets_sorted[:20]]
 
-        result = {
+    # 2. Hot Wallets 1H (use 1 hour stats)
+    hot_wallets_candidates = [w for w in wallets if w.get('gmgn_detailed_stats')]
+    trades_1h_values = [w.get('gmgn_detailed_stats', {}).get('buy_1h', 0) + w.get('gmgn_detailed_stats', {}).get('sell_1h', 0) for w in hot_wallets_candidates]
+    pnl_1h_values = [w.get('gmgn_detailed_stats', {}).get('pnl_1h') for w in hot_wallets_candidates]
+    norm_trades_1h = normalize(trades_1h_values)
+    norm_pnl_1h = normalize(pnl_1h_values)
+    for i, w in enumerate(hot_wallets_candidates):
+        w['hot_score_1h'] = (norm_trades_1h[i] * 0.6) + (norm_pnl_1h[i] * 0.4)
+        w['trades_1h'] = trades_1h_values[i]
+        w['pnl_1h'] = pnl_1h_values[i] if pnl_1h_values[i] is not None else 0
+    filtered_hot_wallets_1h = [w for w in hot_wallets_candidates if w['trades_1h'] >= 5 and w['pnl_1h'] > 0]
+    if not filtered_hot_wallets_1h:
+        filtered_hot_wallets_1h = [w for w in hot_wallets_candidates if w['trades_1h'] > 0]
+        filtered_hot_wallets_1h = sorted(filtered_hot_wallets_1h, key=lambda w: w['hot_score_1h'], reverse=True)[:5]
+    else:
+        filtered_hot_wallets_1h = sorted(filtered_hot_wallets_1h, key=lambda w: w['hot_score_1h'], reverse=True)[:5]
+    hot_wallets_1h = [{
+        "address": w.get('_id'),
+        "trades_1h": w['trades_1h'],
+        "pnl_1h": f"{w['pnl_1h']:.2f}%"
+    } for w in filtered_hot_wallets_1h]
+
+    # 3. Top Risky Wallets (by ML risk_score, only if > 0, and stricter filters)
+    risky_wallets_sorted = sorted(
+        [w for w in wallets if w.get('ai_insights', {}).get('risk_score', 0) > 0
+         and w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0) > 0
+         and w.get('gmgn_detailed_stats', {}).get('winrate', 0) > 0.5
+         and (w.get('gmgn_detailed_stats', {}).get('buy_7d', 0) + w.get('gmgn_detailed_stats', {}).get('sell_7d', 0)) >= 10],
+        key=lambda w: w['ai_insights']['risk_score'], reverse=True)
+    top_risky_wallets_summary = [{
+        "address": w.get('_id'),
+        "pnl_7d": f"{w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0):.2f}%",
+        "winRate": f"{w.get('gmgn_detailed_stats', {}).get('winrate', 0) * 100:.0f}%",
+        "smartScore": f"{w.get('ai_insights', {}).get('overall_smart_score', 0) * 100:.0f}",
+        "riskScore": f"{w.get('ai_insights', {}).get('risk_score', 0) * 100:.0f}",
+        "ml_tags": w.get('ai_insights', {}).get('tags_ml', [])
+    } for w in risky_wallets_sorted[:5]]
+
+    # 4. ML Categories (top 5 most common tags_ml)
+    all_tags = []
+    for w in wallets:
+        tags = w.get('ai_insights', {}).get('tags_ml', [])
+        if tags:
+            all_tags.extend(tags)
+    tag_counts = Counter(all_tags)
+    ml_categories = [tag for tag, _ in tag_counts.most_common(5)]
+
+    # Trending Tokens (top 5 by market cap from latest 1-minute rank)
+    trending_tokens_summary = []
+    if latest_tokens:
+        sorted_tokens = sorted(latest_tokens, key=lambda t: t.get('market_cap', 0), reverse=True)
+        for t in sorted_tokens[:5]:
+            trending_tokens_summary.append({
+                "token": t.get('symbol', 'N/A'),
+                "market_cap": f"${t.get('market_cap', 0):,}"
+            })
+
+    # Placeholder for metrics, trending tokens, etc.
+    metrics = [{"label": "Total Wallets Tracked", "value": len(wallets)}]
+    return {
             "metrics": metrics,
-            "topWallets": topWallets,
-            "onFireWallets": onFireWallets,
-            "trendingTokens": trendingTokens,
-            "mlTags": mlTags,
-            "lastUpdate": last_update,
-        }
-        return result
-    except Exception as e:
-        print(f"[ERROR] /dashboard-summary exception: {e}")
-        raise
+        "topWallets": top_wallets_summary,
+        "hotWallets1h": hot_wallets_1h,
+        "topRiskyWallets": top_risky_wallets_summary,
+        "mlCategories": ml_categories,
+        "trendingTokens": trending_tokens_summary,
+        "mlTags": [],
+        "lastUpdate": datetime.utcnow().isoformat(),
+        "max_free_wallets": 5,  # For future frontend use
+    }
 
 @app.get("/recent-activity")
 def recent_activity():
@@ -412,125 +398,295 @@ def mongo_test():
 
 @app.get("/top-tokens")
 def get_top_tokens():
-    print("[DEBUG] /top-tokens endpoint called")
     try:
-        tokens = []
-        for doc in db.tokens.find({}):
+        client.admin.command('ping')
+    except Exception as db_error:
+        return JSONResponse(status_code=500, content={"error": "Database connection failed"})
+
+    # Get latest 1-minute rank tokens for fresh data
+    latest_tokens = list(db.minute_rank_snapshots.find({}).sort("retrieved_at", -1).limit(50))
+    
+    # Helper to safely convert to float, returns 0 if error
+    def to_float(value):
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return 0
+
+    # Sort tokens by different criteria using the latest 1-minute data
+    top_by_liquidity = sorted(latest_tokens, key=lambda t: to_float(t.get('liquidity')), reverse=True)[:10]
+    top_by_market_cap = sorted(latest_tokens, key=lambda t: to_float(t.get('market_cap')), reverse=True)[:10]
+    top_by_holders = sorted(latest_tokens, key=lambda t: to_float(t.get('holder_count', 0)), reverse=True)[:10]
+
+    # Sanitize data for a clean response
+    def sanitize_token(token):
+        return {
+            "address": token.get('address'),
+            "symbol": token.get('symbol'),
+            "logo": token.get('logo'),
+            "liquidity": f"${to_float(token.get('liquidity')):,}",
+            "market_cap": f"${to_float(token.get('market_cap')):,}",
+            "holder_count": f"{int(to_float(token.get('holder_count', 0))):,}"
+        }
+
+    # Get last update time from minute_rank job (more relevant for this endpoint)
+    last_update_doc = db.job_status.find_one({"job": "minute_rank"}, sort=[("last_update", -1)])
+    if not last_update_doc:
+        # Fallback to discovery job if minute_rank not found
+        last_update_doc = db.job_status.find_one({"job": "discovery"}, sort=[("last_update", -1)])
+    
+    last_update = last_update_doc['last_update'].isoformat() if last_update_doc else datetime.utcnow().isoformat()
+
+    return {
+        "top_by_liquidity": [sanitize_token(t) for t in top_by_liquidity],
+        "top_by_market_cap": [sanitize_token(t) for t in top_by_market_cap],
+        "top_by_holders": [sanitize_token(t) for t in top_by_holders],
+        "last_update": last_update,
+        "data_source": "1-minute_rank_snapshots"
+    }
+
+@app.get("/tokens/latest-minute-rank")
+def get_latest_minute_rank():
+    """
+    Returns the most recent batch of tokens from the 1-minute rank snapshot.
+    """
+    try:
+        # Get the 20 most recent tokens (i.e., the latest snapshot)
+        latest_tokens = list(db.minute_rank_snapshots.find({})
+            .sort("retrieved_at", -1)
+            .limit(20)
+        )
+        results = []
+        for doc in latest_tokens:
             doc['id'] = str(doc['_id'])
             del doc['_id']
-            tokens.append(doc)
-        
-        # Sort tokens by different criteria
-        def get_liquidity(t):
-            return float(t.get('liquidity', 0) or 0)
-        
-        def get_market_cap(t):
-            return float(t.get('market_cap', 0) or 0)
-        
-        def get_holder_count(t):
-            return int(t.get('holder_count', 0) or 0)
-        
-        # Top tokens by liquidity
-        top_by_liquidity = sorted(tokens, key=get_liquidity, reverse=True)[:10]
-        
-        # Top tokens by market cap
-        top_by_market_cap = sorted(tokens, key=get_market_cap, reverse=True)[:10]
-        
-        # Top tokens by holder count
-        top_by_holders = sorted(tokens, key=get_holder_count, reverse=True)[:10]
-        
-        # Calculate 24h performance (using more realistic algorithms based on available data)
-        for token in tokens:
-            liquidity = get_liquidity(token)
-            market_cap = get_market_cap(token)
-            holder_count = get_holder_count(token)
-            rug_ratio = float(token.get('rug_ratio', 0) or 0)
-            
-            if liquidity > 0 and market_cap > 0:
-                # More realistic 24h price change calculation:
-                # - Higher liquidity/market cap ratio = better stability
-                # - Lower rug ratio = better performance
-                # - More holders = better community sentiment
-                stability_ratio = liquidity / market_cap if market_cap > 0 else 0
-                community_score = min(holder_count / 1000, 1.0)  # Normalize holder count
-                rug_penalty = rug_ratio * 50  # Higher rug ratio = worse performance
-                
-                # Calculate price change based on multiple factors
-                base_change = (stability_ratio * 20) + (community_score * 15) - rug_penalty
-                # Add some randomness to make it more realistic
-                random_factor = random.uniform(-10, 10)
-                token['price_change_24h'] = round(base_change + random_factor, 2)
-                
-                # More realistic volume calculation
-                # Volume is typically 2-5x the liquidity for active tokens
-                volume_multiplier = random.uniform(1.5, 4.0)
-                token['volume_24h'] = round(liquidity * volume_multiplier, 2)
-            else:
-                token['price_change_24h'] = 0
-                token['volume_24h'] = 0
-        
-        # Top performing tokens (24h)
-        top_performers = sorted(tokens, key=lambda t: float(t.get('price_change_24h', 0) or 0), reverse=True)[:10]
-        
-        result = {
-            "top_by_liquidity": [
-                {
-                    "symbol": t.get('symbol', 'N/A'),
-                    "address": t.get('address', ''),
-                    "liquidity": get_liquidity(t),
-                    "market_cap": get_market_cap(t),
-                    "holders": get_holder_count(t),
-                    "rug_ratio": float(t.get('rug_ratio', 0) or 0),
-                    "price_change_24h": float(t.get('price_change_24h', 0) or 0),
-                    "volume_24h": float(t.get('volume_24h', 0) or 0)
-                }
-                for t in top_by_liquidity
-            ],
-            "top_by_market_cap": [
-                {
-                    "symbol": t.get('symbol', 'N/A'),
-                    "address": t.get('address', ''),
-                    "liquidity": get_liquidity(t),
-                    "market_cap": get_market_cap(t),
-                    "holders": get_holder_count(t),
-                    "rug_ratio": float(t.get('rug_ratio', 0) or 0),
-                    "price_change_24h": float(t.get('price_change_24h', 0) or 0),
-                    "volume_24h": float(t.get('volume_24h', 0) or 0)
-                }
-                for t in top_by_market_cap
-            ],
-            "top_by_holders": [
-                {
-                    "symbol": t.get('symbol', 'N/A'),
-                    "address": t.get('address', ''),
-                    "liquidity": get_liquidity(t),
-                    "market_cap": get_market_cap(t),
-                    "holders": get_holder_count(t),
-                    "rug_ratio": float(t.get('rug_ratio', 0) or 0),
-                    "price_change_24h": float(t.get('price_change_24h', 0) or 0),
-                    "volume_24h": float(t.get('volume_24h', 0) or 0)
-                }
-                for t in top_by_holders
-            ],
-            "top_performers": [
-                {
-                    "symbol": t.get('symbol', 'N/A'),
-                    "address": t.get('address', ''),
-                    "liquidity": get_liquidity(t),
-                    "market_cap": get_market_cap(t),
-                    "holders": get_holder_count(t),
-                    "rug_ratio": float(t.get('rug_ratio', 0) or 0),
-                    "price_change_24h": float(t.get('price_change_24h', 0) or 0),
-                    "volume_24h": float(t.get('volume_24h', 0) or 0)
-                }
-                for t in top_performers
-            ],
-            "last_update": datetime.utcnow().isoformat()
-        }
-        
-        print(f"[DEBUG] /top-tokens returning {len(tokens)} tokens")
-        return result
-        
+            results.append(sanitize_json(doc))
+        return results
     except Exception as e:
-        print(f"[ERROR] /top-tokens exception: {e}")
-        raise 
+        print("Error in /tokens/latest-minute-rank:", e)
+        return []
+
+def run_discovery_automatically():
+    """Background function to run discovery automatically"""
+    try:
+        print(f"[AUTO-DISCOVERY] Starting automatic discovery at {datetime.utcnow()}")
+        script_path = os.path.join(os.path.dirname(__file__), '../backend/js_scrapers/gmgn_coins_traders.js')
+        env = os.environ.copy()
+        env["FIREBASE_SERVICE_ACCOUNT_KEY_PATH"] = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '../config/solensai-service-account.json')
+        )
+        
+        result = subprocess.run(
+            ['node', script_path],
+            capture_output=True, 
+            text=True, 
+            encoding='utf-8',
+            errors='replace',
+            check=False, 
+            env=env
+        )
+        
+        if result.returncode == 0:
+            print(f"[AUTO-DISCOVERY] Successfully completed at {datetime.utcnow()}")
+            # Update job status
+            db.job_status.update_one({"job": "discovery"}, {"$set": {
+                "job": "discovery",
+                "status": "auto_complete",
+                "last_update": datetime.utcnow(),
+                "auto_run": True
+            }}, upsert=True)
+
+            # --- AUTO RUN ML PROCESSOR ---
+            try:
+                print("[AUTO-ML] Running ML Processor after discovery...")
+                ml_script_path = os.path.join(os.path.dirname(__file__), '../backend/python_scripts/ml_processor.py')
+                ml_result = subprocess.run(
+                    ['python', ml_script_path],
+                    capture_output=True,
+                    text=True,
+                    encoding='utf-8',
+                    errors='replace',
+                    check=False
+                )
+                print("--- ML Processor Output ---")
+                print(ml_result.stdout)
+                print("--- ML Processor Errors (if any) ---")
+                print(ml_result.stderr)
+                print("---------------------------------")
+            except Exception as ml_e:
+                print(f"[AUTO-ML] Exception running ML Processor: {ml_e}")
+        else:
+            print(f"[AUTO-DISCOVERY] Failed with return code {result.returncode}")
+            print(f"[AUTO-DISCOVERY] Error: {result.stderr}")
+            
+    except Exception as e:
+        print(f"[AUTO-DISCOVERY] Exception occurred: {e}")
+
+def run_minute_rank_automatically():
+    """Background function to fetch 1-minute token rank automatically"""
+    try:
+        print(f"[AUTO-1MIN-RANK] Starting 1-minute rank fetch at {datetime.utcnow()}")
+        script_path = os.path.join(os.path.dirname(__file__), '../backend/js_scrapers/fetch_minute_rank.js')
+        env = os.environ.copy()
+        env["FIREBASE_SERVICE_ACCOUNT_KEY_PATH"] = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '../config/solensai-service-account.json')
+        )
+        
+        result = subprocess.run(
+            ['node', script_path],
+            capture_output=True, 
+            text=True, 
+            encoding='utf-8',
+            errors='replace',
+            check=False, 
+            env=env
+        )
+        
+        if result.returncode == 0:
+            print(f"[AUTO-1MIN-RANK] Successfully completed at {datetime.utcnow()}")
+            # Update job status
+            db.job_status.update_one({"job": "minute_rank"}, {"$set": {
+                "job": "minute_rank",
+                "status": "auto_complete",
+                "last_update": datetime.utcnow(),
+                "auto_run": True
+            }}, upsert=True)
+        else:
+            print(f"[AUTO-1MIN-RANK] Failed with return code {result.returncode}")
+            print(f"[AUTO-1MIN-RANK] Error: {result.stderr}")
+            
+    except Exception as e:
+        print(f"[AUTO-1MIN-RANK] Exception occurred: {e}")
+
+def start_scheduler():
+    """Start the background scheduler"""
+    try:
+        # Add the discovery job to run every minute
+        scheduler.add_job(
+            func=run_discovery_automatically,
+            trigger=IntervalTrigger(minutes=1),
+            id='auto_discovery',
+            name='Automatic Discovery',
+            replace_existing=True
+        )
+        
+        # Add the 1-minute rank job to run every minute
+        scheduler.add_job(
+            func=run_minute_rank_automatically,
+            trigger=IntervalTrigger(minutes=1),
+            id='auto_minute_rank',
+            name='Automatic 1-Minute Rank',
+            replace_existing=True
+        )
+        
+        scheduler.start()
+        print("[SCHEDULER] Background scheduler started - discovery and 1-minute rank will run every minute")
+    except Exception as e:
+        print(f"[SCHEDULER] Failed to start scheduler: {e}")
+
+@app.on_event("startup")
+async def startup_event():
+    """Start the background scheduler when the app starts"""
+    start_scheduler()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Stop the background scheduler when the app shuts down"""
+    if scheduler.running:
+        scheduler.shutdown()
+        print("[SCHEDULER] Background scheduler stopped")
+
+@app.get("/scheduler-status")
+def get_scheduler_status():
+    """Get the status of the background scheduler"""
+    try:
+        jobs = []
+        for job in scheduler.get_jobs():
+            jobs.append({
+                "id": job.id,
+                "name": job.name,
+                "next_run_time": str(job.next_run_time) if job.next_run_time else None,
+                "trigger": str(job.trigger)
+            })
+        
+        return {
+            "scheduler_running": scheduler.running,
+            "jobs": jobs,
+            "job_count": len(jobs)
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/scheduler/start")
+def start_scheduler_manual():
+    """Manually start the scheduler"""
+    try:
+        if not scheduler.running:
+            start_scheduler()
+            return {"status": "started", "message": "Scheduler started successfully"}
+        else:
+            return {"status": "already_running", "message": "Scheduler is already running"}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/scheduler/stop")
+def stop_scheduler_manual():
+    """Manually stop the scheduler"""
+    try:
+        if scheduler.running:
+            scheduler.shutdown()
+            return {"status": "stopped", "message": "Scheduler stopped successfully"}
+        else:
+            return {"status": "not_running", "message": "Scheduler is not running"}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/scheduler/run-now")
+def run_discovery_now():
+    """Manually trigger discovery immediately"""
+    try:
+        # Run discovery in a separate thread to avoid blocking
+        thread = threading.Thread(target=run_discovery_automatically)
+        thread.daemon = True
+        thread.start()
+        return {"status": "triggered", "message": "Discovery started in background"}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/scheduler/run-minute-rank-now")
+def run_minute_rank_now():
+    """Manually trigger 1-minute rank fetch immediately"""
+    try:
+        # Run 1-minute rank fetch in a separate thread to avoid blocking
+        thread = threading.Thread(target=run_minute_rank_automatically)
+        thread.daemon = True
+        thread.start()
+        return {"status": "triggered", "message": "1-minute rank fetch started in background"}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/scheduler/run-all-now")
+def run_all_now():
+    """Manually trigger both discovery and 1-minute rank fetch immediately"""
+    try:
+        # Run both in separate threads to avoid blocking
+        discovery_thread = threading.Thread(target=run_discovery_automatically)
+        discovery_thread.daemon = True
+        discovery_thread.start()
+        
+        minute_rank_thread = threading.Thread(target=run_minute_rank_automatically)
+        minute_rank_thread.daemon = True
+        minute_rank_thread.start()
+        
+        return {"status": "triggered", "message": "Discovery and 1-minute rank fetch started in background"}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/token/{token_address}")
+def get_token(token_address: str):
+    doc = db.tokens.find_one({"address": token_address})
+    if doc:
+        doc['id'] = str(doc['_id'])
+        del doc['_id']
+        return doc
+    return JSONResponse(status_code=404, content={"error": "Token not found"}) 
