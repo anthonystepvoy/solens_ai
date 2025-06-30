@@ -90,68 +90,84 @@ function filterTopQualityTokens(tokens, maxTokens = 5) {
 }
 
 async function main() {
+    const scriptStart = Date.now();
     console.log("--- STARTING SMART DISCOVERY ENGINE WITH QUALITY FILTERING ---");
     
     try {
+        const mongoStart = Date.now();
         await client.connect();
         db = client.db("solens_ai");
-        console.log("✓ Connected to MongoDB");
+        console.log("\u2713 Connected to MongoDB");
+        console.log(`[TIMER] MongoDB connect: ${(Date.now() - mongoStart) / 1000}s`);
 
         // 1. Get the LATEST 20 tokens from the 1-minute snapshot collection.
+        const fetchTokensStart = Date.now();
         const tokensToProcess = await db.collection("minute_rank_snapshots")
             .find({})
             .sort({ retrieved_at: -1 }) // Get the most recent documents first
             .limit(20) // Limit to the size of a single snapshot
             .toArray();
+        console.log(`[TIMER] Fetch tokens from DB: ${(Date.now() - fetchTokensStart) / 1000}s`);
 
         if (tokensToProcess.length === 0) {
-            console.log("✓ No tokens found in the minute_rank_snapshots collection yet. Run the 1-minute fetcher first. Exiting.");
+            console.log("\u2713 No tokens found in the minute_rank_snapshots collection yet. Run the 1-minute fetcher first. Exiting.");
             return;
         }
 
-        console.log(`🔥 Found ${tokensToProcess.length} tokens from the latest snapshot.`);
+        console.log(`\ud83d\udd25 Found ${tokensToProcess.length} tokens from the latest snapshot.`);
         
+        const filterStart = Date.now();
         // 2. Filter for top quality tokens only
         const topQualityTokens = filterTopQualityTokens(tokensToProcess, 5); // Process only top 5
+        console.log(`[TIMER] Filter top quality tokens: ${(Date.now() - filterStart) / 1000}s`);
         
+        const browserStart = Date.now();
         const browser = await puppeteer.launch({ headless: true, args: ["--no-sandbox"] });
         const page = await browser.newPage();
+        console.log(`[TIMER] Puppeteer launch: ${(Date.now() - browserStart) / 1000}s`);
         
         // Set page timeouts
         page.setDefaultTimeout(30000);
         page.setDefaultNavigationTimeout(30000);
 
         // First navigate to the main site to establish domain context
+        const navStart = Date.now();
         console.log("Establishing domain context by navigating to gmgn.ai...");
         await page.goto("https://gmgn.ai", { waitUntil: "domcontentloaded", timeout: 30000 });
-        console.log("✓ Domain context established");
+        console.log(`[TIMER] Navigation to gmgn.ai: ${(Date.now() - navStart) / 1000}s`);
+        console.log("\u2713 Domain context established");
 
         let totalNewWallets = 0;
         let totalDetailedStats = 0;
 
         for (const coin of topQualityTokens) {
+            const tokenStart = Date.now();
             const coinAddress = coin.address;
             console.log(`\n--- Processing TOP QUALITY Token: ${coin.symbol || coinAddress.slice(0, 6)} (Score: ${coin.quality_score}/100) ---`);
             
             try {
                 const topTradersUrl = `https://gmgn.ai/defi/quotation/v1/tokens/top_traders/sol/${coinAddress}?orderby=profit&direction=desc`;
-                
+                const tradersApiStart = Date.now();
                 const tradesData = await page.evaluate(async (url) => {
                     const response = await fetch(url, { headers: { "accept": "application/json" } });
                     if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
                     return response.json();
                 }, topTradersUrl);
+                console.log(`[TIMER] Traders API for ${coin.symbol || coinAddress.slice(0, 6)}: ${(Date.now() - tradersApiStart) / 1000}s`);
 
                 if (tradesData.code === 0 && tradesData.data) {
                     const topTraders = tradesData.data.filter(t => t.realized_profit > 0.05).slice(0, 20);
-                    console.log(`✓ Found ${topTraders.length} profitable traders for ${coin.symbol || "Unknown"}.`);
+                    console.log(`\u2713 Found ${topTraders.length} profitable traders for ${coin.symbol || "Unknown"}.`);
 
                     for (const trader of topTraders) {
+                        const walletStart = Date.now();
                         const walletAddress = trader.address;
                         
                         // Fetch detailed wallet stats
                         console.log(`  Fetching detailed stats for ${walletAddress.slice(0, 8)}...`);
+                        const detailedStatsApiStart = Date.now();
                         const detailedStats = await fetchDetailedWalletStats(page, walletAddress);
+                        console.log(`  [TIMER] Detailed stats API for ${walletAddress.slice(0, 8)}: ${(Date.now() - detailedStatsApiStart) / 1000}s`);
                         
                         const walletData = {
                             gmgn_data: {
@@ -172,9 +188,10 @@ async function main() {
                         if (detailedStats) {
                             walletData.gmgn_detailed_stats = detailedStats;
                             totalDetailedStats++;
-                            console.log(`    ✓ Detailed stats added`);
+                            console.log(`    \u2713 Detailed stats added`);
                         }
 
+                        const upsertStart = Date.now();
                         const result = await db.collection("wallets").updateOne(
                             { _id: trader.address },
                             { 
@@ -183,6 +200,7 @@ async function main() {
                             },
                             { upsert: true }
                         );
+                        console.log(`  [TIMER] Wallet upsert for ${walletAddress.slice(0, 8)}: ${(Date.now() - upsertStart) / 1000}s`);
 
                         if (result.upsertedCount > 0) {
                             console.log(`[NEW WALLET] Inserted: ${trader.address}`);
@@ -193,26 +211,28 @@ async function main() {
 
                         // Small delay to avoid rate limiting
                         await new Promise(resolve => setTimeout(resolve, 200));
+                        console.log(`  [TIMER] Total wallet processing for ${walletAddress.slice(0, 8)}: ${(Date.now() - walletStart) / 1000}s`);
                     }
                 }
-
+                console.log(`[TIMER] Total token processing for ${coin.symbol || coinAddress.slice(0, 6)}: ${(Date.now() - tokenStart) / 1000}s`);
             } catch (error) {
-                console.error(`✗ Error processing traders for token ${coinAddress}: ${error.message}`);
+                console.error(`\u2717 Error processing traders for token ${coinAddress}: ${error.message}`);
             }
         }
 
         await browser.close();
         
-        console.log(`\n🎉 SMART DISCOVERY COMPLETE!`);
-        console.log(`📊 Summary:`);
+        console.log(`\n\ud83c\udf89 SMART DISCOVERY COMPLETE!`);
+        console.log(`\ud83d\udcca Summary:`);
         console.log(`   • Total tokens analyzed: ${tokensToProcess.length}`);
         console.log(`   • High-quality tokens processed: ${topQualityTokens.length}`);
         console.log(`   • Total new wallets discovered: ${totalNewWallets}`);
         console.log(`   • Wallets with detailed stats: ${totalDetailedStats}`);
         console.log(`   • Time saved: ~${Math.round((tokensToProcess.length - topQualityTokens.length) * 2)} minutes`);
+        console.log(`[TIMER] Total script time: ${(Date.now() - scriptStart) / 1000}s`);
 
     } catch (error) {
-        console.error("✗ A fatal error occurred in the discovery engine:", error);
+        console.error("\u2717 A fatal error occurred in the discovery engine:", error);
     } finally {
         await client.close();
         console.log("--- SMART DISCOVERY ENGINE FINISHED ---");

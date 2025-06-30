@@ -8,44 +8,48 @@ const MONGO_URI = "mongodb+srv://santowastaken:DGsmWd4ikXVNxA8@cluster0.vxseyuu.
 const client = new MongoClient(MONGO_URI);
 
 async function fetchLatestMinuteRank() {
+  const scriptStart = Date.now();
   console.log(`[${new Date().toISOString()}] Running 1-Minute Rank Fetch...`);
   const oneMinuteRankUrl = "https://gmgn.ai/defi/quotation/v1/rank/sol/swaps/1m?orderby=open_timestamp&direction=desc&limit=20&filters[]=renounced&filters[]=frozen&platforms[]=pump&platforms[]=pumpamm&platforms[]=moonshot&platforms[]=raydium&platforms[]=meteora&platforms[]=fluxbeam&platforms[]=orca&platforms[]=ray_launchpad&platforms[]=boop";
   
   console.log(`Fetching from: ${oneMinuteRankUrl}`);
   
+  const browserStart = Date.now();
   const browser = await puppeteer.launch({ 
     headless: true, 
     args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
     timeout: 30000
   });
   const page = await browser.newPage();
+  console.log(`[TIMER] Puppeteer launch: ${(Date.now() - browserStart) / 1000}s`);
 
   try {
     // Set page timeouts
     page.setDefaultTimeout(30000);
     page.setDefaultNavigationTimeout(30000);
 
+    const navStart = Date.now();
     console.log("Navigating to gmgn.ai main site...");
-    
-    // First navigate to the main site to establish the domain context
     await page.goto("https://gmgn.ai", { waitUntil: "domcontentloaded", timeout: 30000 });
+    console.log(`[TIMER] Navigation to gmgn.ai: ${(Date.now() - navStart) / 1000}s`);
     
     console.log("Main site loaded, now fetching API data...");
-    
-    // Now use the same working approach as gmgn_coins_traders.js
+    const apiStart = Date.now();
     const rankData = await page.evaluate(async (url) => {
       const response = await fetch(url, { headers: { "accept": "application/json" } });
       if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
       return response.json();
     }, oneMinuteRankUrl);
+    console.log(`[TIMER] API fetch: ${(Date.now() - apiStart) / 1000}s`);
 
     console.log("API response received, processing data...");
 
     if (rankData.code === 0 && rankData.data && rankData.data.rank) {
       const latestTokens = rankData.data.rank;
-      console.log(`✓ API returned ${latestTokens.length} tokens`);
+      console.log(`\u2713 API returned ${latestTokens.length} tokens`);
       
       if (latestTokens.length > 0) {
+        const mongoStart = Date.now();
         await client.connect();
         const db = client.db("solens_ai");
 
@@ -57,7 +61,8 @@ async function fetchLatestMinuteRank() {
 
         // Using insertMany for efficiency
         const result = await db.collection("minute_rank_snapshots").insertMany(documentsToInsert);
-        console.log(`✓ Inserted ${result.insertedCount} new tokens into minute_rank_snapshots.`);
+        console.log(`[TIMER] MongoDB insertMany: ${(Date.now() - mongoStart) / 1000}s`);
+        console.log(`\u2713 Inserted ${result.insertedCount} new tokens into minute_rank_snapshots.`);
         
         // Show first few tokens for verification
         console.log("First 3 tokens inserted:");
@@ -65,17 +70,18 @@ async function fetchLatestMinuteRank() {
           console.log(`  ${i+1}. ${token.symbol || 'Unknown'} (${token.address.slice(0, 8)}...)`);
         });
       } else {
-        console.log("✓ 1-minute rank API returned 0 tokens. No data inserted.");
+        console.log("\u2713 1-minute rank API returned 0 tokens. No data inserted.");
       }
     } else {
-      console.error("✗ API response format unexpected:", rankData);
+      console.error("\u2717 API response format unexpected:", rankData);
     }
   } catch (error) {
-    console.error("✗ Error in fetch_minute_rank.js:", error.message);
+    console.error("\u2717 Error in fetch_minute_rank.js:", error.message);
     console.error("Full error:", error);
   } finally {
     await browser.close();
     await client.close();
+    console.log(`[TIMER] Total script time: ${(Date.now() - scriptStart) / 1000}s`);
   }
 }
 
