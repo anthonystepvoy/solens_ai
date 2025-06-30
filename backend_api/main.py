@@ -310,9 +310,9 @@ def dashboard_summary():
 
     # 4. ML Categories (top 5 most common tags_ml)
     all_tags = []
-    for w in wallets:
-        tags = w.get('ai_insights', {}).get('tags_ml', [])
-        if tags:
+        for w in wallets:
+            tags = w.get('ai_insights', {}).get('tags_ml', [])
+            if tags:
             all_tags.extend(tags)
     tag_counts = Counter(all_tags)
     ml_categories = [tag for tag, _ in tag_counts.most_common(5)]
@@ -613,7 +613,7 @@ def get_scheduler_status():
             "scheduler_running": scheduler.running,
             "jobs": jobs,
             "job_count": len(jobs)
-        }
+                }
     except Exception as e:
         return {"error": str(e)}
 

@@ -60,7 +60,7 @@ function calculateTokenQualityScore(token) {
     if (!token.is_honeypot) score += 10;
     
     return score;
-}
+    }
 
 function filterTopQualityTokens(tokens, maxTokens = 5) {
     console.log(`🔍 Filtering ${tokens.length} tokens for quality...`);
@@ -198,8 +198,8 @@ async function main() {
                                 $set: walletData, 
                                 $addToSet: { discovered_by: 'Smart_Quality_Filtered_Discovery' } 
                             },
-                            { upsert: true }
-                        );
+                        { upsert: true }
+                      );
                         console.log(`  [TIMER] Wallet upsert for ${walletAddress.slice(0, 8)}: ${(Date.now() - upsertStart) / 1000}s`);
 
                         if (result.upsertedCount > 0) {
