@@ -26,7 +26,7 @@ function WalletAddress({ address, short = false }: { address: string, short?: bo
         cursor: 'pointer', 
         userSelect: 'all', 
         color: '#00ff41', 
-        fontWeight: 600, 
+        fontWeight: 400, 
         position: 'relative', 
         fontFamily: '"Courier New", monospace',
         fontSize: '13px',
@@ -204,7 +204,8 @@ function DashboardPage() {
                     fontSize: 16, 
                     fontWeight: 600,
                     color: '#ffffff',
-                    letterSpacing: '1px'
+                    letterSpacing: '1px',
+                    fontFamily: '"Courier New", monospace'
                   }}>[TOP_PROFITABLE_WALLETS]</h3>
                   <div style={{
                     display: 'grid',
@@ -215,7 +216,8 @@ function DashboardPage() {
                     fontFamily: '"Courier New", monospace',
                     borderBottom: '1px solid #333333',
                     paddingBottom: 8,
-                    marginBottom: 8
+                    marginBottom: 8,
+                    fontWeight: 600
                   }}>
                     <span>ADDRESS</span>
                     <span>PNL_7D</span>
@@ -232,12 +234,13 @@ function DashboardPage() {
                       padding: '8px 0',
                       borderBottom: i < topWallets.length - 1 ? '1px solid #333333' : 'none',
                       fontFamily: '"Courier New", monospace',
+                      fontSize: 13,
                       background: i % 2 === 0 ? 'rgba(0,255,65,0.03)' : 'transparent'
                     }}>
                           <WalletAddress address={w.address} short={true} />
-                      <span style={{ color: '#00ff41', fontWeight: 700 }}>{w.pnl_7d !== undefined ? (parseFloat(w.pnl_7d) * 100).toFixed(2) + '%' : ''}</span>
-                      <span>{w.winRate}</span>
-                      <span style={{ color: '#00ff41', fontWeight: 700 }}>{!isNaN(parseFloat(w.smartScore)) ? `${parseFloat(w.smartScore).toFixed(0)}%` : 'N/A'}</span>
+                      <span style={{ color: '#00ff41', fontWeight: 400, fontFamily: '"Courier New", monospace', fontSize: 13 }}>{w.pnl_7d !== undefined ? (parseFloat(w.pnl_7d) * 100).toFixed(2) + '%' : ''}</span>
+                      <span style={{ fontFamily: '"Courier New", monospace', fontSize: 13 }}>{w.winRate}</span>
+                      <span style={{ color: '#00ff41', fontWeight: 400, fontFamily: '"Courier New", monospace', fontSize: 13 }}>{!isNaN(parseFloat(w.smartScore)) ? `${parseFloat(w.smartScore).toFixed(0)}%` : 'N/A'}</span>
                       <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                         {w.ml_tags && w.ml_tags.length > 0 ? w.ml_tags.map((tag, j) => (
                           <span key={j} style={{
@@ -247,10 +250,11 @@ function DashboardPage() {
                             padding: '2px 6px',
                             fontSize: 11,
                             borderRadius: 0,
-                            fontFamily: 'inherit',
-                            letterSpacing: '0.5px'
+                            fontFamily: '"Courier New", monospace',
+                            letterSpacing: '0.5px',
+                            fontWeight: 400
                           }}>{tag}</span>
-                        )) : <span style={{ color: '#555' }}>-</span>}
+                        )) : <span style={{ color: '#555', fontFamily: '"Courier New", monospace', fontSize: 13 }}>-</span>}
                       </span>
                     </div>
                   ))}
@@ -259,20 +263,20 @@ function DashboardPage() {
                 {/* Hot Wallets 1H */}
                 <div>
                   <div style={{ background: 'rgba(255, 255, 255, 0.02)', color: '#ffffff', borderRadius: 0, padding: 24, border: '1px solid #333333', marginBottom: 16, fontFamily: '"Courier New", monospace' }}>
-                    <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600, color: '#ffffff', letterSpacing: '1px' }}>[HOT_WALLETS_1H]</h3>
+                    <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600, color: '#ffffff', letterSpacing: '1px', fontFamily: '"Courier New", monospace' }}>[HOT_WALLETS_1H]</h3>
                     {hotWallets1h.length === 0 ? (
-                      <div style={{ color: '#ff6b6b', fontSize: 14 }}>[NO HOT WALLETS FOUND IN LAST 1H]</div>
+                      <div style={{ color: '#ff6b6b', fontSize: 14, fontFamily: '"Courier New", monospace' }}>[NO HOT WALLETS FOUND IN LAST 1H]</div>
                     ) : hotWallets1h.map((w, i) => (
-                      <div key={i} style={{ padding: '12px 0', borderBottom: i < hotWallets1h.length - 1 ? '1px solid #333333' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div key={i} style={{ padding: '12px 0', borderBottom: i < hotWallets1h.length - 1 ? '1px solid #333333' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: '"Courier New", monospace' }}>
                         <div>
-                          <div style={{ fontSize: 14, marginBottom: 4 }}>
+                          <div style={{ fontSize: 14, marginBottom: 4, fontFamily: '"Courier New", monospace' }}>
                             <WalletAddress address={w.address} short={true} />
                           </div>
-                          <div style={{ fontSize: 12, color: '#cccccc' }}>
-                            TRADES_1H: <span style={{ color: '#00ff41' }}>{w.trades_1h}</span>
+                          <div style={{ fontSize: 12, color: '#cccccc', fontFamily: '"Courier New", monospace' }}>
+                            TRADES_1H: <span style={{ color: '#00ff41', fontFamily: '"Courier New", monospace' }}>{w.trades_1h}</span>
                           </div>
                         </div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#00ff41', textAlign: 'right' }}>
+                        <div style={{ fontSize: 14, fontWeight: 400, color: '#00ff41', textAlign: 'right', fontFamily: '"Courier New", monospace' }}>
                           {w.pnl_1h !== undefined ? w.pnl_1h : ''}
                         </div>
                       </div>
@@ -310,14 +314,15 @@ function DashboardPage() {
                       fontSize: 16, 
                       fontWeight: 600,
                       color: '#ffffff',
-                      letterSpacing: '1px'
+                      letterSpacing: '1px',
+                      fontFamily: '"Courier New", monospace'
                     }}>[ML_CATEGORIES]</h3>
                     {mlCategories.length === 0 ? (
-                      <div style={{ color: '#555', fontSize: 14 }}>[NO ML CATEGORIES FOUND]</div>
+                      <div style={{ color: '#555', fontSize: 14, fontFamily: '"Courier New", monospace' }}>[NO ML CATEGORIES FOUND]</div>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {mlCategories.map((cat, i) => (
-                          <span key={i} style={{ color: '#00ff41', border: '1px solid #00ff41', padding: '4px 12px', fontFamily: 'inherit', fontSize: 14, borderRadius: 0, width: 'fit-content' }}>{cat}</span>
+                          <span key={i} style={{ color: '#00ff41', border: '1px solid #00ff41', padding: '4px 12px', fontFamily: '"Courier New", monospace', fontSize: 14, borderRadius: 0, width: 'fit-content' }}>{cat}</span>
                       ))}
                     </div>
                     )}
@@ -1438,7 +1443,7 @@ function CopytradeFinderPage() {
 
   return (
     <div style={{ marginTop: 32, maxWidth: 900, margin: '32px auto 0', padding: '0 24px', fontFamily: '"Courier New", monospace', color: '#fff' }}>
-      <h1 style={{ color: '#00ff41', marginBottom: 16, fontSize: 24, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: 'inherit' }}>&gt; COPYTRADE_FINDER</h1>
+      <h1 style={{ color: '#cccccc', marginBottom: 16, fontSize: 24, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: 'inherit' }}>&gt; COPYTRADE_FINDER</h1>
       <p style={{ color: '#cccccc', marginBottom: 24, fontFamily: 'inherit', fontSize: 14 }}>[ADVANCED_PATTERN_RECOGNITION_SYSTEM]</p>
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         <input
@@ -1552,11 +1557,9 @@ function MainAppLayout() {
           <h1
             style={{ 
             margin: 0, 
-            fontSize: 20, 
-            fontWeight: 700, 
-            color: '#00ff41',
+            fontSize: 20,            
+            color: '#cccccc',
             fontFamily: '"Courier New", monospace',
-              letterSpacing: '2px',
               cursor: 'pointer',
               userSelect: 'none',
               transition: 'color 0.2s',
@@ -1566,7 +1569,7 @@ function MainAppLayout() {
             onMouseLeave={e => (e.currentTarget.style.color = '#00ff41')}
             title="Go to Home"
           >
-            &gt;CIPHER
+            CIPHER
           </h1>
           <p style={{ 
             margin: '4px 0 0 0', 
@@ -1704,9 +1707,9 @@ function App() {
 function MLProcessorPage() {
   return (
     <div style={{ marginTop: 32, maxWidth: 800, margin: '32px auto 0', padding: '0 24px', fontFamily: '"Courier New", monospace', color: '#fff' }}>
-      <h1 style={{ color: '#00ff41', marginBottom: 16, fontSize: 24, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: 'inherit' }}>&gt; ML_PROCESSOR</h1>
+      <h1 style={{ color: '#cccccc', marginBottom: 16, fontSize: 24, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: 'inherit' }}>&gt; ML_PROCESSOR</h1>
       <p style={{ color: '#cccccc', marginBottom: 24, fontFamily: 'inherit', fontSize: 14 }}>[ARTIFICIAL_INTELLIGENCE_CORE]</p>
-      <div style={{ color: '#00ff41', fontWeight: 600, fontSize: 16, marginTop: 32, fontFamily: 'inherit', marginBottom: 32 }}>[ML PROCESSOR MODULE]</div>
+      <div style={{ color: '#cccccc', fontWeight: 600, fontSize: 16, marginTop: 32, fontFamily: 'inherit', marginBottom: 32 }}>[ML PROCESSOR MODULE]</div>
       <div style={{ color: '#cccccc', fontSize: 15, lineHeight: 1.7, background: 'rgba(0,255,65,0.04)', border: '1px solid #00ff41', borderRadius: 0, padding: 24, marginBottom: 32 }}>
         <b style={{ color: '#00ff41' }}>[WHAT IS THIS?]</b><br/>
         The ML Processor is the AI core of Cipher. It analyzes wallet and token data using machine learning algorithms to generate smart scores, risk scores, and predictive trading insights. <br/><br/>
@@ -1717,9 +1720,8 @@ function MLProcessorPage() {
         - Enables advanced filtering and ranking of traders.<br/>
         - Powers the AI-driven leaderboards and wallet discovery.<br/><br/>
         <b style={{ color: '#00ff41' }}>[COMING SOON]</b><br/>
-        Future versions will include predictive analytics, anomaly detection, and personalized trading recommendations.
+        Future versions will include predictive analytics, anomaly detection, and recommendations.
       </div>
-      <div style={{ color: '#00ff41', fontWeight: 600, fontSize: 16, marginTop: 32, fontFamily: 'inherit' }}>[ML PROCESSOR MODULE COMING SOON]</div>
     </div>
   );
 }

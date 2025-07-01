@@ -13,7 +13,7 @@ const MatrixText: React.FC<{
   onMouseLeave?: () => void;
 }> = ({ children, isHovered, style, onClick, buttonStyle, onMouseEnter, onMouseLeave }) => {
   const [displayText, setDisplayText] = useState(children);
-  const characters = '█▄▀▐░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌ΣΨΩΦΧΘΠΔΛΞΓΠΘΜΞΩΦΨΣΔΓΛΧΞΘΠΦΨΣΩΧΓΛΔΞΘΠΦΨΣΩΧΓΛΔ';
+  const characters = '█▄▀▐░▒▓│┤╡╢╖╕╣║╗╝╜╛ΣΔΓΛΧΞΘΠΦΨ┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌ΣΨΩΦΧΘΠΔΛΞΓΠΘΜΞΩΦΨΣΩΧΓΛΔΞΘΠΦΨΣΩΧΓΛΔ';
   
   useEffect(() => {
     if (!isHovered) {
