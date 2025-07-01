@@ -163,35 +163,7 @@ function DashboardPage() {
 
   // --- UI ---
   return (
-    <div style={{ marginTop: 0, position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '0 24px', fontFamily: '"Courier New", monospace' }}>
-      {/* TOP BANNER */}
-      <div style={{
-        width: '100%',
-        background: '#000',
-        borderBottom: '2px solid #00ff41',
-        color: '#00ff41',
-        fontFamily: '"Courier New", monospace',
-        fontSize: 15,
-        fontWeight: 700,
-        letterSpacing: 1,
-        padding: '18px 0 10px 0',
-        marginBottom: 32,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100,
-        boxShadow: '0 2px 12px #000',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-          {metrics.map((m, i) => (
-            <span key={i} style={{ color: '#00ff41', fontWeight: 700 }}>
-              [{m.label?.toUpperCase()}: <span style={{ color: '#fff' }}>{m.value}</span>]
-            </span>
-          ))}
-        </div>
-      </div>
+    <div style={{ marginTop: 0, position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '32px 24px 0', fontFamily: '"Courier New", monospace' }}>
 
       <h1 style={{ 
         color: '#ffffff', 
@@ -215,7 +187,7 @@ function DashboardPage() {
           {/* --- DASHBOARD GRID REARRANGED --- */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             {/* Top row: Profitable | Hot Wallets (1H) | Top Tokens */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
               {/* Top Profitable Wallets */}
               <div>
                 <div style={{ 
@@ -236,7 +208,7 @@ function DashboardPage() {
                   }}>[TOP_PROFITABLE_WALLETS]</h3>
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(180px,1.5fr) 1fr 1fr 1fr 1fr 2fr',
+                    gridTemplateColumns: 'minmax(180px,1.5fr) 1fr 1fr 1fr 2.5fr',
                     gap: 12,
                     fontSize: 13,
                     color: '#cccccc',
@@ -249,13 +221,12 @@ function DashboardPage() {
                     <span>PNL_7D</span>
                     <span>WIN_RATE</span>
                     <span>SMART_SCORE</span>
-                    <span>RISK</span>
                     <span>ML_TAGS</span>
                   </div>
                       {topWallets.map((w, i) => (
                     <div key={i} style={{ 
                       display: 'grid',
-                      gridTemplateColumns: 'minmax(180px,1.5fr) 1fr 1fr 1fr 1fr 2fr',
+                      gridTemplateColumns: 'minmax(180px,1.5fr) 1fr 1fr 1fr 2.5fr',
                       gap: 12,
                       alignItems: 'center',
                       padding: '8px 0',
@@ -267,7 +238,6 @@ function DashboardPage() {
                       <span style={{ color: '#00ff41', fontWeight: 700 }}>{w.pnl_7d !== undefined ? (parseFloat(w.pnl_7d) * 100).toFixed(2) + '%' : ''}</span>
                       <span>{w.winRate}</span>
                       <span style={{ color: '#00ff41', fontWeight: 700 }}>{!isNaN(parseFloat(w.smartScore)) ? `${parseFloat(w.smartScore).toFixed(0)}%` : 'N/A'}</span>
-                      <span>{!isNaN(parseFloat(w.riskScore)) ? `${parseFloat(w.riskScore).toFixed(0)}%` : 'N/A'}</span>
                       <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                         {w.ml_tags && w.ml_tags.length > 0 ? w.ml_tags.map((tag, j) => (
                           <span key={j} style={{
@@ -313,7 +283,7 @@ function DashboardPage() {
               {/* Top Tokens and stacked below: Top Risky Wallets, ML Categories */}
               <div>
                 {/* Top Tokens */}
-                <div style={{ background: 'rgba(255, 255, 255, 0.02)', color: '#ffffff', borderRadius: 0, padding: 24, border: '1px solid #333333', fontFamily: '"Courier New", monospace' }}>
+                {/* <div style={{ background: 'rgba(255, 255, 255, 0.02)', color: '#ffffff', borderRadius: 0, padding: 24, border: '1px solid #333333', fontFamily: '"Courier New", monospace' }}>
                   <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600, color: '#ffffff', letterSpacing: '1px' }}>[TOP_TOKENS]</h3>
                   {trendingTokens.map((t, i) => (
                     <div key={i} style={{ padding: '8px 0', borderBottom: i < trendingTokens.length - 1 ? '1px solid #333333' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -321,80 +291,12 @@ function DashboardPage() {
                       <div style={{ fontSize: 12, color: '#00ff41' }}>MC: {t.market_cap}</div>
                     </div>
                   ))}
-                </div>
+                </div> */}
                 {/* Top Risky Wallets below Top Tokens, same width */}
-                <div style={{ marginTop: 24 }}>
-                  {/* ...[TOP_RISKY_WALLETS] block unchanged, but full width here... */}
-                  <div style={{ 
-                    background: 'rgba(255, 255, 255, 0.02)', 
-                    color: '#ffffff', 
-                    borderRadius: 0, 
-                    padding: 24, 
-                    border: '1px solid #333333',
-                    fontFamily: '"Courier New", monospace'
-                  }}>
-                    <h3 style={{ 
-                      marginBottom: 16, 
-                      fontSize: 16, 
-                      fontWeight: 600,
-                      color: '#ffffff',
-                      letterSpacing: '1px'
-                    }}>[TOP_RISKY_WALLETS]</h3>
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'minmax(180px,1.5fr) 1fr 1fr 1fr 1fr 2fr',
-                      gap: 12,
-                      fontSize: 13,
-                      color: '#cccccc',
-                      fontFamily: '"Courier New", monospace',
-                      borderBottom: '1px solid #333333',
-                      paddingBottom: 8,
-                      marginBottom: 8
-                    }}>
-                      <span>ADDRESS</span>
-                      <span>PNL_7D</span>
-                      <span>WIN_RATE</span>
-                      <span>SMART_SCORE</span>
-                      <span>RISK</span>
-                      <span>ML_TAGS</span>
-                    </div>
-                    {topRiskyWallets.map((w, i) => (
-                      <div key={i} style={{ 
-                        display: 'grid',
-                        gridTemplateColumns: 'minmax(180px,1.5fr) 1fr 1fr 1fr 1fr 2fr',
-                        gap: 12,
-                        alignItems: 'center',
-                        padding: '8px 0', 
-                        borderBottom: i < topRiskyWallets.length - 1 ? '1px solid #333333' : 'none',
-                        fontFamily: '"Courier New", monospace',
-                        background: i % 2 === 0 ? 'rgba(255,0,0,0.04)' : 'transparent'
-                      }}>
-                        <WalletAddress address={w.address} short={true} />
-                        <span style={{ color: '#00ff41', fontWeight: 700 }}>{w.pnl_7d !== undefined ? (parseFloat(w.pnl_7d) * 100).toFixed(2) + '%' : ''}</span>
-                        <span>{w.winRate}</span>
-                        <span style={{ color: '#00ff41', fontWeight: 700 }}>{!isNaN(parseFloat(w.smartScore)) ? `${parseFloat(w.smartScore).toFixed(0)}%` : 'N/A'}</span>
-                        <span>{!isNaN(parseFloat(w.riskScore)) ? `${parseFloat(w.riskScore).toFixed(0)}%` : 'N/A'}</span>
-                        <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                          {w.ml_tags && w.ml_tags.length > 0 ? w.ml_tags.map((tag, j) => (
-                            <span key={j} style={{
-                              background: 'rgba(0,255,65,0.1)',
-                              color: '#00ff41',
-                              border: '1px solid #00ff41',
-                              padding: '2px 6px',
-                              fontSize: 11,
-                              borderRadius: 0,
-                              fontFamily: 'inherit',
-                              letterSpacing: '0.5px'
-                            }}>{tag}</span>
-                          )) : <span style={{ color: '#555' }}>-</span>}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {/* ML Categories below Top Risky Wallets, same width */}
-                <div style={{ marginTop: 24 }}>
-                  {/* ...[ML_CATEGORIES] block unchanged, but full width here... */}
+
+                {/* ML Categories only in right column */}
+                <div>
+                  {/* ML Categories */}
                   <div style={{ 
                     background: 'rgba(255, 255, 255, 0.02)', 
                     color: '#ffffff', 
@@ -1680,12 +1582,12 @@ function MainAppLayout() {
         <nav style={{ flex: 1, padding: '20px 0' }}>
           {[
             { path: '/dashboard', label: '> DASHBOARD', icon: '[MAIN]' },
-            { path: '/top-tokens', label: '> TOKENS', icon: '[TKN]' },
-            { path: '/discovery', label: '> DISCOVERY', icon: '[SCAN]' },
+            // { path: '/top-tokens', label: '> TOKENS', icon: '[TKN]' },
+            // { path: '/discovery', label: '> DISCOVERY', icon: '[SCAN]' },
             { path: '/wallet-finder', label: '> WALLETS', icon: '[FIND]' },
             { path: '/copytrade-finder', label: '> COPYTRADE_FINDER', icon: '[COPY]' },
             { path: '/ml-processor', label: '> ML_PROCESSOR', icon: '[AI]' },
-            { path: '/settings', label: '> SETTINGS', icon: '[CFG]' },
+            // { path: '/settings', label: '> SETTINGS', icon: '[CFG]' },
           ].map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -1811,7 +1713,7 @@ function MLProcessorPage() {
         <b style={{ color: '#00ff41' }}>[WHAT DOES IT DO?]</b><br/>
         - Clusters wallets by trading behavior and performance.<br/>
         - Assigns "Smart Score" and "Risk Score" to each wallet.<br/>
-        - Tags wallets with ML-generated labels (e.g., High-Frequency Scalper, Long-Term Holder, Trench Hunter).<br/>
+        - Tags wallets with ML-generated labels.<br/>
         - Enables advanced filtering and ranking of traders.<br/>
         - Powers the AI-driven leaderboards and wallet discovery.<br/><br/>
         <b style={{ color: '#00ff41' }}>[COMING SOON]</b><br/>

@@ -13,7 +13,7 @@ const MatrixText: React.FC<{
   onMouseLeave?: () => void;
 }> = ({ children, isHovered, style, onClick, buttonStyle, onMouseEnter, onMouseLeave }) => {
   const [displayText, setDisplayText] = useState(children);
-  const characters = '█▄▀▐░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌';
+  const characters = '█▄▀▐░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌ΣΨΩΦΧΘΠΔΛΞΓΠΘΜΞΩΦΨΣΔΓΛΧΞΘΠΦΨΣΩΧΓΛΔΞΘΠΦΨΣΩΧΓΛΔ';
   
   useEffect(() => {
     if (!isHovered) {
@@ -22,7 +22,7 @@ const MatrixText: React.FC<{
     }
 
     let iterations = 0;
-    const maxIterations = 15;
+    const maxIterations = 8;
     
     const interval = setInterval(() => {
       setDisplayText((prevText) => {
@@ -30,10 +30,21 @@ const MatrixText: React.FC<{
           .split('')
           .map((char, index) => {
             if (char === ' ' || char === '>' || char === '[' || char === ']') return char;
-            if (iterations < maxIterations - 5 || Math.random() < 0.7) {
+            
+            // Make the effect more dramatic - more random characters for longer
+            if (iterations < maxIterations - 3) {
               return characters[Math.floor(Math.random() * characters.length)];
+            } else if (iterations < maxIterations - 1) {
+              // Gradually reveal characters
+              if (Math.random() < 0.5) {
+                return children[index];
+              } else {
+                return characters[Math.floor(Math.random() * characters.length)];
+              }
+            } else {
+              // Final reveal
+              return children[index];
             }
-            return children[index];
           })
           .join('');
       });
@@ -43,7 +54,7 @@ const MatrixText: React.FC<{
         clearInterval(interval);
         setDisplayText(children);
       }
-    }, 50);
+    }, 20);
 
     return () => clearInterval(interval);
   }, [isHovered, children]);
@@ -76,8 +87,21 @@ const JUICY_STATS = [
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   // Live stats state
   const [stats, setStats] = useState<any>(null);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -108,31 +132,22 @@ const LandingPage: React.FC = () => {
         height: '70vh',
         zIndex: 0,
         overflow: 'hidden',
-        display: 'flex',
-        justifyContent: 'center',
       }}>
-        <div style={{
-          width: '100%',
-          maxWidth: '1400px',
-          margin: '0 auto',
-          height: '100%',
-        }}>
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              objectPosition: 'center',
-              filter: 'contrast(1.2) brightness(0.9)'
-            }}
-          >
-            <source src="/bgvid.webm" type="video/webm" />
-          </video>
-        </div>
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+            filter: 'contrast(1.2) brightness(0.9)'
+          }}
+        >
+          <source src="/bgvid.webm" type="video/webm" />
+        </video>
       </div>
       
       {/* Header */}
@@ -142,18 +157,20 @@ const LandingPage: React.FC = () => {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '24px 48px',
+        padding: isMobile ? '16px 24px' : '24px 48px',
         maxWidth: 1400,
-        margin: '0 auto'
+        margin: '0 auto',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? '16px' : '0'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <span style={{ 
-            fontSize: 18, 
+            fontSize: isMobile ? 16 : 18, 
             fontWeight: 700, 
             color: '#ffffff',
             fontFamily: '"Courier New", monospace',
             textTransform: 'uppercase',
-            letterSpacing: '1px'
+            letterSpacing: '2px'
           }}>
             <span>&gt;</span> CIPHER
           </span>
@@ -164,9 +181,9 @@ const LandingPage: React.FC = () => {
             background: 'transparent',
             color: '#ffffff',
             border: 'none',
-            padding: '12px 24px',
+            padding: isMobile ? '8px 16px' : '12px 24px',
             borderRadius: 0,
-            fontSize: 16,
+            fontSize: isMobile ? 14 : 16,
             fontWeight: 700,
             cursor: 'pointer',
             transition: 'all 0.3s',
@@ -187,15 +204,15 @@ const LandingPage: React.FC = () => {
         position: 'relative',
         zIndex: 10,
         textAlign: 'left',
-        padding: '440px 24px 50px',
+        padding: isMobile ? '300px 16px 30px' : '440px 24px 50px',
         maxWidth: 1200,
         margin: '0 auto',
-        marginLeft: '-10px',
+        marginLeft: isMobile ? '0' : '-10px',
       }}>
         <h1 style={{
-          fontSize: 20,
+          fontSize: isMobile ? 16 : 20,
           fontWeight: 700,
-          marginBottom: 24,
+          marginBottom: isMobile ? 16 : 24,
           color: '#ffffff',
           fontFamily: '"Courier New", monospace',
           letterSpacing: '1px',
@@ -204,18 +221,18 @@ const LandingPage: React.FC = () => {
           {/* Next gen on-chain intelligence */}
         </h1>
         <div style={{
-          fontSize: 'clamp(16px, 3vw, 20px)',
+          fontSize: 'clamp(14px, 3vw, 20px)',
           color: '#ffffff',
-          marginBottom: 16,
+          marginBottom: isMobile ? 12 : 16,
           fontFamily: '"Courier New", monospace',
           letterSpacing: '1px'
         }}>
           {/* [SYSTEM_STATUS: ONLINE] */}
         </div> 
         <p style={{
-          fontSize: 'clamp(18px, 4vw, 24px)',
+          fontSize: 'clamp(16px, 4vw, 24px)',
           color: '#cccccc',
-          marginBottom: 48,
+          marginBottom: isMobile ? 32 : 48,
           maxWidth: 800,
           marginLeft: 'auto',
           marginRight: 'auto',
@@ -252,100 +269,52 @@ const LandingPage: React.FC = () => {
         </div> 
       </section>
 
-      {/* Juicy Live Stats Bar */}
-      <div style={{
-        width: '100%',
-        background: '#000',
-        borderBottom: '2px solid #00ff41',
-        color: '#00ff41',
-        fontFamily: '"Courier New", monospace',
-        fontSize: 15,
-        fontWeight: 700,
-        letterSpacing: 1,
-        padding: '18px 0 10px 0',
-        marginBottom: 32,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 36,
-        position: 'relative',
-        zIndex: 11,
-        boxShadow: '0 2px 12px #000',
-        marginLeft: 40,
-        marginRight: 40,
-        borderLeft: '2px solid #00ff41',
-        borderRight: '2px solid #00ff41',
-      }}>
-        {stats ? (
-          <>
-            <span style={{ color: '#00ff41', fontWeight: 900, fontSize: 16, marginRight: 18 }}>
-              [TOP TOKEN (1M): <span style={{ color: '#fff' }}>{stats.trendingTokens?.[0]?.token || 'N/A'}</span> {stats.trendingTokens?.[0]?.market_cap ? <span style={{ color: '#00ff41', marginLeft: 4 }}>{stats.trendingTokens[0].market_cap}</span> : null}]
-            </span>
-            <span style={{ color: '#00ff41', fontWeight: 900, fontSize: 16, marginRight: 18 }}>
-              [TOP WALLET (7D PNL): <span style={{ color: '#fff' }}>{stats.topWallets?.[0]?.address?.slice(0, 6)}...{stats.topWallets?.[0]?.address?.slice(-4)}</span> <span style={{ color: '#00ff41', marginLeft: 4 }}>+{stats.topWallets?.[0]?.pnl_7d}</span>]
-            </span>
-            <span style={{ color: '#00ff41', fontWeight: 900, fontSize: 16, marginRight: 18 }}>
-              [WALLETS TRACKED: <span style={{ color: '#fff' }}>{stats.metrics?.find((m:any) => m.label.toLowerCase().includes('wallet'))?.value || 'N/A'}</span>]
-            </span>
-            <span style={{ color: '#00ff41', fontWeight: 900, fontSize: 16, marginRight: 18 }}>
-              [TOKENS TRACKED: <span style={{ color: '#fff' }}>{stats.trendingTokens?.length ? stats.trendingTokens.length : 'N/A'}</span>]
-            </span>
-            <span style={{ color: '#00ff41', fontWeight: 900, fontSize: 16, marginRight: 18 }}>
-              [ML SCORES: <span style={{ color: '#fff' }}>LIVE</span>]
-            </span>
-            <span style={{ color: '#00ff41', fontWeight: 900, fontSize: 16, marginRight: 18 }}>
-              [TRENDING: <span style={{ color: '#fff' }}>{stats.trendingTokens?.map((t:any) => t.token).join(', ')}</span>]
-            </span>
-          </>
-        ) : (
-          <span style={{ color: '#00ff41', fontWeight: 900, fontSize: 16 }}>[LOADING LIVE STATS...]</span>
-        )}
-      </div>
-
       {/* Features Section */}
        <section style={{
         position: 'relative',
         zIndex: 10,
-        padding: '40px 24px 120px',
-        maxWidth: 1400,
-        margin: '100px auto 0',
+        padding: isMobile ? '20px 16px 60px' : '40px 24px 120px',
+        maxWidth: 1120,
+        margin: isMobile ? '50px auto 0' : '100px auto 0',
         background: '#000000'
       }}>
         {/* Live Stats Bar (real data) */}
         <div style={{
           display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
           justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '60px',
-          padding: '20px 40px',
+          alignItems: isMobile ? 'flex-start' : 'center',
+          marginBottom: isMobile ? '40px' : '60px',
+          padding: isMobile ? '16px 20px' : '20px 40px',
           background: 'rgba(255, 255, 255, 0.03)',
           borderTop: '1px solid #333333',
-          borderBottom: '1px solid #333333'
+          borderBottom: '1px solid #333333',
+          gap: isMobile ? '12px' : '0'
         }}>
-          <div style={{ fontFamily: '"Courier New", monospace', color: '#cccccc', fontSize: '12px' }}>
+          <div style={{ fontFamily: '"Courier New", monospace', color: '#cccccc', fontSize: isMobile ? '10px' : '12px' }}>
             <span style={{ color: '#ffffff', marginRight: '8px' }}>[NETWORK_STATUS]</span>
             ONLINE • 99.97% UPTIME
           </div>
-          <div style={{ fontFamily: '"Courier New", monospace', color: '#cccccc', fontSize: '12px' }}>
+          <div style={{ fontFamily: '"Courier New", monospace', color: '#cccccc', fontSize: isMobile ? '10px' : '12px' }}>
             <span style={{ color: '#ffffff', marginRight: '8px' }}>[WALLETS_SCANNED]</span>
             {stats ? (stats.metrics?.find((m:any) => m.label.toLowerCase().includes('wallet'))?.value || 'N/A') : 'N/A'}
           </div>
-          <div style={{ fontFamily: '"Courier New", monospace', color: '#cccccc', fontSize: '12px' }}>
+          <div style={{ fontFamily: '"Courier New", monospace', color: '#cccccc', fontSize: isMobile ? '10px' : '12px' }}>
             <span style={{ color: '#ffffff', marginRight: '8px' }}>[ACTIVE_ALERTS]</span>
             <span style={{ color: '#00ff41' }}>N/A</span>
           </div>
         </div>
 
         <h2 style={{
-          fontSize: 32,
+          fontSize: isMobile ? 24 : 32,
           fontWeight: 700,
           textAlign: 'left',
-          marginBottom: 80,
+          marginBottom: isMobile ? 40 : 80,
           color: '#ffffff',
           fontFamily: '"Courier New", monospace',
           textTransform: 'uppercase',
           letterSpacing: '2px',
-          paddingLeft: '40px'
+          paddingLeft: isMobile ? '20px' : '40px'
         }}>
           &gt; SYSTEM_MODULES
         </h2>
@@ -354,78 +323,72 @@ const LandingPage: React.FC = () => {
         <div style={{ 
           display: 'flex',
           flexDirection: 'column',
-          gap: '40px',
-          paddingLeft: '40px',
-          paddingRight: '40px'
+          gap: isMobile ? '24px' : '40px',
+          paddingLeft: isMobile ? '20px' : '40px',
+          paddingRight: isMobile ? '20px' : '40px'
         }}>
           
           {/* Row 1 */}
-          <div style={{ display: 'flex', gap: '60px', alignItems: 'flex-start' }}>
-            <ModuleCard idx={1} title="WALLET_DISCOVERY" desc="Real-time wallet discovery and ranking powered by GMGN. Instantly find top, new, and risky wallets." stats="LIVE • 2.8M+ WALLETS • 7D PNL, RISK, ML TAGS" />
-            <ModuleCard idx={2} title="TOKEN_DISCOVERY" desc="Live trending tokens, 1-minute and 7-day rankings, and token analytics. All data from GMGN." stats="LIVE • 18K+ TOKENS • 1M/7D RANKINGS" />
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '24px' : '60px', 
+            alignItems: 'flex-start' 
+          }}>
+            <ModuleCard idx={1} title="WALLET_DISCOVERY" desc="Real-time wallet discovery and ranking powered by GMGN. Instantly find top, new, and risky wallets." stats="LIVE • 2.8M+ WALLETS • 7D PNL, RISK, ML TAGS" isMobile={isMobile} />
+            <ModuleCard idx={2} title="AI_PROCESSOR" desc="Automated ML scoring and tagging for every wallet. Risk, smart score, and ML tags updated in real time." stats="LIVE • 2.8M SCORED • 91.8% CONFIDENCE" isMobile={isMobile} />
           </div>
 
           {/* Row 2 */}
-          <div style={{ display: 'flex', gap: '60px', alignItems: 'flex-start' }}>
-            <ModuleCard idx={3} title="ML_PROCESSOR" desc="Automated ML scoring and tagging for every wallet. Risk, smart score, and ML tags updated in real time." stats="LIVE • 2.8M SCORED • 91.8% CONFIDENCE" />
-            <ModuleCard idx={4} title="COPYTRADE_FINDER" desc="Detects unique copytraders and patterns. CSV/JSON export, robust frontend integration." stats="LIVE • UNIQUE COPYTRADERS • CSV/JSON EXPORT" />
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '24px' : '60px', 
+            alignItems: 'flex-start' 
+          }}>
+            <ModuleCard idx={3} title="COPYTRADE_FINDER" desc="Detects unique copytraders and patterns. CSV/JSON export, robust frontend integration." stats="LIVE • UNIQUE COPYTRADERS • CSV/JSON EXPORT" isMobile={isMobile} />
+            <ModuleCard idx={4} title="WATCHLIST" desc="Add, remove, and monitor wallets/tokens. Local, persistent, and synced across pages. Export/import supported." stats="LIVE • LOCAL STORAGE • EXPORT/IMPORT" isMobile={isMobile} />
           </div>
 
           {/* Row 3 */}
-          <div style={{ display: 'flex', gap: '60px', alignItems: 'flex-start' }}>
-            <ModuleCard idx={5} title="WATCHLIST" desc="Add, remove, and monitor wallets/tokens. Local, persistent, and synced across pages. Export/import supported." stats="LIVE • LOCAL STORAGE • EXPORT/IMPORT" />
-            <ModuleCard idx={6} title="API_SERVICE" desc="Public API endpoints for programmatic access to all analytics. Docs and keys coming soon." stats="COMING SOON" comingSoon />
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '24px' : '60px', 
+            alignItems: 'flex-start' 
+          }}>
+            <ModuleCard idx={5} title="API_SERVICE" desc="Public API endpoints for programmatic access to all analytics. Docs and keys coming soon." stats="COMING SOON" comingSoon isMobile={isMobile} />
           </div>
         </div>
-      </section>
-
-      {/* Roadmap Section */}
-      <section style={{
-        position: 'relative',
-        zIndex: 10,
-        padding: '80px 24px',
-        maxWidth: 1400,
-        margin: '0 auto',
-        background: '#000000',
-        borderTop: '1px solid #333333',
-        marginTop: 60
-      }}>
-        <h2 style={{ color: '#00ff41', fontSize: 24, fontWeight: 700, letterSpacing: 2, fontFamily: '"Courier New", monospace', marginBottom: 32 }}>&gt; ROADMAP</h2>
-        <ul style={{ color: '#fff', fontFamily: '"Courier New", monospace', fontSize: 16, listStyle: 'none', padding: 0, margin: 0 }}>
-          <li style={{ marginBottom: 18 }}><span style={{ color: '#00ff41' }}>[NEXT]</span> API Service <span style={{ color: '#cccccc', fontSize: 13 }}>(public endpoints, docs, keys)</span></li>
-          <li style={{ marginBottom: 18 }}><span style={{ color: '#00ff41' }}>[SOON]</span> Phone App <span style={{ color: '#cccccc', fontSize: 13 }}>(follow wallets/tokens, push alerts)</span></li>
-          <li style={{ marginBottom: 18 }}><span style={{ color: '#00ff41' }}>[SOON]</span> Real-Time Token Analysis <span style={{ color: '#cccccc', fontSize: 13 }}>(sub-second updates, advanced stats)</span></li>
-          <li style={{ marginBottom: 18 }}><span style={{ color: '#00ff41' }}>[SECRET]</span> Secret Integration <span style={{ color: '#cccccc', fontSize: 13 }}>(major partnership with a top project—details soon!)</span></li>
-        </ul>
       </section>
 
       {/* Security & Compliance Section */}
       <section style={{
         position: 'relative',
         zIndex: 10,
-        padding: '80px 24px',
-        maxWidth: 1400,
+        padding: isMobile ? '40px 16px' : '80px 24px',
+        maxWidth: 1120,
         margin: '0 auto',
         background: '#000000',
         borderTop: '1px solid #333333'
       }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '40px',
-          paddingLeft: '40px',
-          paddingRight: '40px'
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: isMobile ? '24px' : '40px',
+          paddingLeft: isMobile ? '20px' : '40px',
+          paddingRight: isMobile ? '20px' : '40px'
         }}>          
           
           
           <div style={{
             textAlign: 'center',
-            padding: '24px',
+            padding: isMobile ? '16px' : '24px',
             background: 'rgba(255, 255, 255, 0.02)',
             border: '1px solid #333333'
           }}>
             <div style={{
-              fontSize: '14px',
+              fontSize: isMobile ? '12px' : '14px',
               fontFamily: '"Courier New", monospace',
               color: '#00ff41',
               marginBottom: '8px',
@@ -434,7 +397,7 @@ const LandingPage: React.FC = () => {
               [API_PERFORMANCE]
             </div>
             <div style={{
-              fontSize: '12px',
+              fontSize: isMobile ? '10px' : '12px',
               fontFamily: '"Courier New", monospace',
               color: '#cccccc'
             }}>
@@ -446,12 +409,12 @@ const LandingPage: React.FC = () => {
           
           <div style={{
             textAlign: 'center',
-            padding: '24px',
+            padding: isMobile ? '16px' : '24px',
             background: 'rgba(255, 255, 255, 0.02)',
             border: '1px solid #333333'
           }}>
             <div style={{
-              fontSize: '14px',
+              fontSize: isMobile ? '12px' : '14px',
               fontFamily: '"Courier New", monospace',
               color: '#00ff41',
               marginBottom: '8px',
@@ -460,7 +423,7 @@ const LandingPage: React.FC = () => {
               [VERSION_INFO]
             </div>
             <div style={{
-              fontSize: '12px',
+              fontSize: isMobile ? '10px' : '12px',
               fontFamily: '"Courier New", monospace',
               color: '#cccccc'
             }}>
@@ -477,12 +440,12 @@ const LandingPage: React.FC = () => {
         position: 'relative',
         zIndex: 10,
         textAlign: 'center',
-        padding: '48px 24px',
+        padding: isMobile ? '32px 16px' : '48px 24px',
         borderTop: '1px solid #333333',
         color: '#666666',
         background: '#000000',
         fontFamily: '"Courier New", monospace',
-        fontSize: '12px'
+        fontSize: isMobile ? '10px' : '12px'
       }}>
         <div style={{ marginBottom: '16px' }}>
           <span style={{ color: '#ffffff' }}>&gt; CIPHER_SYSTEMS</span> • ADVANCED ON-CHAIN INTELLIGENCE PLATFORM
@@ -505,28 +468,28 @@ const LandingPage: React.FC = () => {
   );
 };
 
-function ModuleCard({ idx, title, desc, stats, comingSoon }: { idx: number, title: string, desc: string, stats: string, comingSoon?: boolean }) {
+function ModuleCard({ idx, title, desc, stats, comingSoon, isMobile }: { idx: number, title: string, desc: string, stats: string, comingSoon?: boolean, isMobile?: boolean }) {
   return (
     <div
       style={{
         flex: '1',
-        maxWidth: '400px',
+        maxWidth: isMobile ? 'none' : '400px',
         background: comingSoon ? 'rgba(0,255,65,0.03)' : 'rgba(255,255,255,0.02)',
-        padding: '32px',
-        borderLeft: comingSoon ? '2px dashed #00ff41' : '2px solid #333333',
-        marginTop: idx % 2 === 0 ? '20px' : undefined,
+        padding: isMobile ? '24px' : '32px',
+        borderLeft: '2px solid #333333',
+        marginTop: isMobile ? '0' : (idx % 2 === 0 ? '20px' : undefined),
         transition: 'all 0.3s ease',
         cursor: comingSoon ? 'not-allowed' : 'pointer',
         opacity: comingSoon ? 0.7 : 1
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <div style={{ color: '#ffffff', fontSize: '14px', fontFamily: '"Courier New", monospace', letterSpacing: '1px', opacity: 0.7 }}>[{String(idx).padStart(2, '0')}]</div>
-        <div style={{ color: comingSoon ? '#cccccc' : '#00ff41', fontSize: '12px', fontFamily: '"Courier New", monospace', letterSpacing: '1px' }}>{comingSoon ? 'COMING SOON' : 'ACTIVE'}</div>
+        <div style={{ color: '#ffffff', fontSize: isMobile ? '12px' : '14px', fontFamily: '"Courier New", monospace', letterSpacing: '1px', opacity: 0.7 }}>[{String(idx).padStart(2, '0')}]</div>
+        <div style={{ color: comingSoon ? '#cccccc' : '#00ff41', fontSize: isMobile ? '10px' : '12px', fontFamily: '"Courier New", monospace', letterSpacing: '1px' }}>{comingSoon ? 'COMING SOON' : 'ACTIVE'}</div>
       </div>
-      <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, color: '#ffffff', fontFamily: '"Courier New", monospace', letterSpacing: '1px', textTransform: 'uppercase' }}>{title}</h3>
-      <p style={{ color: '#cccccc', lineHeight: 1.6, fontFamily: '"Courier New", monospace', fontSize: '13px', opacity: 0.8, marginBottom: '16px' }}>{desc}</p>
-      <div style={{ fontSize: '11px', fontFamily: '"Courier New", monospace', color: comingSoon ? '#00ff41' : '#666666', borderTop: '1px solid #222222', paddingTop: '12px' }}>{stats}</div>
+      <h3 style={{ fontSize: isMobile ? 16 : 18, fontWeight: 700, marginBottom: 16, color: '#ffffff', fontFamily: '"Courier New", monospace', letterSpacing: '1px', textTransform: 'uppercase' }}>{title}</h3>
+      <p style={{ color: '#cccccc', lineHeight: 1.6, fontFamily: '"Courier New", monospace', fontSize: isMobile ? '12px' : '13px', opacity: 0.8, marginBottom: '16px' }}>{desc}</p>
+      <div style={{ fontSize: isMobile ? '10px' : '11px', fontFamily: '"Courier New", monospace', color: comingSoon ? '#00ff41' : '#666666', borderTop: '1px solid #222222', paddingTop: '12px' }}>{stats}</div>
     </div>
   );
 }

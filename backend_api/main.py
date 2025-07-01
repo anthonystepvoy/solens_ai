@@ -5,6 +5,7 @@ import json
 import os
 import subprocess
 import io
+import ssl
 import pandas as pd
 from datetime import datetime, timedelta
 import traceback
@@ -32,7 +33,7 @@ app.add_middleware(
 SETTINGS_FILE = os.path.join(os.path.dirname(__file__), 'discovery_settings.json')
 
 # MongoDB Atlas connection
-MONGO_URI = "mongodb+srv://santowastaken:DGsmWd4ikXVNxA8@cluster0.vxseyuu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGO_URI = "mongodb+srv://santowastaken:DGsmWd4ikXVNxA8@cluster0.vxseyuu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&tlsAllowInvalidCertificates=true"
 
 client = MongoClient(
     MONGO_URI,
@@ -310,9 +311,9 @@ def dashboard_summary():
 
     # 4. ML Categories (top 5 most common tags_ml)
     all_tags = []
-        for w in wallets:
-            tags = w.get('ai_insights', {}).get('tags_ml', [])
-            if tags:
+    for w in wallets:
+        tags = w.get('ai_insights', {}).get('tags_ml', [])
+        if tags:
             all_tags.extend(tags)
     tag_counts = Counter(all_tags)
     ml_categories = [tag for tag, _ in tag_counts.most_common(5)]

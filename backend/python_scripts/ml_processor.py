@@ -8,10 +8,10 @@ from datetime import datetime
 # --- CONFIG ---
 N_CLUSTERS = 4 
 CATEGORY_LABELS = [
-    'High-Frequency Gem Hunter',
-    'Measured Low-Cap Specialist',
-    'Consistent High-Roller',
-    'Volatile Scalper'
+    'Fast af',
+    'Low cap demon',
+    'BDE',
+    'Volatility scalpoor'
 ]
 
 # MongoDB Connection
