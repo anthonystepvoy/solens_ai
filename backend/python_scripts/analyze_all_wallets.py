@@ -13,6 +13,8 @@ def enrich_wallets_with_gmgn_details():
     wallets = list(db.wallets.find({}))
     print(f"Found {len(wallets)} wallets in database.")
     updated = 0
+    min_trades_7d = 10    # Minimum trades in 7 days
+    max_trades_7d = 100   # Maximum trades in 7 days
     for w in wallets:
         wallet_address = w.get('_id') or w.get('wallet_address')
         if not wallet_address:
@@ -25,6 +27,13 @@ def enrich_wallets_with_gmgn_details():
                 data = resp.json()
                 if data.get('code') == 0 and data.get('data'):
                     gmgn_details = data['data']
+                    trades_7d = gmgn_details.get('buy_7d', 0) + gmgn_details.get('sell_7d', 0)
+                    if trades_7d < min_trades_7d:
+                        print(f"[SKIP] {wallet_address} has only {trades_7d} trades in 7d (min {min_trades_7d})")
+                        continue
+                    if trades_7d > max_trades_7d:
+                        print(f"[SKIP] {wallet_address} has {trades_7d} trades in 7d (max {max_trades_7d})")
+                        continue
                     db.wallets.update_one(
                         {"_id": wallet_address},
                         {"$set": {"gmgn_detailed_stats": gmgn_details, "last_gmgn_enrich": datetime.utcnow()}},

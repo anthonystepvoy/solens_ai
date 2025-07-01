@@ -163,6 +163,35 @@ async function scrapeWallets() {
             walletToSave.gmgn_detailed_stats = detailedData.data;
           }
 
+          // --- NEW: Fetch wallet activity and calculate avg SOL per buy trade ---
+          let avgSolPerBuy7d = null;
+          try {
+            const activityUrl = `https://gmgn.ai/vas/api/v1/wallet_activity/sol?type=buy&type=sell&device_id=b4e58a50-81f0-4ffb-850e-f433598a8c51&client_id=gmgn_web_20250701-623-affa2c7&from_app=gmgn&app_ver=20250701-623-affa2c7&tz_name=America%2FMontevideo&tz_offset=-10800&app_lang=en-US&fp_did=535415de390d0e8ab5b33b8fd73b2830&os=web&wallet=${walletAddress}&limit=50&cost=10`;
+            await page.goto(activityUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+            let jsonText = '';
+            const preTag = await page.$('pre');
+            if (preTag) {
+              jsonText = await page.evaluate(el => el.textContent, preTag);
+            } else {
+              jsonText = await page.evaluate(() => document.body.innerText);
+            }
+            const activityData = JSON.parse(jsonText);
+            if (activityData && activityData.code === 0 && activityData.data && Array.isArray(activityData.data.activities)) {
+              const buyTrades = activityData.data.activities.filter(trade => trade.event_type === 'buy');
+              const solAmounts = buyTrades.map(trade => parseFloat(trade.quote_amount || '0')).filter(x => !isNaN(x));
+              if (solAmounts.length > 0) {
+                const totalSol = solAmounts.reduce((a, b) => a + b, 0);
+                avgSolPerBuy7d = totalSol / solAmounts.length;
+              }
+            }
+          } catch (err) {
+            console.error(`[WARN] Could not fetch/calculate avg SOL per buy for ${walletAddress}:`, err.message);
+          }
+          if (avgSolPerBuy7d !== null) {
+            walletToSave.avg_sol_per_buy_7d = avgSolPerBuy7d;
+          }
+          // --- END NEW ---
+
           // Upsert the combined data into MongoDB
           await db.collection("wallets").updateOne(
             { _id: walletAddress },
