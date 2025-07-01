@@ -116,12 +116,12 @@ function DashboardPage() {
       })
       .catch(() => {
         if (isInitialLoad) {
-          setError('[WARNING] Failed to load live data. Displaying mock dataset.');
+          setError('[WARNING] Failed to load live data.');
         setMetrics([
-            { label: 'Total Wallets Tracked', value: '1,452' },
-            { label: 'New Wallets Today', value: '+56' },
-            { label: 'Total 7D PNL', value: '$1.2M' },
-            { label: 'Top 1m Token', value: '$WIF' },
+            // { label: 'Total Wallets Tracked', value: '1,452' },
+            // { label: 'New Wallets Today', value: '+56' },
+            // { label: 'Total 7D PNL', value: '$1.2M' },
+            // { label: 'Top 1m Token', value: '$WIF' },
           ]);
           setTopWallets([]);
           setTopRiskyWallets([]);
@@ -184,11 +184,6 @@ function DashboardPage() {
         zIndex: 100,
         boxShadow: '0 2px 12px #000',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-          <span style={{ color: '#00ff41', fontWeight: 900, fontSize: 18 }}>&gt; SYSTEM STATUS</span>
-          <span>[LAST_UPDATE: <span style={{ color: '#fff' }}>{getRelativeTime(lastUpdate)}</span>]</span>
-          <span>[NEXT_UPDATE: <span style={{ color: '#fff' }}>{countdown}s</span>]</span>
-        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
           {metrics.map((m, i) => (
             <span key={i} style={{ color: '#00ff41', fontWeight: 700 }}>
