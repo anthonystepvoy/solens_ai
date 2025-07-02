@@ -5,7 +5,8 @@ import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { MongoClient } from "mongodb";
 import dotenv from 'dotenv';
-dotenv.config({ path: '../../.env' });
+dotenv.config({ path: './.env' });
+console.log('[DEBUG] MONGO_URI:', process.env.MONGO_URI);
 
 puppeteer.use(StealthPlugin());
 
@@ -242,3 +243,12 @@ async function main() {
 }
 
 main();
+
+export {
+  fetchDetailedWalletStats,
+  fetchWalletActivity,
+  calculateWalletEnrichmentFields,
+  passesWalletQualityFilters,
+  calculateTokenQualityScore,
+  filterTopQualityTokens
+};

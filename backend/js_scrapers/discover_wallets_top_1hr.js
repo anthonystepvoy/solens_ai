@@ -13,7 +13,7 @@ import {
   filterTopQualityTokens
 } from "./gmgn_coins_traders.js";
 import dotenv from 'dotenv';
-dotenv.config({ path: '../../.env' });
+dotenv.config({ path: './.env' });
 
 puppeteer.use(StealthPlugin());
 
