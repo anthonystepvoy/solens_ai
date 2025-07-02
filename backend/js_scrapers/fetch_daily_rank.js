@@ -1,6 +1,7 @@
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { MongoClient } from "mongodb";
+import { exec } from "child_process";
 require('dotenv').config();
 
 puppeteer.use(StealthPlugin());
@@ -8,12 +9,12 @@ puppeteer.use(StealthPlugin());
 const MONGO_URI = process.env.MONGO_URI;
 const client = new MongoClient(MONGO_URI);
 
-async function fetchLatestMinuteRank() {
+async function fetchLatestDailyRank() {
   const scriptStart = Date.now();
-  console.log(`[${new Date().toISOString()}] Running 1-Minute Rank Fetch...`);
-  const oneMinuteRankUrl = "https://gmgn.ai/defi/quotation/v1/rank/sol/swaps/1m?orderby=open_timestamp&direction=desc&limit=20&filters[]=renounced&filters[]=frozen&platforms[]=pump&platforms[]=pumpamm&platforms[]=moonshot&platforms[]=raydium&platforms[]=meteora&platforms[]=fluxbeam&platforms[]=orca&platforms[]=ray_launchpad&platforms[]=boop";
+  console.log(`[${new Date().toISOString()}] Running 24-Hour Rank Fetch...`);
+  const dailyRankUrl = "https://gmgn.ai/defi/quotation/v1/rank/sol/swaps/24h?orderby=open_timestamp&direction=desc&limit=20&filters[]=renounced&filters[]=frozen&platforms[]=pump&platforms[]=pumpamm&platforms[]=moonshot&platforms[]=raydium&platforms[]=meteora&platforms[]=fluxbeam&platforms[]=orca&platforms[]=ray_launchpad&platforms[]=boop";
   
-  console.log(`Fetching from: ${oneMinuteRankUrl}`);
+  console.log(`Fetching from: ${dailyRankUrl}`);
   
   const browserStart = Date.now();
   const browser = await puppeteer.launch({ 
@@ -25,7 +26,6 @@ async function fetchLatestMinuteRank() {
   console.log(`[TIMER] Puppeteer launch: ${(Date.now() - browserStart) / 1000}s`);
 
   try {
-    // Set page timeouts
     page.setDefaultTimeout(30000);
     page.setDefaultNavigationTimeout(30000);
 
@@ -40,7 +40,7 @@ async function fetchLatestMinuteRank() {
       const response = await fetch(url, { headers: { "accept": "application/json" } });
       if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
       return response.json();
-    }, oneMinuteRankUrl);
+    }, dailyRankUrl);
     console.log(`[TIMER] API fetch: ${(Date.now() - apiStart) / 1000}s`);
 
     console.log("API response received, processing data...");
@@ -56,28 +56,37 @@ async function fetchLatestMinuteRank() {
 
         const documentsToInsert = latestTokens.map(token => ({
           ...token,
-          source_list: "latest_1m_rank",
+          source_list: "latest_24h_rank",
           retrieved_at: new Date()
         }));
 
-        // Using insertMany for efficiency
-        const result = await db.collection("minute_rank_snapshots").insertMany(documentsToInsert);
+        const result = await db.collection("daily_rank_snapshots").insertMany(documentsToInsert);
         console.log(`[TIMER] MongoDB insertMany: ${(Date.now() - mongoStart) / 1000}s`);
-        console.log(`\u2713 Inserted ${result.insertedCount} new tokens into minute_rank_snapshots.`);
+        console.log(`\u2713 Inserted ${result.insertedCount} new tokens into daily_rank_snapshots.`);
         
-        // Show first few tokens for verification
         console.log("First 3 tokens inserted:");
         documentsToInsert.slice(0, 3).forEach((token, i) => {
           console.log(`  ${i+1}. ${token.symbol || 'Unknown'} (${token.address.slice(0, 8)}...)`);
         });
+
+        // --- CHAINED: Run wallet discovery for 24hr tokens ---
+        console.log("[CHAIN] Running 24hr wallet discovery script...");
+        exec('node backend/js_scrapers/discover_wallets_top_24hr.js', (error, stdout, stderr) => {
+          if (error) {
+            console.error(`[CHAIN] Error running wallet discovery: ${error.message}`);
+            return;
+          }
+          if (stdout) console.log(`[CHAIN] Wallet discovery output:\n${stdout}`);
+          if (stderr) console.error(`[CHAIN] Wallet discovery errors:\n${stderr}`);
+        });
       } else {
-        console.log("\u2713 1-minute rank API returned 0 tokens. No data inserted.");
+        console.log("\u2713 24-hour rank API returned 0 tokens. No data inserted.");
       }
     } else {
       console.error("\u2717 API response format unexpected:", rankData);
     }
   } catch (error) {
-    console.error("\u2717 Error in fetch_minute_rank.js:", error.message);
+    console.error("\u2717 Error in fetch_daily_rank.js:", error.message);
     console.error("Full error:", error);
   } finally {
     await browser.close();
@@ -86,4 +95,4 @@ async function fetchLatestMinuteRank() {
   }
 }
 
-fetchLatestMinuteRank().catch(console.error); 
+fetchLatestDailyRank().catch(console.error); 

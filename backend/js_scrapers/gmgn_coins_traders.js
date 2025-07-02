@@ -4,10 +4,11 @@
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { MongoClient } from "mongodb";
+require('dotenv').config();
 
 puppeteer.use(StealthPlugin());
 
-const MONGO_URI = "mongodb+srv://santowastaken:DGsmWd4ikXVNxA8@cluster0.vxseyuu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const MONGO_URI = process.env.MONGO_URI;
 const client = new MongoClient(MONGO_URI);
 let db;
 
@@ -321,6 +322,7 @@ async function main() {
                             { _id: trader.address },
                             { 
                                 $set: walletData, 
+                                $setOnInsert: { created_at: new Date() },
                                 $addToSet: { discovered_by: 'Smart_Quality_Filtered_Discovery' } 
                             },
                             { upsert: true }
@@ -370,3 +372,12 @@ async function main() {
 }
 
 main().catch(console.error);
+
+export {
+  fetchDetailedWalletStats,
+  fetchWalletActivity,
+  calculateWalletEnrichmentFields,
+  passesWalletQualityFilters,
+  calculateTokenQualityScore,
+  filterTopQualityTokens
+};

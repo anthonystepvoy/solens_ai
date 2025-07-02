@@ -55,8 +55,8 @@ HELIUS_API_URL = "https://api.helius.xyz"
 HELIUS_RPC_URL = f"https://mainnet.helius-rpc.com/?api-key={HELIUS_API_KEY}"
 WRAPPED_SOL_MINT = "So11111111111111111111111111111111111111112"
 
-# MongoDB Atlas connection with timeout
-MONGO_URI = "mongodb+srv://santowastaken:DGsmWd4ikXVNxA8@cluster0.vxseyuu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+# MONGO_URI should be set in your environment or .env file
+MONGO_URI = os.environ.get('MONGO_URI')
 client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=10000, connectTimeoutMS=10000)
 db = client["solens_ai"]
 

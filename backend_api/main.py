@@ -32,8 +32,8 @@ app.add_middleware(
 
 SETTINGS_FILE = os.path.join(os.path.dirname(__file__), 'discovery_settings.json')
 
-# MongoDB Atlas connection
-MONGO_URI = "mongodb+srv://santowastaken:DGsmWd4ikXVNxA8@cluster0.vxseyuu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&tlsAllowInvalidCertificates=true"
+# MONGO_URI should be set in your environment or .env file
+MONGO_URI = os.environ.get('MONGO_URI')
 
 client = MongoClient(
     MONGO_URI,
@@ -559,6 +559,46 @@ def run_minute_rank_automatically():
     except Exception as e:
         print(f"[AUTO-1MIN-RANK] Exception occurred: {e}")
 
+def run_hourly_rank_automatically():
+    try:
+        print(f"[AUTO-1HR-RANK] Starting 1-hour rank fetch at {datetime.utcnow()}")
+        script_path = os.path.join(os.path.dirname(__file__), '../backend/js_scrapers/fetch_hourly_rank.js')
+        result = subprocess.run(['node', script_path], capture_output=True, text=True, encoding='utf-8', errors='replace', check=False)
+        print(result.stdout)
+        print(result.stderr)
+    except Exception as e:
+        print(f"[AUTO-1HR-RANK] Exception occurred: {e}")
+
+def run_hourly_wallet_discovery_automatically():
+    try:
+        print(f"[AUTO-1HR-WALLET] Starting 1-hour wallet discovery at {datetime.utcnow()}")
+        script_path = os.path.join(os.path.dirname(__file__), '../backend/js_scrapers/discover_wallets_top_1hr.js')
+        result = subprocess.run(['node', script_path], capture_output=True, text=True, encoding='utf-8', errors='replace', check=False)
+        print(result.stdout)
+        print(result.stderr)
+    except Exception as e:
+        print(f"[AUTO-1HR-WALLET] Exception occurred: {e}")
+
+def run_daily_rank_automatically():
+    try:
+        print(f"[AUTO-24HR-RANK] Starting 24-hour rank fetch at {datetime.utcnow()}")
+        script_path = os.path.join(os.path.dirname(__file__), '../backend/js_scrapers/fetch_daily_rank.js')
+        result = subprocess.run(['node', script_path], capture_output=True, text=True, encoding='utf-8', errors='replace', check=False)
+        print(result.stdout)
+        print(result.stderr)
+    except Exception as e:
+        print(f"[AUTO-24HR-RANK] Exception occurred: {e}")
+
+def run_daily_wallet_discovery_automatically():
+    try:
+        print(f"[AUTO-24HR-WALLET] Starting 24-hour wallet discovery at {datetime.utcnow()}")
+        script_path = os.path.join(os.path.dirname(__file__), '../backend/js_scrapers/discover_wallets_top_24hr.js')
+        result = subprocess.run(['node', script_path], capture_output=True, text=True, encoding='utf-8', errors='replace', check=False)
+        print(result.stdout)
+        print(result.stderr)
+    except Exception as e:
+        print(f"[AUTO-24HR-WALLET] Exception occurred: {e}")
+
 def start_scheduler():
     """Start the background scheduler"""
     try:
@@ -579,9 +619,41 @@ def start_scheduler():
             name='Automatic 1-Minute Rank',
             replace_existing=True
         )
+
+        # 1HR scripts every 10 minutes
+        scheduler.add_job(
+            func=run_hourly_rank_automatically,
+            trigger=IntervalTrigger(minutes=10),
+            id='auto_hourly_rank',
+            name='Automatic 1-Hour Rank',
+            replace_existing=True
+        )
+        scheduler.add_job(
+            func=run_hourly_wallet_discovery_automatically,
+            trigger=IntervalTrigger(minutes=10),
+            id='auto_hourly_wallet_discovery',
+            name='Automatic 1-Hour Wallet Discovery',
+            replace_existing=True
+        )
+
+        # 24HR scripts every hour
+        scheduler.add_job(
+            func=run_daily_rank_automatically,
+            trigger=IntervalTrigger(hours=1),
+            id='auto_daily_rank',
+            name='Automatic 24-Hour Rank',
+            replace_existing=True
+        )
+        scheduler.add_job(
+            func=run_daily_wallet_discovery_automatically,
+            trigger=IntervalTrigger(hours=1),
+            id='auto_daily_wallet_discovery',
+            name='Automatic 24-Hour Wallet Discovery',
+            replace_existing=True
+        )
         
         scheduler.start()
-        print("[SCHEDULER] Background scheduler started - discovery and 1-minute rank will run every minute")
+        print("[SCHEDULER] Background scheduler started - all jobs scheduled")
     except Exception as e:
         print(f"[SCHEDULER] Failed to start scheduler: {e}")
 

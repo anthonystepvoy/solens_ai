@@ -14,8 +14,8 @@ CATEGORY_LABELS = [
     'Volatility scalpoor'
 ]
 
-# MongoDB Connection
-MONGO_URI = "mongodb+srv://santowastaken:DGsmWd4ikXVNxA8@cluster0.vxseyuu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+# MONGO_URI should be set in your environment or .env file
+MONGO_URI = os.environ.get('MONGO_URI')
 client = MongoClient(MONGO_URI)
 db = client["solens_ai"]
 

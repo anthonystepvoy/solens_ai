@@ -4,8 +4,8 @@ from datetime import datetime
 import requests
 import time
 
-# MongoDB Connection
-MONGO_URI = "mongodb+srv://santowastaken:DGsmWd4ikXVNxA8@cluster0.vxseyuu.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true"
+# MONGO_URI should be set in your environment or .env file
+MONGO_URI = os.environ.get('MONGO_URI')
 client = MongoClient(MONGO_URI)
 db = client["solens_ai"]
 
