@@ -12,7 +12,8 @@ import {
   calculateTokenQualityScore,
   filterTopQualityTokens
 } from "./gmgn_coins_traders.js";
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config({ path: '../../.env' });
 
 puppeteer.use(StealthPlugin());
 

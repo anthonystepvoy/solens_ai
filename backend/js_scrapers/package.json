@@ -1,6 +1,7 @@
 {
   "type": "module",
   "dependencies": {
+    "dotenv": "^17.0.1",
     "firebase-admin": "^12.7.0",
     "mongodb": "^6.17.0",
     "puppeteer": "^24.1.0",

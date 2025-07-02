@@ -65,7 +65,12 @@ cipher-ai/
    ```
 
 4. **Configure MongoDB**
-   - Set your MongoDB Atlas URI in the backend and scrapers (see `MONGO_URI` in code or use environment variables)
+   - Create a `.env` file in the project root with your MongoDB Atlas URI:
+     ```env
+     MONGO_URI="your-mongodb-uri-here"
+     ```
+   - Both the Node.js scrapers and the FastAPI backend will automatically load this variable from `.env` (using `dotenv` and `python-dotenv`).
+   - **Do not commit your `.env` file to git** (it is already in `.gitignore`).
 
 ### Running the Application
 

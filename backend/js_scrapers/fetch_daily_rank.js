@@ -2,7 +2,8 @@ import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { MongoClient } from "mongodb";
 import { exec } from "child_process";
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config({ path: '../../.env' });
 
 puppeteer.use(StealthPlugin());
 

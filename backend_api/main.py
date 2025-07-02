@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv(dotenv_path='../.env')
 from fastapi import FastAPI, Request, BackgroundTasks, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
