@@ -51,160 +51,164 @@ async function scrapeWallets() {
     });
     
     if (initialData.code === 0 && initialData.data && initialData.data.rank) {
-      // Filter wallets based on copy trading criteria
-      const profitableWallets = initialData.data.rank
+      // Apply MINIMAL initial filtering - only basic safety checks
+      const candidateWallets = initialData.data.rank
         .filter(wallet => {
-          const minNonZeroProfitDays = 2;
-          const minTokens7d = 1;
-          const maxAvgPnlPerTrade = 500; // 500% per trade
-          const dailyProfit = wallet.daily_profit_7d || [];
-          const nonZeroProfitDays = dailyProfit.filter(day => day.profit && day.profit !== 0).length;
-          const avgPnlPerTrade = wallet.pnl_7d && wallet.txs_30d ? wallet.pnl_7d / wallet.txs_30d : 0;
           return (
             wallet.realized_profit > 0 &&
             wallet.pnl_7d > 0 &&
-            nonZeroProfitDays >= minNonZeroProfitDays &&
-            (wallet.token_num_7d || 0) >= minTokens7d &&
-            wallet.winrate_7d >= 0.7 &&
             wallet.risk.token_honeypot_ratio === 0 &&
-            wallet.risk.fast_tx_ratio < 0.3 &&
-            avgPnlPerTrade <= maxAvgPnlPerTrade
+            wallet.risk.fast_tx_ratio < 0.3
           );
-        })
-        .sort((a, b) => {
-          // Primary sort by win rate
-          if (b.winrate_7d !== a.winrate_7d) {
-            return b.winrate_7d - a.winrate_7d;
-          }
-          // Secondary sort by average profit per trade
-          const aAvgProfit = a.realized_profit / a.txs_30d;
-          const bAvgProfit = b.realized_profit / b.txs_30d;
-          if (bAvgProfit !== aAvgProfit) {
-            return bAvgProfit - aAvgProfit;
-          }
-          // Tertiary sort by number of trades (more trades = more reliable)
-          return b.txs_30d - a.txs_30d;
         });
 
-      // Add rank and copy trading score to each wallet
-      const rankedWallets = profitableWallets.map((wallet, index) => {
-        // Calculate copy trading score (0-100)
-        const winRateScore = wallet.winrate_7d * 40; // 40% weight
-        const profitPerTradeScore = Math.min((wallet.realized_profit / wallet.txs_30d) / 1000 * 30, 30); // 30% weight, capped at 30
-        const tradeCountScore = Math.min(wallet.txs_30d / 50 * 20, 20); // 20% weight, capped at 20
-        const riskScore = (1 - wallet.risk.fast_tx_ratio) * 10; // 10% weight
+      console.log(`Found ${candidateWallets.length} candidate wallets for detailed analysis...`);
 
-        const copyTradingScore = Math.round(winRateScore + profitPerTradeScore + tradeCountScore + riskScore);
-
-        return {
-          rank: index + 1,
-          copy_trading_score: copyTradingScore,
-          ...wallet
-        };
-      });
-
-      // Replace Firestore upserts with MongoDB upserts for wallets
-      for (const wallet of rankedWallets) {
-        const walletData = {
-          gmgn_data: { ...wallet },
-          updated_at: new Date(),
-          discovered_by: ['GMGN_Wallet_Scraper']
-        };
-        await db.collection("wallets").updateOne(
-          { _id: wallet.wallet_address },
-          { $set: walletData },
-          { upsert: true }
-        );
-      }
-      console.log(`Sent ${rankedWallets.length} wallets to MongoDB (wallets collection).`);
+      const qualifiedWallets = [];
       
-      // Print top 5 wallets for quick review
-      console.log("\nTop 5 Wallets for Copy Trading:");
-      rankedWallets.slice(0, 5).forEach(wallet => {
-        const avgPnlPerTrade = wallet.pnl_7d && wallet.txs_30d ? (wallet.pnl_7d / wallet.txs_30d) : 0;
-        const dailyProfit = wallet.daily_profit_7d || [];
-        const nonZeroProfitDays = dailyProfit.filter(day => day.profit && day.profit !== 0).length;
-        console.log(`\nRank ${wallet.rank} (Score: ${wallet.copy_trading_score}/100):`);
-        console.log(`Address: ${wallet.wallet_address}`);
-        console.log(`Win Rate: ${(wallet.winrate_7d * 100).toFixed(2)}%`);
-        console.log(`Total Trades: ${wallet.txs_30d}`);
-        console.log(`Avg Profit per Trade: $${(wallet.realized_profit / wallet.txs_30d).toFixed(2)}`);
-        console.log(`Avg PNL% per Trade (7d): ${avgPnlPerTrade.toFixed(2)}%`);
-        console.log(`Non-zero profit days (7d): ${nonZeroProfitDays}`);
-        console.log(`Tokens traded in 7d: ${wallet.token_num_7d || 0}`);
-        console.log(`Total Profit: $${wallet.realized_profit.toFixed(2)}`);
-        console.log(`7d PNL: ${wallet.pnl_7d.toFixed(2)}%`);
-        console.log(`Risk Metrics:`);
-        console.log(`  - Honeypot Ratio: ${wallet.risk.token_honeypot_ratio * 100}%`);
-        console.log(`  - Fast Trade Ratio: ${wallet.risk.fast_tx_ratio * 100}%`);
-        console.log(`  - No Buy Hold Ratio: ${wallet.risk.no_buy_hold_ratio * 100}%`);
-      });
-
-      // Loop through each promising wallet to get detailed stats
-      for (const wallet of profitableWallets) {
+      // Process each wallet individually with full enrichment and filtering
+      for (let i = 0; i < candidateWallets.length; i++) {
+        const wallet = candidateWallets[i];
         const walletAddress = wallet.wallet_address;
-        const detailedStatsUrl = `https://gmgn.ai/api/v1/wallet_stat/sol/${walletAddress}/7d?device_id=b4e58a50-81f0-4ffb-850e-f433598a8c51&client_id=gmgn_web_20250628-487-0a3c13b&from_app=gmgn&app_ver=20250628-487-0a3c13b&tz_name=America%2FMontevideo&tz_offset=-10800&app_lang=en-US&fp_did=535415de390d0e8ab5b33b8fd73b2830&os=web&period=7d`;
-
+        
+        console.log(`Processing wallet ${i + 1}/${candidateWallets.length}: ${walletAddress.slice(0, 8)}...`);
+        
         try {
+          // Fetch detailed stats
+          const detailedStatsUrl = `https://gmgn.ai/api/v1/wallet_stat/sol/${walletAddress}/7d?device_id=b4e58a50-81f0-4ffb-850e-f433598a8c51&client_id=gmgn_web_20250628-487-0a3c13b&from_app=gmgn&app_ver=20250628-487-0a3c13b&tz_name=America%2FMontevideo&tz_offset=-10800&app_lang=en-US&fp_did=535415de390d0e8ab5b33b8fd73b2830&os=web&period=7d`;
+
           const detailedData = await page.evaluate(async (url) => {
             const response = await fetch(url, { headers: { "accept": "application/json" } });
             return response.json();
           }, detailedStatsUrl);
 
-          let walletToSave = {
-            gmgn_data: { ...wallet }, // Save the original summary data
+          // Fetch activity data for enrichment
+          let uniqueTokensBought7d = 0;
+          let avgBuyUsd7d = null;
+          
+          const activityUrl = `https://gmgn.ai/vas/api/v1/wallet_activity/sol?type=buy&type=sell&device_id=b4e58a50-81f0-4ffb-850e-f433598a8c51&client_id=gmgn_web_20250701-623-affa2c7&from_app=gmgn&app_ver=20250701-623-affa2c7&tz_name=America%2FMontevideo&tz_offset=-10800&app_lang=en-US&fp_did=535415de390d0e8ab5b33b8fd73b2830&os=web&wallet=${walletAddress}&limit=200`;
+          
+          await page.goto(activityUrl, { waitUntil: 'networkidle2', timeout: 30000 });
+          let jsonText = '';
+          const preTag = await page.$('pre');
+          if (preTag) {
+            jsonText = await page.evaluate(el => el.textContent, preTag);
+          } else {
+            jsonText = await page.evaluate(() => document.body.innerText);
+          }
+          
+          const activityData = JSON.parse(jsonText);
+          
+          if (activityData && activityData.code === 0 && activityData.data && Array.isArray(activityData.data.activities)) {
+            // Compute enrichment fields
+            const tokensBought = new Set();
+            const buyUsdAmounts = [];
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            
+            for (const trade of activityData.data.activities) {
+              const tradeDate = new Date(trade.timestamp * 1000);
+              
+              // Only count trades from the last 7 days
+              if (tradeDate >= sevenDaysAgo && trade.event_type === 'buy') {
+                const tokenAddr = trade.token?.address;
+                if (tokenAddr) tokensBought.add(tokenAddr);
+                if (trade.cost_usd) buyUsdAmounts.push(Number(trade.cost_usd));
+              }
+            }
+            
+            uniqueTokensBought7d = tokensBought.size;
+            avgBuyUsd7d = buyUsdAmounts.length > 0 ? (buyUsdAmounts.reduce((a, b) => a + b, 0) / buyUsdAmounts.length) : null;
+          }
+
+          // Extract win rate and PNL from detailed data or fallback to initial data
+          const winrate7d = detailedData?.data?.winrate_7d ?? detailedData?.data?.winrate ?? wallet.winrate_7d ?? 0;
+          const pnl7d = detailedData?.data?.pnl_7d ?? detailedData?.data?.pnl ?? wallet.pnl_7d ?? 0;
+
+          // Apply ALL quality filters here
+          const passesAllFilters =
+            uniqueTokensBought7d >= 5 &&
+            winrate7d >= 0.3 &&
+            pnl7d > 0 &&
+            avgBuyUsd7d !== null && avgBuyUsd7d >= 30;
+
+          if (!passesAllFilters) {
+            console.log(`[SKIP] ${walletAddress.slice(0, 8)}: Failed filters - ` +
+              `tokens: ${uniqueTokensBought7d}, winrate: ${(winrate7d * 100).toFixed(1)}%, ` +
+              `pnl_7d: ${pnl7d.toFixed(2)}%, avg_buy: $${avgBuyUsd7d?.toFixed(2) || 'N/A'}`);
+            continue;
+          }
+
+          // Calculate copy trading score
+          const winRateScore = winrate7d * 40; // 40% weight
+          const profitPerTradeScore = Math.min((wallet.realized_profit / wallet.txs_30d) / 1000 * 30, 30); // 30% weight
+          const tradeCountScore = Math.min(wallet.txs_30d / 50 * 20, 20); // 20% weight
+          const riskScore = (1 - wallet.risk.fast_tx_ratio) * 10; // 10% weight
+          const copyTradingScore = Math.round(winRateScore + profitPerTradeScore + tradeCountScore + riskScore);
+
+          // Create enriched wallet object
+          const enrichedWallet = {
+            ...wallet,
+            rank: qualifiedWallets.length + 1,
+            copy_trading_score: copyTradingScore,
+            unique_tokens_bought_7d: uniqueTokensBought7d,
+            avg_buy_usd_7d: avgBuyUsd7d,
+            enriched_winrate_7d: winrate7d,
+            enriched_pnl_7d: pnl7d
+          };
+
+          qualifiedWallets.push(enrichedWallet);
+
+          // Save to database
+          const walletData = {
+            gmgn_data: { ...enrichedWallet },
+            gmgn_detailed_stats: detailedData?.data || null,
+            unique_tokens_bought_7d: uniqueTokensBought7d,
+            avg_buy_usd_7d: avgBuyUsd7d,
             updated_at: new Date(),
             discovered_by: ['GMGN_Wallet_Scraper']
           };
 
-          if (detailedData && detailedData.code === 0) {
-            console.log(`✓ Successfully fetched details for wallet ${walletAddress.slice(0, 6)}...`);
-            // Add the new detailed stats to our wallet object
-            walletToSave.gmgn_detailed_stats = detailedData.data;
-          }
-
-          // --- NEW: Fetch wallet activity and calculate avg SOL per buy trade ---
-          let avgSolPerBuy7d = null;
-          try {
-            const activityUrl = `https://gmgn.ai/vas/api/v1/wallet_activity/sol?type=buy&type=sell&device_id=b4e58a50-81f0-4ffb-850e-f433598a8c51&client_id=gmgn_web_20250701-623-affa2c7&from_app=gmgn&app_ver=20250701-623-affa2c7&tz_name=America%2FMontevideo&tz_offset=-10800&app_lang=en-US&fp_did=535415de390d0e8ab5b33b8fd73b2830&os=web&wallet=${walletAddress}&limit=50&cost=10`;
-            await page.goto(activityUrl, { waitUntil: 'networkidle2', timeout: 30000 });
-            let jsonText = '';
-            const preTag = await page.$('pre');
-            if (preTag) {
-              jsonText = await page.evaluate(el => el.textContent, preTag);
-            } else {
-              jsonText = await page.evaluate(() => document.body.innerText);
-            }
-            const activityData = JSON.parse(jsonText);
-            if (activityData && activityData.code === 0 && activityData.data && Array.isArray(activityData.data.activities)) {
-              const buyTrades = activityData.data.activities.filter(trade => trade.event_type === 'buy');
-              const solAmounts = buyTrades.map(trade => parseFloat(trade.quote_amount || '0')).filter(x => !isNaN(x));
-              if (solAmounts.length > 0) {
-                const totalSol = solAmounts.reduce((a, b) => a + b, 0);
-                avgSolPerBuy7d = totalSol / solAmounts.length;
-              }
-            }
-          } catch (err) {
-            console.error(`[WARN] Could not fetch/calculate avg SOL per buy for ${walletAddress}:`, err.message);
-          }
-          if (avgSolPerBuy7d !== null) {
-            walletToSave.avg_sol_per_buy_7d = avgSolPerBuy7d;
-          }
-          // --- END NEW ---
-
-          // Upsert the combined data into MongoDB
           await db.collection("wallets").updateOne(
             { _id: walletAddress },
-            { $set: walletToSave },
+            { $set: walletData },
             { upsert: true }
           );
 
-        } catch (e) {
-          console.error(`Error fetching detailed stats for ${walletAddress}:`, e.message);
+          console.log(`[SAVED] ${walletAddress.slice(0, 8)}: Score ${copyTradingScore}, ` +
+            `${uniqueTokensBought7d} tokens, ${(winrate7d * 100).toFixed(1)}% winrate, $${avgBuyUsd7d.toFixed(2)} avg buy`);
+
+        } catch (error) {
+          console.error(`[ERROR] Processing ${walletAddress}:`, error.message);
         }
-        await new Promise(resolve => setTimeout(resolve, 300)); // Short delay
+
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
-      console.log(`Processing complete. All wallet data has been updated in MongoDB.`);
+
+      // Sort qualified wallets by copy trading score
+      qualifiedWallets.sort((a, b) => {
+        if (b.enriched_winrate_7d !== a.enriched_winrate_7d) {
+          return b.enriched_winrate_7d - a.enriched_winrate_7d;
+        }
+        const aAvgProfit = a.realized_profit / a.txs_30d;
+        const bAvgProfit = b.realized_profit / b.txs_30d;
+        if (bAvgProfit !== aAvgProfit) {
+          return bAvgProfit - aAvgProfit;
+        }
+        return b.txs_30d - a.txs_30d;
+      });
+
+      console.log(`\n=== FINAL RESULTS: ${qualifiedWallets.length} QUALIFIED WALLETS ===`);
+      
+      // Print top 5 qualified wallets
+      qualifiedWallets.slice(0, 5).forEach((wallet, index) => {
+        console.log(`\n${index + 1}. ${wallet.wallet_address} (Score: ${wallet.copy_trading_score})`);
+        console.log(`   Tokens Bought (7d): ${wallet.unique_tokens_bought_7d}`);
+        console.log(`   Win Rate: ${(wallet.enriched_winrate_7d * 100).toFixed(2)}%`);
+        console.log(`   PNL (7d): ${wallet.enriched_pnl_7d.toFixed(2)}%`);
+        console.log(`   Avg Buy: $${wallet.avg_buy_usd_7d.toFixed(2)}`);
+        console.log(`   Total Trades: ${wallet.txs_30d}`);
+      });
 
     } else {
       console.error("Failed to get initial wallet data:", initialData);
@@ -214,8 +218,10 @@ async function scrapeWallets() {
     console.error("Error during scraping:", error);
   } finally {
     await browser.close();
+    await client.close();
     console.log("=== GMGN Wallet Scraper: Finished ===");
   }
 }
 
+// Run the scraper (removed duplicate call)
 scrapeWallets().catch((err) => console.error("Unexpected error:", err)); 

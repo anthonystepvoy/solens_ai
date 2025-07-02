@@ -1269,6 +1269,8 @@ function WalletFinderPage() {
                   <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>SMART_SCORE</th>
                   <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>RISK_SCORE</th>
                   <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>ML_TAGS</th>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>TOKENS (7D)</th>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>TRADES (7D)</th>
                 </tr>
               </thead>
               <tbody>
@@ -1304,9 +1306,11 @@ function WalletFinderPage() {
                     </td>
                     <td style={{ padding: '10px' }}>{w.gmgn_detailed_stats?.pnl_7d !== undefined ? (w.gmgn_detailed_stats.pnl_7d * 100).toFixed(2) + '%' : ''}</td>
                     <td style={{ padding: '10px' }}>{w.gmgn_detailed_stats?.winrate !== undefined ? `${(w.gmgn_detailed_stats.winrate * 100).toFixed(0)}%` : ''}</td>
-                    <td style={{ padding: '10px' }}>{w.ai_insights?.overall_smart_score !== undefined && !isNaN(w.ai_insights.overall_smart_score) ? `${(w.ai_insights.overall_smart_score * 100).toFixed(0)}%` : 'N/A'}</td>
-                    <td style={{ padding: '10px' }}>{w.ai_insights?.risk_score !== undefined && !isNaN(w.ai_insights.risk_score) ? `${(w.ai_insights.risk_score * 100).toFixed(0)}%` : 'N/A'}</td>
-                    <td style={{ padding: '10px' }}>{w?.ai_insights?.tags_ml ? w.ai_insights.tags_ml.join(', ') : ''}</td>
+                    <td style={{ padding: '10px' }}>{!isNaN(parseFloat(w?.ai_insights?.overall_smart_score)) ? `${parseFloat(w.ai_insights.overall_smart_score).toFixed(0)}%` : 'N/A'}</td>
+                    <td style={{ padding: '10px' }}>{!isNaN(parseFloat(w?.ai_insights?.risk_score)) ? `${parseFloat(w.ai_insights.risk_score).toFixed(0)}%` : 'N/A'}</td>
+                    <td style={{ padding: '10px' }}>{w.ai_insights?.tags_ml?.join(', ')}</td>
+                    <td style={{ padding: '10px' }}>{w.unique_tokens_bought_7d ?? ''}</td>
+                    <td style={{ padding: '10px' }}>{(w.gmgn_detailed_stats?.buy_7d ?? 0) + (w.gmgn_detailed_stats?.sell_7d ?? 0)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1376,6 +1380,8 @@ function WalletFinderPage() {
             <p style={{ color: '#cccccc' }}>WIN_RATE: <span style={{ color: '#ffffff' }}>{selected.gmgn_detailed_stats?.winrate !== undefined ? `${(selected.gmgn_detailed_stats.winrate * 100).toFixed(0)}%` : ''}</span></p>
             <p style={{ color: '#cccccc' }}>SMART_SCORE: <span style={{ color: '#ffffff' }}>{!isNaN(parseFloat(selected?.ai_insights?.overall_smart_score)) ? `${parseFloat(selected.ai_insights.overall_smart_score).toFixed(0)}%` : 'N/A'}</span></p>
             <p style={{ color: '#cccccc' }}>RISK_SCORE: <span style={{ color: '#ffffff' }}>{!isNaN(parseFloat(selected?.ai_insights?.risk_score)) ? `${parseFloat(selected.ai_insights.risk_score).toFixed(0)}%` : 'N/A'}</span></p>
+            <p style={{ color: '#cccccc' }}>TOKENS BOUGHT (7D): <span style={{ color: '#ffffff' }}>{selected.unique_tokens_bought_7d ?? ''}</span></p>
+            <p style={{ color: '#cccccc' }}>TRADES MADE (7D): <span style={{ color: '#ffffff' }}>{(selected.gmgn_detailed_stats?.buy_7d ?? 0) + (selected.gmgn_detailed_stats?.sell_7d ?? 0)}</span></p>
           </div>
           <p style={{ color: '#cccccc', marginTop: 16 }}>ML_TAGS: <span style={{ color: '#ffffff' }}>{selected.ai_insights?.tags_ml?.join(', ')}</span></p>
         </div>
