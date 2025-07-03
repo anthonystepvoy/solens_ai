@@ -88,7 +88,7 @@ async def set_settings(request: Request):
 
 @app.post("/run-discovery")
 def run_discovery():
-    script_path = os.path.join(os.path.dirname(__file__), '../backend/js_scrapers/gmgn_coins_traders.js')
+    script_path = os.path.join(os.path.dirname(__file__), '../backend/scrapers/gmgn_coins_traders.js')
     env = os.environ.copy()
     env["FIREBASE_SERVICE_ACCOUNT_KEY"] = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '../config/solensai-service-account.json')
@@ -180,8 +180,10 @@ def copytrade_analyze(data: dict = Body(...)):
     wallet_address = data.get('wallet_address')
     if not wallet_address:
         return PlainTextResponse("wallet_address is required", status_code=400)
-    script_path = os.path.join(os.path.dirname(__file__), '../backend/python_scripts/copy_trader_analyzer.py')
+    script_path = os.path.join(os.path.dirname(__file__), '../backend/scrapers/copy_trader_analyzer.py')
     env = os.environ.copy()
+    print("[DEBUG] HELIUS_API_KEY in env:", env.get("HELIUS_API_KEY"))
+    print("[DEBUG] Current working directory:", os.getcwd())
     try:
         result = subprocess.run(
             ['python', script_path, wallet_address],
@@ -202,7 +204,7 @@ def copytrade_analyze(data: dict = Body(...)):
 
 @app.post("/ml-process")
 def ml_process():
-    script_path = os.path.join(os.path.dirname(__file__), '../backend/python_scripts/ml_processor.py')
+    script_path = os.path.join(os.path.dirname(__file__), '../backend/scrapers/ml_processor.py')
     env = os.environ.copy()
     env["FIREBASE_SERVICE_ACCOUNT_KEY_PATH"] = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '../config/solensai-service-account.json')
@@ -473,7 +475,7 @@ def run_discovery_automatically():
     """Background function to run discovery automatically"""
     try:
         print(f"[AUTO-DISCOVERY] Starting automatic discovery at {datetime.utcnow()}")
-        script_path = os.path.join(os.path.dirname(__file__), '../backend/js_scrapers/gmgn_coins_traders.js')
+        script_path = os.path.join(os.path.dirname(__file__), '../backend/scrapers/gmgn_coins_traders.js')
         env = os.environ.copy()
         env["FIREBASE_SERVICE_ACCOUNT_KEY_PATH"] = os.path.abspath(
             os.path.join(os.path.dirname(__file__), '../config/solensai-service-account.json')
@@ -502,7 +504,7 @@ def run_discovery_automatically():
             # --- AUTO RUN ML PROCESSOR ---
             try:
                 print("[AUTO-ML] Running ML Processor after discovery...")
-                ml_script_path = os.path.join(os.path.dirname(__file__), '../backend/python_scripts/ml_processor.py')
+                ml_script_path = os.path.join(os.path.dirname(__file__), '../backend/scrapers/ml_processor.py')
                 ml_result = subprocess.run(
                     ['python', ml_script_path],
                     capture_output=True,
@@ -529,43 +531,18 @@ def run_minute_rank_automatically():
     """Background function to fetch 1-minute token rank automatically"""
     try:
         print(f"[AUTO-1MIN-RANK] Starting 1-minute rank fetch at {datetime.utcnow()}")
-        script_path = os.path.join(os.path.dirname(__file__), '../backend/js_scrapers/fetch_minute_rank.js')
-        env = os.environ.copy()
-        env["FIREBASE_SERVICE_ACCOUNT_KEY_PATH"] = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '../config/solensai-service-account.json')
-        )
-        
-        result = subprocess.run(
-            ['node', script_path],
-            capture_output=True, 
-            text=True, 
-            encoding='utf-8',
-            errors='replace',
-            check=False, 
-            env=env
-        )
-        
-        if result.returncode == 0:
-            print(f"[AUTO-1MIN-RANK] Successfully completed at {datetime.utcnow()}")
-            # Update job status
-            db.job_status.update_one({"job": "minute_rank"}, {"$set": {
-                "job": "minute_rank",
-                "status": "auto_complete",
-                "last_update": datetime.utcnow(),
-                "auto_run": True
-            }}, upsert=True)
-        else:
-            print(f"[AUTO-1MIN-RANK] Failed with return code {result.returncode}")
-            print(f"[AUTO-1MIN-RANK] Error: {result.stderr}")
-            
+        script_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'backend', 'scrapers', 'fetch_rank.js'))
+        result = subprocess.run(['node', script_path, 'minute'], capture_output=True, text=True, encoding='utf-8', errors='replace', check=False)
+        print(result.stdout)
+        print(result.stderr)
     except Exception as e:
         print(f"[AUTO-1MIN-RANK] Exception occurred: {e}")
 
 def run_hourly_rank_automatically():
     try:
         print(f"[AUTO-1HR-RANK] Starting 1-hour rank fetch at {datetime.utcnow()}")
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../backend/js_scrapers/fetch_hourly_rank.js'))
-        result = subprocess.run(['node', script_path], capture_output=True, text=True, encoding='utf-8', errors='replace', check=False)
+        script_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'backend', 'scrapers', 'fetch_rank.js'))
+        result = subprocess.run(['node', script_path, 'hour'], capture_output=True, text=True, encoding='utf-8', errors='replace', check=False)
         print(result.stdout)
         print(result.stderr)
     except Exception as e:
@@ -574,7 +551,8 @@ def run_hourly_rank_automatically():
 def run_hourly_wallet_discovery_automatically():
     try:
         print(f"[AUTO-1HR-WALLET] Starting 1-hour wallet discovery at {datetime.utcnow()}")
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../backend/js_scrapers/discover_wallets_top_1hr.js'))
+        script_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'backend', 'scrapers', 'discover_wallets_top_1hr.js'))
+        print(f"[DEBUG] Resolved script_path for 1hr wallet discovery: {script_path}")
         result = subprocess.run(['node', script_path], capture_output=True, text=True, encoding='utf-8', errors='replace', check=False)
         print(result.stdout)
         print(result.stderr)
@@ -584,8 +562,8 @@ def run_hourly_wallet_discovery_automatically():
 def run_daily_rank_automatically():
     try:
         print(f"[AUTO-24HR-RANK] Starting 24-hour rank fetch at {datetime.utcnow()}")
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../backend/js_scrapers/fetch_daily_rank.js'))
-        result = subprocess.run(['node', script_path], capture_output=True, text=True, encoding='utf-8', errors='replace', check=False)
+        script_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'backend', 'scrapers', 'fetch_rank.js'))
+        result = subprocess.run(['node', script_path, 'day'], capture_output=True, text=True, encoding='utf-8', errors='replace', check=False)
         print(result.stdout)
         print(result.stderr)
     except Exception as e:
@@ -594,7 +572,8 @@ def run_daily_rank_automatically():
 def run_daily_wallet_discovery_automatically():
     try:
         print(f"[AUTO-24HR-WALLET] Starting 24-hour wallet discovery at {datetime.utcnow()}")
-        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../backend/js_scrapers/discover_wallets_top_24hr.js'))
+        script_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'backend', 'scrapers', 'discover_wallets_top_24hr.js'))
+        print(f"[DEBUG] Resolved script_path for 24hr wallet discovery: {script_path}")
         result = subprocess.run(['node', script_path], capture_output=True, text=True, encoding='utf-8', errors='replace', check=False)
         print(result.stdout)
         print(result.stderr)

@@ -146,7 +146,7 @@ const LandingPage: React.FC = () => {
             filter: 'contrast(1.2) brightness(0.9)'
           }}
         >
-          <source src="/bgvid.webm" type="video/webm" />
+          <source src="/assets/bgvid.webm" type="video/webm" />
         </video>
       </div>
       

@@ -48,7 +48,7 @@ except Exception as e:
 # MONGO_URI should be set in your environment or .env file
 MONGO_URI = os.environ.get('MONGO_URI')
 WRAPPED_SOL_MINT = "So11111111111111111111111111111111111111112"
-BLOCK_SCAN_LIMIT = 20  # Increased to scan more blocks
+BLOCK_SCAN_LIMIT = 10  # Scan 10 blocks for better copytrader detection
 
 # Common DEX program IDs for detecting swaps
 DEX_PROGRAM_IDS = {
@@ -102,14 +102,17 @@ def make_helius_request(url, method='get', payload=None, timeout=30):
     try:
         print(f"[DEBUG] Making {method.upper()} request to: {url}", file=sys.stderr)
         
-        headers = {
-            'Content-Type': 'application/json',
-            'User-Agent': 'Copy-Trader-Analyzer/1.0'
-        }
-        
+        # Only set Content-Type for POST requests
+        headers = {}
+        if method.lower() == 'post':
+            headers['Content-Type'] = 'application/json'
+            headers['User-Agent'] = 'Copy-Trader-Analyzer/1.0'
+        # For GET, do not set User-Agent or Content-Type (to match minimal test)
         if method.lower() == 'get':
+            print(f"[DEBUG] GET headers: {headers}", file=sys.stderr)
             response = requests.get(url, timeout=timeout, headers=headers)
         else:
+            print(f"[DEBUG] POST headers: {headers}", file=sys.stderr)
             response = requests.post(url, json=payload, timeout=timeout, headers=headers)
             
         print(f"[DEBUG] Response status: {response.status_code}", file=sys.stderr)
@@ -127,6 +130,7 @@ def make_helius_request(url, method='get', payload=None, timeout=30):
         print(f"[ERROR] Timeout occurred for URL {url}", file=sys.stderr)
     except requests.exceptions.HTTPError as e:
         print(f"[ERROR] HTTP error {e.response.status_code} for URL {url}: {e}", file=sys.stderr)
+        print(f"[ERROR] Response content: {e.response.text}", file=sys.stderr)  # Added to see actual error
         if e.response.status_code == 401:
             print("[ERROR] Unauthorized - check your API key", file=sys.stderr)
         elif e.response.status_code == 403:
@@ -153,71 +157,112 @@ def get_pnl(token_address, wallet_address):
 def find_latest_buy_transactions(wallet_address, max_buys=3):
     """Find the latest N buy/swap transactions for a wallet"""
     try:
-        url = f"{HELIUS_API_BASE_URL}/v0/addresses/{wallet_address}/transactions?api-key={HELIUS_API_KEY}&limit=500"
-        print(f"[DEBUG] Searching for transactions for wallet: {wallet_address}", file=sys.stderr)
-        transactions = make_helius_request(url)
-        if not transactions or not isinstance(transactions, list):
-            print(f"[ERROR] No transactions found for wallet: {wallet_address}", file=sys.stderr)
-            return []
-        print(f"[DEBUG] Found {len(transactions)} transactions", file=sys.stderr)
+        # Use a smaller limit to avoid 400 error - fetch in batches if needed
+        all_transactions = []
+        limit = 100  # Reduced from 500
+        before = None
+        
+        # Try to fetch transactions in smaller batches
+        while len(all_transactions) < 500:  # Still want to check up to 500 transactions
+            url = f"{HELIUS_API_BASE_URL}/v0/addresses/{wallet_address}/transactions?api-key={HELIUS_API_KEY}&limit={limit}"
+            if before:
+                url += f"&before={before}"
+                
+            print(f"[DEBUG] Searching for transactions for wallet: {wallet_address} (batch, limit={limit})", file=sys.stderr)
+            transactions = make_helius_request(url)
+            
+            # Handle response
+            if transactions is None:
+                print(f"[ERROR] No transactions found for wallet: {wallet_address}", file=sys.stderr)
+                break
+            if isinstance(transactions, dict) and 'error' in transactions:
+                print(f"[ERROR] Helius returned error: {transactions['error']}", file=sys.stderr)
+                break
+            if not isinstance(transactions, list):
+                print(f"[ERROR] Unexpected response type from Helius: {type(transactions)}", file=sys.stderr)
+                print(f"[ERROR] Response content: {transactions}", file=sys.stderr)
+                break
+            
+            if not transactions:  # No more transactions
+                break
+                
+            all_transactions.extend(transactions)
+            before = transactions[-1].get('signature')  # Use last signature for pagination
+            
+            print(f"[DEBUG] Fetched {len(transactions)} transactions, total: {len(all_transactions)}", file=sys.stderr)
+            
+            # Small delay to avoid rate limiting
+            time.sleep(0.1)
+            
+            # If we got less than the limit, we've reached the end
+            if len(transactions) < limit:
+                break
+        
+        print(f"[DEBUG] Found {len(all_transactions)} total transactions", file=sys.stderr)
+        
         buys = []
-        for i, tx in enumerate(transactions):
+        for i, tx in enumerate(all_transactions):
             try:
-                print(f"[DEBUG] Analyzing transaction {i+1}/{len(transactions)}: {tx.get('signature', 'NO_SIG')}", file=sys.stderr)
-                token_transfers = tx.get("tokenTransfers", [])
-                sent_sol = False
-                received_token = None
-                for transfer in token_transfers:
-                    from_user = transfer.get("fromUserAccount")
-                    to_user = transfer.get("toUserAccount")
-                    mint = transfer.get("mint")
-                    if from_user == wallet_address and mint == WRAPPED_SOL_MINT:
-                        sent_sol = True
-                    if to_user == wallet_address and mint != WRAPPED_SOL_MINT:
-                        received_token = mint
+                print(f"[DEBUG] Analyzing transaction {i+1}/{len(all_transactions)}: {tx.get('signature', 'NO_SIG')}", file=sys.stderr)
+                
+                # Check if this is a swap transaction
                 tx_type = tx.get("type", "").upper()
                 description = tx.get("description", "").lower()
+                
                 if tx_type in ["SWAP", "TRADE"] or "swap" in description or "buy" in description:
+                    # Look for token transfers to identify what was bought
+                    token_transfers = tx.get("tokenTransfers", [])
+                    
                     for transfer in token_transfers:
-                        if (transfer.get("toUserAccount") == wallet_address and transfer.get("mint") != WRAPPED_SOL_MINT):
+                        # Check if this wallet received a token (not SOL/WSOL)
+                        if (transfer.get("toUserAccount") == wallet_address and 
+                            transfer.get("mint") != WRAPPED_SOL_MINT):
+                            
                             received_token = transfer.get("mint")
-                            sent_sol = True
-                            break
-                if sent_sol and received_token:
-                    slot = tx.get('slot')
-                    signature = tx.get('signature')
-                    print(f"[SUCCESS] Found buy transaction - Signature: {signature}, Token: {received_token}, Slot: {slot}", file=sys.stderr)
-                    buys.append((signature, received_token, slot))
+                            slot = tx.get('slot')
+                            signature = tx.get('signature')
+                            
+                            print(f"[SUCCESS] Found buy transaction - Signature: {signature}, Token: {received_token}, Slot: {slot}", file=sys.stderr)
+                            buys.append((signature, received_token, slot))
+                            
+                            if len(buys) >= max_buys:
+                                break
+                    
                     if len(buys) >= max_buys:
                         break
+                        
             except Exception as e:
                 print(f"[ERROR] Error analyzing transaction {i}: {e}", file=sys.stderr)
                 continue
+        
         if not buys:
             print(f"[WARNING] No buy transactions found for wallet: {wallet_address}", file=sys.stderr)
+        
         return buys
+        
     except Exception as e:
         print(f"[ERROR] Error in find_latest_buy_transactions: {e}", file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
         return []
+
+# Add or update this near the top of the file
+KNOWN_BOTS = set([
+    # Add known bot wallet addresses here
+    # Example: 'SomeBotWalletAddress',
+])
 
 def scan_blocks_for_copytraders(start_block, token_address, main_wallet):
     """Scan blocks for potential copy traders"""
     try:
         copy_traders = []
         unique_traders = set()
-        
         print(f"[DEBUG] Scanning {BLOCK_SCAN_LIMIT} blocks starting from block {start_block}", file=sys.stderr)
         print(f"[DEBUG] Looking for token: {token_address}", file=sys.stderr)
         print(f"[DEBUG] Excluding main wallet: {main_wallet}", file=sys.stderr)
-        
         scan_range = list(range(0, BLOCK_SCAN_LIMIT + 1))  # Just scan forward
-        
         for i in scan_range:
             current_block = start_block + i
-            
             print(f"[DEBUG] Scanning block {current_block} (offset {i:+d})", file=sys.stderr)
-            
             payload = {
                 "jsonrpc": "2.0",
                 "id": "1",
@@ -231,157 +276,95 @@ def scan_blocks_for_copytraders(start_block, token_address, main_wallet):
                     }
                 ]
             }
-            
             block_data = make_helius_request(HELIUS_RPC_URL, method='post', payload=payload)
-            
             if not block_data or 'result' not in block_data:
                 print(f"[WARNING] No data for block {current_block}", file=sys.stderr)
                 continue
-                
             if not block_data['result']:
                 print(f"[WARNING] Empty block {current_block}", file=sys.stderr)
                 continue
-            
             transactions = block_data['result'].get('transactions', [])
             print(f"[DEBUG] Found {len(transactions)} transactions in block {current_block}", file=sys.stderr)
-            
             for tx_index, tx in enumerate(transactions):
                 try:
-                    # MULTIPLE METHODS TO DETECT TOKEN BUYS
-                    
-                    # Get the fee payer/signer (first account)
                     account_keys = tx.get('transaction', {}).get('message', {}).get('accountKeys', [])
                     if not account_keys:
+                        print(f"[DEBUG] Skipping tx {tx_index}: no account keys", file=sys.stderr)
                         continue
-                        
                     signer = account_keys[0].get('pubkey')
-                    if not signer or signer == main_wallet:
+                    if not signer or signer == main_wallet or signer in KNOWN_BOTS:
+                        print(f"[DEBUG] Skipping tx {tx_index}: signer is main wallet or known bot", file=sys.stderr)
                         continue
-                    
                     if signer in unique_traders:
+                        print(f"[DEBUG] Skipping tx {tx_index}: signer already processed", file=sys.stderr)
                         continue
-                    
-                    # METHOD 1: Check postTokenBalances for the target token
+                    tx_type = tx.get('meta', {}).get('type', '').upper() or tx.get('type', '').upper()
+                    description = tx.get('meta', {}).get('description', '').lower() or tx.get('description', '').lower()
+                    if tx.get('meta', {}).get('err') is not None:
+                        print(f"[DEBUG] Skipping tx {tx_index}: transaction failed", file=sys.stderr)
+                        continue
+                    # Check if the wallet received the target token
                     post_balances = tx.get('meta', {}).get('postTokenBalances', [])
                     pre_balances = tx.get('meta', {}).get('preTokenBalances', [])
-                    
                     target_token_acquired = False
                     token_amount_acquired = 0
-                    
-                    # Compare pre vs post balances
                     for post_bal in post_balances:
-                        if (post_bal.get('mint') == token_address and 
-                            post_bal.get('owner') == signer):
-                            
+                        if (post_bal.get('mint') == token_address and post_bal.get('owner') == signer):
                             post_amount = post_bal.get('uiTokenAmount', {}).get('uiAmount', 0)
-                            
-                            # Find corresponding pre-balance
                             pre_amount = 0
                             for pre_bal in pre_balances:
-                                if (pre_bal.get('mint') == token_address and 
-                                    pre_bal.get('owner') == signer and
-                                    pre_bal.get('accountIndex') == post_bal.get('accountIndex')):
+                                if (pre_bal.get('mint') == token_address and pre_bal.get('owner') == signer and pre_bal.get('accountIndex') == post_bal.get('accountIndex')):
                                     pre_amount = pre_bal.get('uiTokenAmount', {}).get('uiAmount', 0)
                                     break
-                            
                             if post_amount > pre_amount:
                                 target_token_acquired = True
                                 token_amount_acquired = post_amount - pre_amount
-                                print(f"[DEBUG] Wallet {signer} acquired {token_amount_acquired} of target token", file=sys.stderr)
                                 break
-                    
-                    # METHOD 2: Check if transaction failed (skip failed transactions)
-                    if tx.get('meta', {}).get('err') is not None:
+                    if not target_token_acquired:
+                        print(f"[DEBUG] Skipping tx {tx_index}: signer did not acquire target token", file=sys.stderr)
                         continue
-                    
-                    # METHOD 3: Check instruction types for swaps/transfers
-                    contains_swap = False
-                    instructions = tx.get('transaction', {}).get('message', {}).get('instructions', [])
-                    
-                    for instruction in instructions:
-                        program_id = instruction.get('programId', '')
-                        # Common DEX program IDs
-                        if program_id in [
-                            'JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4',  # Jupiter
-                            '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',  # Raydium
-                            'EhpADApTmMm46FWTaWqkqNpgEm4xgHUHoJZCWrfnT27',  # Orca
-                            'whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc',   # Whirlpool
-                        ]:
-                            contains_swap = True
+                    # Check if the wallet spent SOL/WSOL in this transaction
+                    sol_spent = 0
+                    meta = tx.get('meta', {})
+                    for i, post_bal in enumerate(meta.get('postBalances', [])):
+                        pre_bal = meta.get('preBalances', [0] * len(meta.get('postBalances', [])))[i]
+                        if i < len(account_keys) and account_keys[i].get('pubkey') == signer:
+                            sol_difference = (pre_bal - post_bal) / 1e9  # Convert lamports to SOL
+                            if sol_difference > 0:  # SOL was spent
+                                sol_spent = sol_difference
                             break
-                    
-                    # If we found target token acquisition OR swap instruction
-                    if target_token_acquired or contains_swap:
-                        print(f"[DEBUG] Found potential copy trader: {signer} in block {current_block}", file=sys.stderr)
-                        
-                        # Extract transaction details
-                        meta = tx.get('meta', {})
-                        fee_paid = meta.get('fee', 0) / 1e9
-                        signature = tx.get('transaction', {}).get('signatures', [None])[0]
-                        
-                        # Calculate SOL spent (look at pre vs post SOL balance)
-                        sol_spent = 0
-                        for i, post_bal in enumerate(meta.get('postBalances', [])):
-                            pre_bal = meta.get('preBalances', [0] * len(meta.get('postBalances', [])))[i]
-                            if i < len(account_keys) and account_keys[i].get('pubkey') == signer:
-                                sol_difference = (pre_bal - post_bal) / 1e9  # Convert lamports to SOL
-                                if sol_difference > 0:  # SOL was spent
-                                    sol_spent = sol_difference
-                                break
-                        
-                        # Additional check for token transfers in inner instructions
-                        if not target_token_acquired:
-                            inner_instructions = tx.get('meta', {}).get('innerInstructions', [])
-                            for inner in inner_instructions:
-                                for instr in inner.get('instructions', []):
-                                    if instr.get('parsed', {}).get('type') == 'transfer' and \
-                                       instr.get('parsed', {}).get('info', {}).get('destination') == signer and \
-                                       instr.get('parsed', {}).get('info', {}).get('mint') == token_address:
-                                        target_token_acquired = True
-                                        print(f"[DEBUG] Wallet {signer} acquired target token via inner instruction", file=sys.stderr)
-                                        break
-                        
-                        # Calculate profit
-                        profit_usd, profit_pct = get_pnl(token_address, signer)
-                        
-                        trader_info = {
-                            "Trader": signer,
-                            "Signature": signature or "N/A",
-                            "Block Delay": current_block - start_block,
-                            "Bot Used": "Detected" if contains_swap else "Unknown",
-                            "Fee Wallet": "Unknown",
-                            "Tx Processor/Fee Wallet": signer,
-                            "Fee Paid": fee_paid,
-                            "SOL Spent": round(sol_spent, 6) if sol_spent > 0 else "N/A",
-                            "Token Amount": round(token_amount_acquired, 6) if token_amount_acquired > 0 else "N/A",
-                            "Profit/USD": profit_usd,
-                            "Profit/%": profit_pct
-                        }
-                        
-                        # Add bot and fee wallet detection
-                        bot_used = "Unknown"
-                        for instruction in instructions:
-                            program_id = instruction.get('programId', '')
-                            if program_id in botAccounts:
-                                bot_used = botAccounts[program_id]
-                                break
-                        trader_info["Bot Used"] = bot_used
-                        
-                        for account in account_keys:
-                            if account.get('pubkey') in feeWallets:
-                                trader_info["Fee Wallet"] = feeWallets[account.get('pubkey')]
-                                break
-                        
-                        copy_traders.append(trader_info)
-                        unique_traders.add(signer)
-                        
+                    # Only include if:
+                    # - SWAP/TRADE (or description contains swap/buy), OR
+                    # - TRANSFER but spent SOL and received target token
+                    is_swap = (tx_type in ["SWAP", "TRADE"] or "swap" in description or "buy" in description)
+                    is_transfer_with_sol = (tx_type == "TRANSFER" and sol_spent > 0)
+                    if not (is_swap or is_transfer_with_sol):
+                        print(f"[DEBUG] Skipping tx {tx_index}: not swap/trade or transfer with SOL spent", file=sys.stderr)
+                        continue
+                    # If we get here, this is a candidate copytrader
+                    print(f"[DEBUG] Including tx {tx_index}: signer {signer} is a copytrader (type={tx_type}, sol_spent={sol_spent})", file=sys.stderr)
+                    profit_usd, profit_pct = get_pnl(token_address, signer)
+                    signature = tx.get('transaction', {}).get('signatures', [None])[0]
+                    trader_info = {
+                        "Trader": signer,
+                        "Signature": signature or "N/A",
+                        "Block Delay": current_block - start_block,
+                        "Bot Used": tx_type,
+                        "Fee Wallet": "Unknown",
+                        "Tx Processor/Fee Wallet": signer,
+                        "Fee Paid": meta.get('fee', 0) / 1e9,
+                        "SOL Spent": round(sol_spent, 6) if sol_spent > 0 else "N/A",
+                        "Token Amount": round(token_amount_acquired, 6) if token_amount_acquired > 0 else "N/A",
+                        "Profit/USD": profit_usd,
+                        "Profit/%": profit_pct
+                    }
+                    copy_traders.append(trader_info)
+                    unique_traders.add(signer)
                 except Exception as e:
                     print(f"[ERROR] Error processing transaction {tx_index} in block {current_block}: {e}", file=sys.stderr)
                     continue
-        
         print(f"[SUCCESS] Found {len(copy_traders)} potential copy traders", file=sys.stderr)
         return copy_traders
-        
     except Exception as e:
         print(f"[ERROR] Error in scan_blocks_for_copytraders: {e}", file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
@@ -392,15 +375,26 @@ def main():
     try:
         print(f"[INFO] Copy Trader Analyzer started at {datetime.now()}", file=sys.stderr)
         
-        # Accept wallet address as command-line argument or use placeholder
+        # Accept wallet address as command-line argument or prompt if not provided
         if len(sys.argv) > 1:
             walletAddress = sys.argv[1]
         else:
             walletAddress = WALLET_TO_ANALYZE
+            if not walletAddress:
+                walletAddress = input("Enter the wallet address to analyze: ").strip()
         if not walletAddress:
             print("No target wallet address provided.")
             sys.exit(1)
-        rpcUrl = RPC_URL
+        
+        # Build Helius RPC URL from API key if not set
+        rpcUrl = HELIUS_RPC_URL
+        if not rpcUrl:
+            if HELIUS_API_KEY:
+                rpcUrl = f"https://mainnet.helius-rpc.com/?api-key={HELIUS_API_KEY}"
+                print(f"[INFO] Built Helius RPC URL from API key.", file=sys.stderr)
+            else:
+                print("[ERROR] Helius RPC URL or API key not set in environment.", file=sys.stderr)
+                sys.exit(1)
         blockLimit = BLOCK_LIMIT
         
         print(f"[INFO] Analyzing wallet: {walletAddress}", file=sys.stderr)
@@ -457,3 +451,9 @@ if __name__ == "__main__":
     except:
         pass  # Ignore if reconfigure fails
     main()
+
+# Remove the test code at the end since it's not part of the main functionality
+# url = "https://api.helius.xyz/v0/addresses/DfMxre4cKmvogbLrPigxmibVTTQDuzjdXojWzjCXXhzj/transactions?api-key=5f76bf48-ea7b-4491-beb2-1122aedd3c07&limit=1"
+# response = requests.get(url)
+# print("MINIMAL TEST Status:", response.status_code)
+# print("MINIMAL TEST Body:", response.text)

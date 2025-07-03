@@ -194,7 +194,7 @@ async function main() {
         
         const filterStart = Date.now();
         // 2. Filter for top quality tokens only
-        const topQualityTokens = filterTopQualityTokens(tokensToProcess, 3); // Reduced to 3 for faster processing
+        const topQualityTokens = filterTopQualityTokens(tokensToProcess, 20); // Changed from 3 to 20 for full processing
         console.log(`[TIMER] Filter top quality tokens: ${(Date.now() - filterStart) / 1000}s`);
         
         const browserStart = Date.now();
