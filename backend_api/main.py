@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import os
 
+# ed suck my d
 # Load environment variables - try multiple paths for different deployment scenarios
 env_paths = ['../.env', '.env', './.env']
 for env_path in env_paths:
