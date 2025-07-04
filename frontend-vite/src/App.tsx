@@ -1391,141 +1391,83 @@ function WalletFinderPage() {
 }
 
 function CopytradeFinderPage() {
-  const [wallet, setWallet] = useState('');
-  const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [status, setStatus] = useState<string | null>(null);
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    const savedResults = localStorage.getItem('copytrade_results');
-    const savedStatus = localStorage.getItem('copytrade_status');
-    if (savedResults) setResults(JSON.parse(savedResults));
-    if (savedStatus) setStatus(savedStatus);
-  }, []);
-
-  // Save to localStorage when results or status change
-  useEffect(() => {
-    if (results.length > 0) {
-      localStorage.setItem('copytrade_results', JSON.stringify(results));
-    }
-    if (status) {
-      localStorage.setItem('copytrade_status', status);
-    }
-  }, [results, status]);
-
-  // Optionally clear on new session (uncomment if you want to clear on reload)
-  // useEffect(() => {
-  //   return () => {
-  //     localStorage.removeItem('copytrade_results');
-  //     localStorage.removeItem('copytrade_status');
-  //   };
-  // }, []);
-
-  const handleAnalyze = async () => {
-    setLoading(true);
-    setError('');
-    setStatus(null);
-    setResults([]);
-    localStorage.removeItem('copytrade_results');
-    localStorage.removeItem('copytrade_status');
-
-    try {
-      const response = await axios.post(API_ENDPOINTS.COPYTRADE_ANALYZE, { wallet_address: wallet });
-      const { count, results } = response.data;
-      if (count > 0) {
-        setStatus(`[ANALYSIS_COMPLETE] Found ${count} unique potential copytraders.`);
-      } else {
-        setStatus('[ANALYSIS_COMPLETE] No new copytrade patterns identified in this run.');
-      }
-      setResults(results);
-    } catch (err) {
-      setError('Error analyzing wallet. The backend script may have failed.');
-    } finally {
-        setLoading(false);
-    }
-  };
-
   return (
     <div style={{ marginTop: 32, maxWidth: 900, margin: '32px auto 0', padding: '0 24px', fontFamily: '"Courier New", monospace', color: '#fff' }}>
       <h1 style={{ color: '#cccccc', marginBottom: 16, fontSize: 24, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: 'inherit' }}>&gt; COPYTRADE_FINDER</h1>
       <p style={{ color: '#cccccc', marginBottom: 24, fontFamily: 'inherit', fontSize: 14 }}>[ADVANCED_PATTERN_RECOGNITION_SYSTEM]</p>
+      
+      {/* Feature Under Development Message */}
+      <div style={{ 
+        border: '4px solid #ff0000', 
+        borderRadius: 12, 
+        padding: '32px', 
+        margin: '24px 0',
+        background: '#330000',
+        color: '#ff0000',
+        textAlign: 'center',
+        fontSize: '1.5em',
+        fontWeight: 'bold',
+        boxShadow: '0 0 20px #ff0000'
+      }}>
+        <div style={{ fontSize: '2.5em', marginBottom: '16px' }}>🚨 ON THE WORKS 🚨</div>
+        <div style={{ marginBottom: '12px', fontSize: '1.3em' }}>COPYTRADE ANALYZER IS UNDER DEVELOPMENT</div>
+        <div style={{ fontSize: '1em', opacity: 0.9, color: '#ffaaaa' }}>
+          This feature is currently being enhanced with advanced blockchain analysis capabilities.
+          <br />Check back soon for the full copy trader detection system!
+          <br /><strong>Version: 2024-07-04 APP.TSX FIXED</strong>
+        </div>
+      </div>
+      
+      {/* Disabled Input Fields */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         <input
           type="text"
-          value={wallet}
-          onChange={e => setWallet(e.target.value)}
-          placeholder="Enter wallet address to analyze"
-        style={{
-            background: '#000',
-            color: '#00ff41', 
+          placeholder="Feature coming soon..."
+          disabled={true}
+          readOnly
+          style={{
+            background: '#0f1114',
+            color: '#666', 
             fontFamily: '"Courier New", monospace',
-          border: '1px solid #00ff41',
-          borderRadius: 0,
+            border: '1px solid #333',
+            borderRadius: 0,
             padding: '10px 16px',
             fontSize: 16,
             minWidth: 340,
             outline: 'none',
-            flex: 1
+            flex: 1,
+            opacity: 0.5,
+            cursor: 'not-allowed'
           }}
         />
         <button
-          onClick={handleAnalyze}
-          disabled={loading || !wallet}
-          style={{ padding: '12px 24px', borderRadius: 0, border: '1px solid #00ff41', background: loading ? '#222' : '#000', color: loading ? '#666' : '#00ff41', fontWeight: 700, fontFamily: 'inherit', fontSize: 14, cursor: loading || !wallet ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
+          disabled={true}
+          style={{ 
+            padding: '12px 24px', 
+            borderRadius: 0, 
+            border: '1px solid #333', 
+            background: '#0f1114', 
+            color: '#666', 
+            fontWeight: 700, 
+            fontFamily: 'inherit', 
+            fontSize: 14, 
+            cursor: 'not-allowed',
+            opacity: 0.5
+          }}
         >
-          {loading ? '[SCANNING...]' : '> SEARCH'}
-      </button>
-          </div>
+          DISABLED
+        </button>
+      </div>
       
-      {/* Display error or status message */}
-      {error && <div style={{ color: '#ff6b6b', marginBottom: 16, fontFamily: 'inherit', padding: 12, border: '1px solid #ff6b6b', background: 'rgba(255, 107, 107, 0.1)', fontSize: 14 }}>{error}</div>}
-      {status && !loading && (
-        <div style={{ 
-          marginBottom: 16, 
-          padding: 16, 
-          background: 'rgba(0, 255, 65, 0.1)', 
-          color: '#00ff41', 
-          borderRadius: 0, 
-          fontWeight: 600, 
-          fontSize: 14, 
-          border: '1px solid #00ff41',
-          fontFamily: '"Courier New", monospace'
-        }}>
-          {status}
-        </div>
-      )}
-
-      {/* Display results table */}
-      {results.length > 0 && !loading && (
-        <div style={{ width: '100%', marginBottom: 32 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', color: '#fff', fontFamily: 'inherit', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid #333333' }}>
-            <thead style={{ background: 'rgba(0, 255, 65, 0.1)' }}>
-              <tr>
-                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Trader</th>
-                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Signature</th>
-                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Block Delay</th>
-                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Tx Processor/Fee Wallet</th>
-                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Fee Paid</th>
-                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>SOL Bought</th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.map((row, idx) => (
-                <tr key={idx} style={{ borderBottom: '1px solid #333333' }}>
-                  <td style={{ padding: '10px' }}><WalletAddress address={row['Trader']} short={true}/></td>
-                  <td style={{ padding: '10px' }}><WalletAddress address={row['Signature']} short={true}/></td>
-                  <td style={{ padding: '10px' }}>{row['Block Delay']}</td>
-                  <td style={{ padding: '10px' }}>{row['Tx Processor/Fee Wallet']}</td>
-                  <td style={{ padding: '10px' }}>{row['Fee Paid']}</td>
-                  <td style={{ padding: '10px' }}>{row['SOL Bought']}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <div style={{ 
+        color: '#666', 
+        marginTop: 24, 
+        fontSize: '0.9em',
+        fontStyle: 'italic',
+        textAlign: 'center'
+      }}>
+        💡 Meanwhile, explore our other powerful features: Smart Wallet Discovery and AI Analysis!
+      </div>
     </div>
   );
 }
