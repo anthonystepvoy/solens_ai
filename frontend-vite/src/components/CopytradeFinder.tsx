@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import { API_ENDPOINTS } from '../config';
+
+// CopytradeFinder - Feature Under Development v2.0
 
 const retroBox: React.CSSProperties = {
   border: '2px solid #00ff41',
