@@ -32,16 +32,9 @@ from pymongo import MongoClient
 import random
 import asyncio
 import threading
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 from collections import Counter
-
-# Conditional imports for scheduler (only needed for local development)
-try:
-    from apscheduler.schedulers.background import BackgroundScheduler
-    from apscheduler.triggers.interval import IntervalTrigger
-    HAS_SCHEDULER = True
-except ImportError:
-    # apscheduler not available (Railway deployment)
-    HAS_SCHEDULER = False
 
 # Rest of your code continues here...
 
@@ -79,10 +72,8 @@ client = MongoClient(
 )
 db = client["solens_ai"]
 
-# Background scheduler for automatic discovery (only if available)
-scheduler = None
-if HAS_SCHEDULER:
-    scheduler = BackgroundScheduler()
+# Background scheduler for automatic discovery
+scheduler = BackgroundScheduler()
 
 @app.get("/")
 def read_root():
@@ -213,44 +204,25 @@ def copytrade_analyze(data: dict = Body(...)):
     wallet_address = data.get('wallet_address')
     if not wallet_address:
         return PlainTextResponse("wallet_address is required", status_code=400)
-    
-    # Temporarily use test script for debugging
-    test_script_path = os.path.join(os.path.dirname(__file__), 'test_helius.py')
     script_path = os.path.join(os.path.dirname(__file__), '../backend/scrapers/copy_trader_analyzer.py')
     env = os.environ.copy()
     print("[DEBUG] HELIUS_API_KEY in env:", env.get("HELIUS_API_KEY"))
     print("[DEBUG] Current working directory:", os.getcwd())
-    
     try:
-        # First run test script
-        test_result = subprocess.run(
-            ['python', test_script_path, wallet_address],
+        result = subprocess.run(
+            ['python', script_path, wallet_address],
             capture_output=True,
             text=True,
             env=env,
-            timeout=30
+            timeout=120
         )
-        print(f"[DEBUG] Test script output: {test_result.stdout}")
-        print(f"[DEBUG] Test script stderr: {test_result.stderr}")
-        
-        # If test script works, try the real script
-        if test_result.returncode == 0:
-            result = subprocess.run(
-                ['python', script_path, wallet_address],
-                capture_output=True,
-                text=True,
-                env=env,
-                timeout=120
-            )
-            if result.returncode == 0:
-                try:
-                    return JSONResponse(json.loads(result.stdout))
-                except Exception:
-                    return PlainTextResponse(result.stdout, status_code=200)
-            else:
-                return PlainTextResponse(f"Script error: {result.stderr}\n\nTest output: {test_result.stdout}", status_code=500)
+        if result.returncode == 0:
+            try:
+                return JSONResponse(json.loads(result.stdout))
+            except Exception:
+                return PlainTextResponse(result.stdout, status_code=200)
         else:
-            return PlainTextResponse(f"Test script failed: {test_result.stderr}", status_code=500)
+            return PlainTextResponse(result.stderr or "Script error", status_code=500)
     except Exception as e:
         return PlainTextResponse(str(e), status_code=500)
 
@@ -692,17 +664,14 @@ def start_scheduler():
 
 @app.on_event("startup")
 async def startup_event():
-    """Start scheduler only for local development with apscheduler available"""
-    # Check if running locally (not on Railway) and scheduler is available
+    """Start scheduler only for local development, disabled on Railway"""
+    # Check if running locally (not on Railway)
     is_local = os.environ.get("RAILWAY_ENVIRONMENT") is None
     
-    if is_local and HAS_SCHEDULER and scheduler is not None:
+    if is_local:
         print("[SCHEDULER] 🚀 Starting background scheduler for local development...")
         print("[SCHEDULER] 📊 Data will automatically sync to website via shared MongoDB!")
         start_scheduler()
-    elif not HAS_SCHEDULER:
-        print("[SCHEDULER] APScheduler not available - Railway deployment mode")
-        print("[SCHEDULER] Data collection runs on local PC instead")
     else:
         print("[SCHEDULER] Background scheduler disabled for Railway deployment")
         print("[SCHEDULER] Data collection runs on local PC instead")
@@ -710,19 +679,13 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Stop the background scheduler when the app shuts down"""
-    if HAS_SCHEDULER and scheduler is not None and scheduler.running:
+    if scheduler.running:
         scheduler.shutdown()
         print("[SCHEDULER] Background scheduler stopped")
 
 @app.get("/scheduler-status")
 def get_scheduler_status():
     """Get the status of the background scheduler"""
-    if not HAS_SCHEDULER or scheduler is None:
-        return {
-            "scheduler_available": False,
-            "message": "Scheduler not available (Railway deployment mode)"
-        }
-    
     try:
         jobs = []
         for job in scheduler.get_jobs():
@@ -734,20 +697,16 @@ def get_scheduler_status():
             })
         
         return {
-            "scheduler_available": True,
             "scheduler_running": scheduler.running,
             "jobs": jobs,
             "job_count": len(jobs)
-        }
+                }
     except Exception as e:
         return {"error": str(e)}
 
 @app.post("/scheduler/start")
 def start_scheduler_manual():
     """Manually start the scheduler"""
-    if not HAS_SCHEDULER or scheduler is None:
-        return {"error": "Scheduler not available (Railway deployment mode)"}
-    
     try:
         if not scheduler.running:
             start_scheduler()
@@ -760,9 +719,6 @@ def start_scheduler_manual():
 @app.post("/scheduler/stop")
 def stop_scheduler_manual():
     """Manually stop the scheduler"""
-    if not HAS_SCHEDULER or scheduler is None:
-        return {"error": "Scheduler not available (Railway deployment mode)"}
-    
     try:
         if scheduler.running:
             scheduler.shutdown()
