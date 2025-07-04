@@ -4,7 +4,7 @@
   "description": "Cipher Backend",
   "scripts": {
     "build": "cd backend/scrapers && npm install",
-    "start": "python backend_api/main.py"
+    "start": "python3 backend_api/main.py"
   },
   "engines": {
     "node": ">=18.0.0",
