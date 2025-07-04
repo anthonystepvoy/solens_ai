@@ -53,92 +53,67 @@ const tdStyle: React.CSSProperties = {
 };
 
 const CopytradeFinder: React.FC = () => {
-  const [wallet, setWallet] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [searched, setSearched] = useState(false);
-
-  const handleSearch = async () => {
-    setLoading(true);
-    setError(null);
-    setResults([]);
-    setSearched(false);
-    try {
-      const res = await fetch(API_ENDPOINTS.COPYTRADE_ANALYZE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet_address: wallet.trim() }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || 'API error');
-      }
-      const data = await res.json();
-      setResults(data.results || []);
-      setSearched(true);
-    } catch (e: any) {
-      setError(e.message || 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div style={retroBox}>
       <div style={{ fontWeight: 'bold', fontSize: '1.5em', marginBottom: 16 }}>&gt; COPYTRADE_FINDER</div>
       <div style={{ marginBottom: 24, color: '#00ff41', opacity: 0.8, fontSize: '1em' }}>
         [ADVANCED_PATTERN_RECOGNITION_SYSTEM]
       </div>
+      
+      {/* Feature Under Development Message */}
+      <div style={{ 
+        border: '2px solid #ffaa00', 
+        borderRadius: 8, 
+        padding: '24px', 
+        margin: '24px 0',
+        background: '#2a1f00',
+        color: '#ffaa00',
+        textAlign: 'center',
+        fontSize: '1.2em',
+        fontWeight: 'bold'
+      }}>
+        <div style={{ fontSize: '1.8em', marginBottom: '12px' }}>⚠️ ON THE WORKS ⚠️</div>
+        <div style={{ marginBottom: '8px' }}>COPYTRADE ANALYZER IS UNDER DEVELOPMENT</div>
+        <div style={{ fontSize: '0.9em', opacity: 0.8 }}>
+          This feature is currently being enhanced with advanced blockchain analysis capabilities.
+          <br />Check back soon for the full copy trader detection system!
+        </div>
+      </div>
+      
+      {/* Disabled Input Fields */}
       <input
-        style={inputStyle}
+        style={{
+          ...inputStyle,
+          opacity: 0.5,
+          cursor: 'not-allowed',
+          backgroundColor: '#0f1114'
+        }}
         type="text"
-        placeholder="Enter wallet address..."
-        value={wallet}
-        onChange={e => setWallet(e.target.value)}
-        onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
-        disabled={loading}
+        placeholder="Feature coming soon..."
+        disabled={true}
+        readOnly
       />
-      <button style={buttonStyle} onClick={handleSearch} disabled={loading || !wallet.trim()}>
-        {loading ? 'SEARCHING...' : '> SEARCH'}
+      <button 
+        style={{
+          ...buttonStyle,
+          opacity: 0.5,
+          cursor: 'not-allowed',
+          backgroundColor: '#0f1114'
+        }} 
+        disabled={true}
+      >
+        DISABLED
       </button>
-      {error && <div style={{ color: '#ff4141', marginTop: 24, fontWeight: 'bold' }}>[ERROR] {error}</div>}
-      {searched && !loading && results.length === 0 && !error && (
-        <div style={{ color: '#00ff41', marginTop: 24, fontWeight: 'bold', border: '1px solid #00ff41', borderRadius: 4, padding: 16 }}>
-          [ANALYSIS_COMPLETE] No new copytrade patterns identified in this run.
-        </div>
-      )}
-      {results.length > 0 && (
-        <div style={{ marginTop: 32 }}>
-          <div style={{ fontWeight: 'bold', marginBottom: 12 }}>[ANALYSIS_COMPLETE] Copytrader patterns found:</div>
-          <table style={tableStyle}>
-            <thead>
-              <tr>
-                <th style={thStyle}>Trader</th>
-                <th style={thStyle}>Signature</th>
-                <th style={thStyle}>Block Delay</th>
-                <th style={thStyle}>Bot Used</th>
-                <th style={thStyle}>Fee Paid</th>
-                <th style={thStyle}>SOL Bought</th>
-                <th style={thStyle}>Profit/PNL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.map((row, i) => (
-                <tr key={i}>
-                  <td style={tdStyle}>{row.Trader || row.trader || '-'}</td>
-                  <td style={tdStyle}>{row.Signature || row.signature || '-'}</td>
-                  <td style={tdStyle}>{row['Block Delay'] || row.blockDelay || '-'}</td>
-                  <td style={tdStyle}>{row['Bot Used'] || row.botUsed || '-'}</td>
-                  <td style={tdStyle}>{row['Fee Paid'] || row.feePaid || '-'}</td>
-                  <td style={tdStyle}>{row['SOL Spent'] || row.solAmountBought || '-'}</td>
-                  <td style={tdStyle}>{row['Profit/USD'] || row.profitPNL || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      
+      <div style={{ 
+        color: '#666', 
+        marginTop: 24, 
+        fontSize: '0.9em',
+        fontStyle: 'italic',
+        textAlign: 'center'
+      }}>
+        💡 Meanwhile, explore our other powerful features: Smart Wallet Discovery and AI Analysis!
+      </div>
     </div>
   );
 };
