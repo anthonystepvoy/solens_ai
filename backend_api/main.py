@@ -65,7 +65,10 @@ client = MongoClient(
     socketTimeoutMS=10000,
     maxPoolSize=10,
     retryWrites=True,
-    w='majority'
+    w='majority',
+    tls=True,
+    tlsAllowInvalidCertificates=True,
+    tlsAllowInvalidHostnames=True
 )
 db = client["solens_ai"]
 
@@ -661,8 +664,9 @@ def start_scheduler():
 
 @app.on_event("startup")
 async def startup_event():
-    """Start the background scheduler when the app starts"""
-    start_scheduler()
+    """Background scheduler disabled for Railway deployment"""
+    print("[SCHEDULER] Background scheduler disabled - run data collection from local PC instead")
+    # start_scheduler()  # Disabled to avoid Puppeteer issues on Railway
 
 @app.on_event("shutdown")
 async def shutdown_event():
