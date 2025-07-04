@@ -1398,23 +1398,21 @@ function CopytradeFinderPage() {
       
       {/* Feature Under Development Message */}
       <div style={{ 
-        border: '4px solid #ff0000', 
-        borderRadius: 12, 
-        padding: '32px', 
+        border: '2px solid #00ff41', 
+        borderRadius: 8, 
+        padding: '24px', 
         margin: '24px 0',
-        background: '#330000',
-        color: '#ff0000',
+        background: '#0a1a0a',
+        color: '#00ff41',
         textAlign: 'center',
-        fontSize: '1.5em',
-        fontWeight: 'bold',
-        boxShadow: '0 0 20px #ff0000'
+        fontSize: '1.2em',
+        fontWeight: 'bold'
       }}>
-        <div style={{ fontSize: '2.5em', marginBottom: '16px' }}>🚨 ON THE WORKS 🚨</div>
-        <div style={{ marginBottom: '12px', fontSize: '1.3em' }}>COPYTRADE ANALYZER IS UNDER DEVELOPMENT</div>
-        <div style={{ fontSize: '1em', opacity: 0.9, color: '#ffaaaa' }}>
+        <div style={{ fontSize: '1.8em', marginBottom: '12px' }}>⚠️ ON THE WORKS ⚠️</div>
+        <div style={{ marginBottom: '8px' }}>COPYTRADE ANALYZER IS UNDER DEVELOPMENT</div>
+        <div style={{ fontSize: '0.9em', opacity: 0.8 }}>
           This feature is currently being enhanced with advanced blockchain analysis capabilities.
           <br />Check back soon for the full copy trader detection system!
-          <br /><strong>Version: 2024-07-04 APP.TSX FIXED</strong>
         </div>
       </div>
       
