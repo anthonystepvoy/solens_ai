@@ -62,23 +62,25 @@ const CopytradeFinder: React.FC = () => {
         [ADVANCED_PATTERN_RECOGNITION_SYSTEM]
       </div>
       
-      {/* Feature Under Development Message */}
+      {/* EMERGENCY CACHE CLEAR TEST - Feature Under Development Message */}
       <div style={{ 
-        border: '2px solid #ffaa00', 
-        borderRadius: 8, 
-        padding: '24px', 
+        border: '4px solid #ff0000', 
+        borderRadius: 12, 
+        padding: '32px', 
         margin: '24px 0',
-        background: '#2a1f00',
-        color: '#ffaa00',
+        background: '#330000',
+        color: '#ff0000',
         textAlign: 'center',
-        fontSize: '1.2em',
-        fontWeight: 'bold'
+        fontSize: '1.5em',
+        fontWeight: 'bold',
+        boxShadow: '0 0 20px #ff0000'
       }}>
-        <div style={{ fontSize: '1.8em', marginBottom: '12px' }}>⚠️ ON THE WORKS ⚠️</div>
-        <div style={{ marginBottom: '8px' }}>COPYTRADE ANALYZER IS UNDER DEVELOPMENT</div>
-        <div style={{ fontSize: '0.9em', opacity: 0.8 }}>
+        <div style={{ fontSize: '2.5em', marginBottom: '16px' }}>🚨 ON THE WORKS 🚨</div>
+        <div style={{ marginBottom: '12px', fontSize: '1.3em' }}>COPYTRADE ANALYZER IS UNDER DEVELOPMENT</div>
+        <div style={{ fontSize: '1em', opacity: 0.9, color: '#ffaaaa' }}>
           This feature is currently being enhanced with advanced blockchain analysis capabilities.
           <br />Check back soon for the full copy trader detection system!
+          <br /><strong>Version: 2024-07-04 CACHE_CLEAR_TEST</strong>
         </div>
       </div>
       
