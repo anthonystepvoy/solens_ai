@@ -4,7 +4,7 @@ import axios from 'axios';
 // import solensLogo from '../assets/solens-logo-white.png';
 import '@fontsource/dm-sans/400.css';
 import '@fontsource/dm-sans/700.css';
-import Hero3DBackground from './assets/Hero3DBackground';
+
 import TopTokensSection from './components/TopTokensSection';
 import LandingPage from './components/LandingPage';
 
