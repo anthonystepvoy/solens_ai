@@ -56,7 +56,7 @@ app.add_middleware(
 SETTINGS_FILE = os.path.join(os.path.dirname(__file__), 'discovery_settings.json')
 
 # MONGO_URI should be set in your environment or .env file
-MONGO_URI = os.environ.get('MONGO_URI')
+MONGO_URI = os.environ.get('MONGODB_URI') or os.environ.get('MONGO_URI') or 'mongodb://localhost:27017'
 
 client = MongoClient(
     MONGO_URI,
