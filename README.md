@@ -109,10 +109,6 @@ npm run dev
 
 - **MongoDB Connection Issues:**  
   Ensure your IP is whitelisted in MongoDB Atlas and your `.env` is correct.
-- **No New Wallets:**  
-  Try relaxing quality filters or check logs for errors.
-- **Frontend Video Not Loading:**  
-  Make sure the path in `LandingPage.tsx` matches the file location in `public/assets/`.
 
 ---
 
