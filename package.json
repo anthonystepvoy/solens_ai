@@ -1,0 +1,13 @@
+{
+  "name": "cipher",
+  "version": "1.0.0",
+  "description": "Cipher Backend",
+  "scripts": {
+    "build": "cd backend/scrapers && npm install",
+    "start": "python backend_api/main.py"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "python": ">=3.9.0"
+  }
+} 
