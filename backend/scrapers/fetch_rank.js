@@ -9,7 +9,16 @@ import path from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: './.env' });
+// Load environment variables - try multiple paths for different deployment scenarios
+const envPaths = ['../.env', './.env', '.env'];
+for (const envPath of envPaths) {
+  try {
+    dotenv.config({ path: envPath });
+    break;
+  } catch (error) {
+    // Continue to next path
+  }
+}
 
 puppeteer.use(StealthPlugin());
 
@@ -50,7 +59,14 @@ async function fetchRank(mode) {
   const browserStart = Date.now();
   const browser = await puppeteer.launch({ 
     headless: true, 
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+    args: [
+      "--no-sandbox", 
+      "--disable-setuid-sandbox", 
+      "--disable-dev-shm-usage",
+      "--disable-gpu",
+      "--disable-web-security",
+      "--disable-features=VizDisplayCompositor"
+    ],
     timeout: 30000
   });
   const page = await browser.newPage();

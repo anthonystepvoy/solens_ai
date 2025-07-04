@@ -5,7 +5,16 @@ import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import { MongoClient } from "mongodb";
 import dotenv from 'dotenv';
-dotenv.config({ path: './.env' });
+// Load environment variables - try multiple paths for different deployment scenarios
+const envPaths = ['../.env', './.env', '.env'];
+for (const envPath of envPaths) {
+  try {
+    dotenv.config({ path: envPath });
+    break;
+  } catch (error) {
+    // Continue to next path
+  }
+}
 console.log('[DEBUG] MONGO_URI:', process.env.MONGO_URI);
 
 puppeteer.use(StealthPlugin());

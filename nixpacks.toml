@@ -1,0 +1,14 @@
+[phases.setup]
+nixPkgs = ["nodejs", "python3", "python3Packages.pip"]
+
+[phases.install]
+cmds = [
+  "cd backend/scrapers && npm install",
+  "pip install -r backend_api/requirements.txt"
+]
+
+[phases.build]
+cmds = ["echo 'Build complete'"]
+
+[start]
+cmd = "python backend_api/main.py" 

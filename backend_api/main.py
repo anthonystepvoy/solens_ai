@@ -1,5 +1,13 @@
 from dotenv import load_dotenv
-load_dotenv(dotenv_path='../.env')
+import os
+
+# Load environment variables - try multiple paths for different deployment scenarios
+env_paths = ['../.env', '.env', './.env']
+for env_path in env_paths:
+    if os.path.exists(env_path):
+        load_dotenv(dotenv_path=env_path)
+        break
+
 from fastapi import FastAPI, Request, BackgroundTasks, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
@@ -22,11 +30,16 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from collections import Counter
 
-app = FastAPI()
+app = FastAPI(title="Solens AI API", version="1.0.0")
+
+# Configure CORS for production
+allowed_origins = ["*"]  # You can restrict this to your frontend domain in production
+if os.environ.get("FRONTEND_URL"):
+    allowed_origins = [os.environ.get("FRONTEND_URL")]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For development, allow all. Use ["http://localhost:5173"] for stricter security.
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -743,4 +756,19 @@ def get_token(token_address: str):
         doc['id'] = str(doc['_id'])
         del doc['_id']
         return doc
-    return JSONResponse(status_code=404, content={"error": "Token not found"}) 
+    return JSONResponse(status_code=404, content={"error": "Token not found"})
+
+# Production server configuration
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    host = os.environ.get("HOST", "0.0.0.0")
+    
+    print(f"Starting server on {host}:{port}")
+    uvicorn.run(
+        "main:app",
+        host=host,
+        port=port,
+        reload=False,  # Disable reload in production
+        log_level="info"
+    ) 

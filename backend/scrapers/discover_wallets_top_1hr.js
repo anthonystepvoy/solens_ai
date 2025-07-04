@@ -13,7 +13,16 @@ import {
   filterTopQualityTokens
 } from "./gmgn_coins_traders.js";
 import dotenv from 'dotenv';
-dotenv.config({ path: './.env' });
+// Load environment variables - try multiple paths for different deployment scenarios
+const envPaths = ['../.env', './.env', '.env'];
+for (const envPath of envPaths) {
+  try {
+    dotenv.config({ path: envPath });
+    break;
+  } catch (error) {
+    // Continue to next path
+  }
+}
 
 puppeteer.use(StealthPlugin());
 
