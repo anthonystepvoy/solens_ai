@@ -28,6 +28,7 @@ import math
 import numpy as np
 from dateutil import parser as date_parser
 from pymongo import MongoClient
+from bson import ObjectId
 import random
 from collections import Counter
 
@@ -142,6 +143,8 @@ def sanitize_json(obj):
         return {k: sanitize_json(v) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [sanitize_json(v) for v in obj]
+    elif isinstance(obj, ObjectId):
+        return str(obj)
     elif isinstance(obj, float):
         if math.isnan(obj) or math.isinf(obj):
             return None
