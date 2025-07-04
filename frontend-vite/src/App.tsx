@@ -1396,23 +1396,43 @@ function CopytradeFinderPage() {
       <h1 style={{ color: '#cccccc', marginBottom: 16, fontSize: 24, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: 'inherit' }}>&gt; COPYTRADE_FINDER</h1>
       <p style={{ color: '#cccccc', marginBottom: 24, fontFamily: 'inherit', fontSize: 14 }}>[ADVANCED_PATTERN_RECOGNITION_SYSTEM]</p>
       
-      {/* Feature Under Development Message */}
+      {/* Feature Information */}
       <div style={{ 
         border: '2px solid #00ff41', 
-        borderRadius: 8, 
+        borderRadius: 0, 
         padding: '24px', 
         margin: '24px 0',
-        background: '#0a1a0a',
+        background: 'rgba(0, 0, 0, 0.6)',
         color: '#00ff41',
-        textAlign: 'center',
-        fontSize: '1.2em',
-        fontWeight: 'bold'
+        fontFamily: '"Courier New", monospace'
       }}>
-        <div style={{ fontSize: '1.8em', marginBottom: '12px' }}>⚠️ ON THE WORKS ⚠️</div>
-        <div style={{ marginBottom: '8px' }}>COPYTRADE ANALYZER IS UNDER DEVELOPMENT</div>
-        <div style={{ fontSize: '0.9em', opacity: 0.8 }}>
-          This feature is currently being enhanced with advanced blockchain analysis capabilities.
-          <br />Check back soon for the full copy trader detection system!
+        <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', color: '#00ff41' }}>
+          [COPYTRADE_ANALYZER MODULE]
+        </div>
+        
+        <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: '#00ff41' }}>
+          [WHAT IS THIS?]
+        </div>
+        <div style={{ fontSize: '14px', marginBottom: '20px', color: '#cccccc', lineHeight: '1.6' }}>
+          The Copytrade Analyzer is an advanced pattern recognition system for Cipher. It analyzes blockchain transactions to identify wallets that copy successful traders, providing insights into trading patterns and behaviors.
+        </div>
+        
+        <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: '#00ff41' }}>
+          [WHAT DOES IT DO?]
+        </div>
+        <div style={{ fontSize: '14px', marginBottom: '20px', color: '#cccccc' }}>
+          - Detects copy trading patterns by analyzing transaction timing.<br />
+          - Identifies wallets that follow successful traders.<br />
+          - Provides detailed analytics on copy trading behaviors.<br />
+          - Exports results in CSV/JSON format for further analysis.<br />
+          - Integrates with the main wallet discovery system.
+        </div>
+        
+        <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: '#00ff41' }}>
+          [COMING SOON]
+        </div>
+        <div style={{ fontSize: '14px', color: '#cccccc', lineHeight: '1.6' }}>
+          Advanced blockchain analysis capabilities are currently being enhanced. Check back soon for the full copy trader detection system.
         </div>
       </div>
       
