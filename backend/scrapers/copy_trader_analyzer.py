@@ -18,7 +18,7 @@ from fake_useragent import UserAgent
 # --- Placeholders/Config ---
 WALLET_TO_ANALYZE = ""  # Set a default wallet here if desired
 RPC_URL = "https://api.mainnet-beta.solana.com"  # Set your Helius or Solana RPC URL here
-BLOCK_LIMIT = 20  # Number of blocks to scan for copytraders
+BLOCK_LIMIT = 5  # Number of blocks to scan for copytraders (reduced from 20)
 
 # --- CONFIGURATION ---
 try:
@@ -48,7 +48,7 @@ except Exception as e:
 # MONGO_URI should be set in your environment or .env file
 MONGO_URI = os.environ.get('MONGO_URI')
 WRAPPED_SOL_MINT = "So11111111111111111111111111111111111111112"
-BLOCK_SCAN_LIMIT = 10  # Scan 10 blocks for better copytrader detection
+BLOCK_SCAN_LIMIT = 10
 
 # Common DEX program IDs for detecting swaps
 DEX_PROGRAM_IDS = {
@@ -58,9 +58,89 @@ DEX_PROGRAM_IDS = {
     'whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc': 'Whirlpool',
     'CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK': 'Raydium CLMM',
     'CLMM9tUoggJu2wagPkkqs9eFG4BWhVBZWkP1qv3Sp7tR': 'Raydium CLMM',
-    'SaberQK8Z8Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2': 'Saber',
+    'SaberQK8Z8Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2': 'Saber',
     'Amm1QK8Z8Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q': 'Amm1',
     # Add more as needed
+}
+
+# Bot accounts from original script
+botAccounts = {
+    "LUNARCc6FmA3hzPrwmXW3z6RNX1MYXhKS4opYoqCm9P": "Lunar",
+    "vs1ongEMwP15z6RKykbUbWwAf8WXFKNTLkfEr5JN6K7": "VisionAIO",
+    "BSfD6SHZigAfDWSjzD5Q41jw8LmKwtmjskPH9XW1mrRW": "Photon",
+    "7HeD6sLLqAnKVRuSfc1Ko3BSPMNKWgGTiWLKXJF31vKM": "Bloom",
+    "b1oomGGqPKGD6errbyfbVMBuzSC8WtAAYo8MwNafWW1": "Bloom",
+    "GengarGzVQiNwzmXFC6sz3oT4HY91MnV26nDX6z2U97V": "SharpAIO",
+    "minTcHYRLVPubRK8nt6sqe2ZpWrGDLQoNLipDJCGocY": "Mintech",
+    "6m2CDdhRgxpH4WjvdzxAYbGxwdGUz5MziiL5jek2kBma": "OKX",
+    "BANANAjs7FJiPQqJTGFzkZJndT9o7UmKiYYGaJz6frGu": "Banana Gun",
+    "9QT9pBnnvrRXdEdkYhp5KrB9SqgTopmmVNunUm726DbJ": "StarkDex Bot",
+    "97VmzkjX9w8gMFS2RnHTSjtMEDbifGXBq9pgosFdFnM": "TradeWiz",
+    "CABAL69DYBisjkdHxwVktMy2TPHYVYc2D3UDQQ2DLwKM": "Cabal Bot",
+    "b1oodtXw4tigt8MoRcRrWUGCW31WeFUtFMsFgwQpSQ9": "Blood",
+    "Axiom3a2w1UbMt2SMgqSvRiuJFTPusDhwKamNgPTeNQ9": "Axiom",
+    "PEPPER3dYQpY2TTqHp3XinzRu519X7GswmVNb5tqK8L": "Peppermints",
+    "King7ki4SKMBPb3iupnQwTyjsq294jaXsgLmJo8cb7T": "King Bot (??)",
+}
+
+# Fee wallets from original script
+feeWallets = {
+    "9yMwSPk9mrXSN7yDHUuZurAh1sjbJsfpUqjZ7SvVtdco": "Trojan",
+    "AaG6of1gbj1pbDumvbSiTuJhRCRkkUNaWVxijSbWvTJW": "Axiom",
+    "97VmzkjX9w8gMFS2RnHTSjtMEDbifGXBq9pgosFdFnM": "TradeWiz",
+    "BB5dnY55FXS1e1NXqZDwCzgdYJdMCj3B92PU6Q5Fb6DT": "GMGN",
+    "28KqHiudrpzfVkVWQ1jztQ2Aarf4W3CvTitjWEqTCkpA": "BullX",
+    "HWEoBxYs7ssKuudEjzjmpfJVX7Dvi7wescFsVx2L5yoY": "Bloxroute",
+    "7ks326H4LbMVaUC8nW5FpC5EoAf5eK5pf4Dsx4HDQLpq": "Bloxroute",
+    "TEMPaMeCRFAS9EKF53Jd6KpHxgL47uWLcpFArU1Fanq": "Temporal",
+    "noz3jAjPiHuBPqiSPkkugaJDkJscPuRhYnSpbi8UvC4": "Temporal",
+    "noz3str9KXfpKknefHji8L1mPgimezaiUyCHYMDv1GE": "Temporal",
+    "noz6uoYCDijhu1V7cutCpwxNiSovEwLdRHPwmgCGDNo": "Temporal",
+    "noz9EPNcT7WH6Sou3sr3GGjHQYVkN3DNirpbvDkv9YJ": "Temporal",
+    "nozc5yT15LazbLTFVZzoNZCwjh3yUtW86LoUyqsBu4L": "Temporal",
+    "nozFrhfnNGoyqwVuwPAW4aaGqempx4PU6g6D9CJMv7Z": "Temporal",
+    "nozievPk7HyK1Rqy1MPJwVQ7qQg2QoJGyP71oeDwbsu": "Temporal",
+    "noznbgwYnBLDHu8wcQVCEw6kDrXkPdKkydGJGNXGvL7": "Temporal",
+    "nozNVWs5N8mgzuD3qigrCG2UoKxZttxzZ85pvAQVrbP": "Temporal",
+    "nozpEGbwx4BcGp6pvEdAh1JoC2CQGZdU6HbNP1v2p6P": "Temporal",
+    "nozrhjhkCr3zXT3BiT4WCodYCUFeQvcdUkM7MqhKqge": "Temporal",
+    "nozrwQtWhEdrA6W8dkbt9gnUaMs52PdAv5byipnadq3": "Temporal",
+    "nozUacTVWub3cL4mJmGCYjKZTnE9RbdY5AP46iQgbPJ": "Temporal",
+    "nozWCyTPppJjRuw2fpzDhhWbW355fzosWSzrrMYB1Qk": "Temporal",
+    "nozWNju6dY353eMkMqURqwQEoM3SFgEKC6psLCSfUne": "Temporal",
+    "nozxNBgWohjR75vdspfxR5H9ceC7XXH99xpxhVGt3Bb": "Temporal",
+    "NexTbLoCkWykbLuB1NkjXgFWkX9oAtcoagQegygXXA2": "Next Block 1",
+    "nextBLoCkPMgmG8ZgJtABeScP35qLa2AMCNKntAP7Xc": "Next Block 2",
+    "NextbLoCkVtMGcV47JzewQdvBpLqT9TxQFozQkN98pE": "Next Block 3",
+    "NEXTbLoCkB51HpLBLojQfpyVAMorm3zzKg7w9NFdqid": "Next Block 4",
+    "NeXTBLoCKs9F1y5PJS9CKrFNNLU1keHW71rfh7KgA1X": "Next Block 5",
+    "neXtBLock1LeC67jYd1QdAa32kbVeubsfPNTJC1V5At": "Next Block 6",
+    "nEXTBLockYgngeRmRrjDV31mGSekVPqZoMGhQEZtPVG": "Next Block 7",
+    "96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5": "Jito1",
+    "HFqU5x63VTqvQss8hp11i4wVV8bD44PvwucfZ2bU7gRe": "Jito2",
+    "Cw8CFyM9FkoMi7K7Crf6HNQqf4uEMzpKw6QNghXLvLkY": "Jito3",
+    "ADaUMid9yfUytqMBgopwjb2DTLSokTSzL1zt6iGPaS49": "Jito4",
+    "DfXygSm4jCyNCybVYYK6DwvWqjKee8pbDmJGcLWNDXjh": "Jito5",
+    "ADuUkR4vqLUMWXxW9gh6D6L8pMSawimctcNZ5pGwDcEt": "Jito6",
+    "DttWaMuVvTiduZRnguLF7jNxTgiMBZ1hyAumKUiL2KRL": "Jito7",
+    "3AVi9Tg9Uo68tJfuvoKvqKNWKkC5wPdSSdeBnizKZ6jT": "Jito8",
+    "6fQaVhYZA4w3MBSXjJ81Vf6W1EDYeUPXpgVQ6UQyU1Av": "0slot",
+    "4HiwLEP2Bzqj3hM2ENxJuzhcPCdsafwiet3oGkMkuQY4": "0slot",
+    "7toBU3inhmrARGngC7z6SjyP85HgGMmCTEwGNRAcYnEK": "0slot",
+    "8mR3wB1nh4D6J9RUCugxUpc6ya8w38LPxZ3ZjcBhgzws": "0slot",
+    "6SiVU5WEwqfFapRuYCndomztEwDjvS5xgtEof3PLEGm9": "0slot",
+    "TpdxgNJBWZRL8UXF5mrEsyWxDWx9HQexA9P1eTWQ42p": "0slot",
+    "D8f3WkQu6dCF33cZxuAsrKHrGsqGP2yvAHf8mX6RXnwf": "0slot",
+    "GQPFicsy3P3NXxB5piJohoxACqTvWE9fKpLgdsMduoHE": "0slot",
+    "Ey2JEr8hDkgN8qKJGrLf2yFjRhW7rab99HVxwi5rcvJE": "0slot",
+    "4iUgjMT8q2hNZnLuhpqZ1QtiV8deFPy2ajvvjEpKKgsS": "0slot",
+    "3Rz8uD83QsU8wKvZbgWAPvCNDU6Fy8TSZTMcPm3RB6zt": "0slot",
+    "FCjUJZ1qozm1e8romw216qyfQMaaWKxWsuySnumVCCNe": "0slot",
+    "Cix2bHfqPcKcM233mzxbLk14kSggUUiz2A87fJtGivXr": "0slot",
+    "ENxTEjSQ1YabmUpXAdCgevnHQ9MHdLv8tzFiuiYJqa13": "0slot",
+    "J9BMEWFbCBEjtQ1fG5Lo9kouX1HfrKQxeUxetwXrifBw": "0slot",
+    "6rYLG55Q9RpsPGvqdPNJs4z5WTxJVatMB8zV3WJhs5EK": "0slot",
+    "Dz8rMcdokTLfbnNz2ZdYocZixgaA1TMqbA31xtwPgcxb": "0slot"
 }
 
 # Add bot and fee wallet detection
@@ -69,7 +149,7 @@ botAccounts = {
     # ... add more as needed ...
 }
 feeWallets = {
-    "9yMwSPk9mrXSN7yDHUZurAh1sjbJsfpUqjZ7SvVtdco": "Trojan",
+    "9yMwSPk9mrXSN7yDHUuZurAh1sjbJsfpUqjZ7SvVtdco": "Trojan",
     # ... add more as needed ...
 }
 
@@ -95,117 +175,149 @@ if not HELIUS_API_BASE_URL:
     print("[ERROR] HELIUS_API_BASE_URL is not set in environment variables.", file=sys.stderr)
     sys.exit(1)
 
-# --- HELPER FUNCTIONS ---
+def shorten(s: str) -> str:
+    return f"{s[:4]}...{s[-5:]}" if len(s) >= 9 else s
 
-def make_helius_request(url, method='get', payload=None, timeout=30):
-    """Make a request to Helius API with better error handling"""
-    try:
-        print(f"[DEBUG] Making {method.upper()} request to: {url}", file=sys.stderr)
+def checkTxIsBuy(txData: dict) -> bool:
+    for msg in txData["result"]["meta"].get("logMessages", []):
+        if "Instruction: Sell" in msg:
+            return False
+        if "Instruction: Buy" in msg:
+            return True
+    return True
+
+def getFeeInfo(txData: dict):
+    feePaidTo = {}
+    feePaid = 0
+    for instr in txData["result"]["transaction"]["message"]["instructions"]:
+        # Only process if instr is a dict and has a 'parsed' key that is also a dict
+        if isinstance(instr, dict) and isinstance(instr.get("parsed"), dict):
+            if instr["parsed"].get("type") == "transfer":
+                info = instr["parsed"].get("info", {})
+                dest = info.get("destination")
+                lamports = int(info.get("lamports", 0))
+                if dest in feeWallets:
+                    solAmount = lamports / 1_000_000_000
+                    feePaidTo[feeWallets[dest]] = solAmount
+                    feePaid += solAmount
+    return feePaidTo, feePaid
+
+def getSolAmountBought(txData: dict) -> float:
+    solAmount = 0
+    for group in txData["result"]["meta"].get("innerInstructions", []):
+        for instr in group.get("instructions", []):
+            if instr.get("program") == "system":
+                parsed = instr.get("parsed")
+                if parsed and parsed.get("type") == "transfer":
+                    lamports = parsed.get("info", {}).get("lamports")
+                    if lamports:
+                        solAmount += lamports / 1e9
+    return solAmount
+
+class CopyWalletFinder:
+    def __init__(self, rpcUrl: str):
+        self.rpcUrl = rpcUrl
+        self.session = tls_client.Session(client_identifier="chrome_103")
+
+    def randomiseRequest(self):
+        self.identifier = random.choice(
+            [browser for browser in tls_client.settings.ClientIdentifiers.__args__
+             if browser.startswith(('chrome', 'safari', 'firefox', 'opera'))]
+        )
+        parts = self.identifier.split('_')
+        identifier, version, *rest = parts
+        identifier = identifier.capitalize()
         
-        # Only set Content-Type for POST requests
-        headers = {}
-        if method.lower() == 'post':
-            headers['Content-Type'] = 'application/json'
-            headers['User-Agent'] = 'Copy-Trader-Analyzer/1.0'
-        # For GET, do not set User-Agent or Content-Type (to match minimal test)
-        if method.lower() == 'get':
-            print(f"[DEBUG] GET headers: {headers}", file=sys.stderr)
-            response = requests.get(url, timeout=timeout, headers=headers)
+        self.sendRequest = tls_client.Session(random_tls_extension_order=True, client_identifier=self.identifier)
+        self.sendRequest.timeout_seconds = 60
+
+        if identifier == 'Opera':
+            identifier = 'Chrome'
+            osType = 'Windows'
+        elif version.lower() == 'ios':
+            osType = 'iOS'
         else:
-            print(f"[DEBUG] POST headers: {headers}", file=sys.stderr)
-            response = requests.post(url, json=payload, timeout=timeout, headers=headers)
-            
-        print(f"[DEBUG] Response status: {response.status_code}", file=sys.stderr)
-        
-        if response.status_code == 429:
-            retry_after = int(response.headers.get('Retry-After', 30))
-            print(f"[WARNING] Rate limited. Waiting {retry_after} seconds...", file=sys.stderr)
-            time.sleep(retry_after)
-            return make_helius_request(url, method, payload, timeout)
-            
-        response.raise_for_status()
-        return response.json()
-        
-    except requests.exceptions.Timeout:
-        print(f"[ERROR] Timeout occurred for URL {url}", file=sys.stderr)
-    except requests.exceptions.HTTPError as e:
-        print(f"[ERROR] HTTP error {e.response.status_code} for URL {url}: {e}", file=sys.stderr)
-        print(f"[ERROR] Response content: {e.response.text}", file=sys.stderr)  # Added to see actual error
-        if e.response.status_code == 401:
-            print("[ERROR] Unauthorized - check your API key", file=sys.stderr)
-        elif e.response.status_code == 403:
-            print("[ERROR] Forbidden - check your API permissions", file=sys.stderr)
-    except requests.RequestException as e:
-        print(f"[ERROR] Request failed for URL {url}: {e}", file=sys.stderr)
-    except json.JSONDecodeError as e:
-        print(f"[ERROR] Failed to decode JSON from Helius for URL {url}: {e}", file=sys.stderr)
-    except Exception as e:
-        print(f"[ERROR] Unexpected error for URL {url}: {e}", file=sys.stderr)
-        traceback.print_exc(file=sys.stderr)
-    
-    return None
+            osType = 'Windows'
 
-def get_pnl(token_address, wallet_address):
-    try:
-        url = f"https://gmgn.ai/defi/quotation/v1/smartmoney/sol/walletstat/{wallet_address}?token_address={token_address}&period=1d"
-        response = requests.get(url)
-        data = response.json().get('data', {})
-        return f"${data.get('total_profit', 0):.2f}", f"{data.get('realized_profit_pnl', 0):.2f}%"
-    except:
-        return "N/A", "N/A"
+        try:
+            self.user_agent = UserAgent(os=[osType]).random
+        except Exception:
+            self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:82.0) Gecko/20100101 Firefox/82.0"
 
-def find_latest_buy_transactions(wallet_address, max_buys=3):
-    """Find the latest N buy/swap transactions for a wallet"""
-    try:
-        # Use a smaller limit to avoid 400 error - fetch in batches if needed
-        all_transactions = []
-        limit = 100  # Reduced from 500
-        before = None
-        
-        # Try to fetch transactions in smaller batches
-        while len(all_transactions) < 500:  # Still want to check up to 500 transactions
-            url = f"{HELIUS_API_BASE_URL}/v0/addresses/{wallet_address}/transactions?api-key={HELIUS_API_KEY}&limit={limit}"
-            if before:
-                url += f"&before={before}"
-                
-            print(f"[DEBUG] Searching for transactions for wallet: {wallet_address} (batch, limit={limit})", file=sys.stderr)
-            transactions = make_helius_request(url)
-            
-            # Handle response
-            if transactions is None:
-                print(f"[ERROR] No transactions found for wallet: {wallet_address}", file=sys.stderr)
-                break
-            if isinstance(transactions, dict) and 'error' in transactions:
-                print(f"[ERROR] Helius returned error: {transactions['error']}", file=sys.stderr)
-                break
-            if not isinstance(transactions, list):
-                print(f"[ERROR] Unexpected response type from Helius: {type(transactions)}", file=sys.stderr)
-                print(f"[ERROR] Response content: {transactions}", file=sys.stderr)
-                break
-            
-            if not transactions:  # No more transactions
-                break
-                
-            all_transactions.extend(transactions)
-            before = transactions[-1].get('signature')  # Use last signature for pagination
-            
-            print(f"[DEBUG] Fetched {len(transactions)} transactions, total: {len(all_transactions)}", file=sys.stderr)
-            
-            # Small delay to avoid rate limiting
-            time.sleep(0.1)
-            
-            # If we got less than the limit, we've reached the end
-            if len(transactions) < limit:
-                break
-        
-        print(f"[DEBUG] Found {len(all_transactions)} total transactions", file=sys.stderr)
-        
-        buys = []
-        for i, tx in enumerate(all_transactions):
+        self.headers = {
+            'Host': 'gmgn.ai',
+            'accept': 'application/json, text/plain, */*',
+            'accept-language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7',
+            'dnt': '1',
+            'priority': 'u=1, i',
+            'referer': 'https://gmgn.ai/?chain=sol',
+            'user-agent': self.user_agent
+        }
+
+    def getLastBuy(self, walletAddress: str):
+        # Try GMGN API first
+        url = f"https://gmgn.mobi/api/v1/wallet_activity/sol?type=buy&wallet={walletAddress}&limit=10&cost=10"
+        for attempt in range(3):
+            self.randomiseRequest()
             try:
-                print(f"[DEBUG] Analyzing transaction {i+1}/{len(all_transactions)}: {tx.get('signature', 'NO_SIG')}", file=sys.stderr)
+                print(f"[DEBUG] Attempt {attempt + 1}: Making request to {url}", file=sys.stderr)
+                response = self.session.get(url, headers=self.headers)
+                print(f"[DEBUG] Response status: {response.status_code}", file=sys.stderr)
                 
-                # Check if this is a swap transaction
+                if response.status_code != 200:
+                    print(f"[DEBUG] Non-200 status: {response.text[:200]}", file=sys.stderr)
+                    continue
+                
+                response_text = response.text
+                if not response_text.strip():
+                    print(f"[DEBUG] Empty response received", file=sys.stderr)
+                    continue
+                
+                data = response.json()
+                if 'data' not in data:
+                    print(f"[DEBUG] No 'data' key in response", file=sys.stderr)
+                    continue
+                
+                activities = data['data']['activities']
+                print(f"[DEBUG] Found {len(activities)} activities", file=sys.stderr)
+                
+                buys = [act for act in activities if act.get("event_type") == "buy"]
+                print(f"[DEBUG] Found {len(buys)} buy events", file=sys.stderr)
+                
+                if not buys:
+                    print(f"No buy events found for {walletAddress}", file=sys.stderr)
+                    continue
+                
+                lastToken = max(buys, key=lambda x: x['timestamp'])['token']['address']
+                tokenBuys = [act for act in buys if act['token']['address'] == lastToken]
+                firstTokenBuy = min(tokenBuys, key=lambda x: x['timestamp'])
+                return firstTokenBuy['tx_hash'], firstTokenBuy['token']['address']
+            except Exception as e:
+                print(f"Attempt {attempt + 1} failed for wallet {walletAddress}: {e}", file=sys.stderr)
+        
+        # Fallback: Use Helius API to find recent buy transactions
+        print(f"[INFO] GMGN API blocked, using Helius fallback for {walletAddress}", file=sys.stderr)
+        return self.getLastBuyFromHelius(walletAddress)
+    
+    def getLastBuyFromHelius(self, walletAddress: str):
+        """Fallback method using Helius API to find buy transactions"""
+        try:
+            # Get recent transactions from Helius
+            url = f"{HELIUS_API_BASE_URL}/v0/addresses/{walletAddress}/transactions?api-key={HELIUS_API_KEY}&limit=50"
+            response = requests.get(url, timeout=30)
+            
+            if response.status_code != 200:
+                print(f"[ERROR] Helius API returned {response.status_code}", file=sys.stderr)
+                return None, None
+            
+            transactions = response.json()
+            if not transactions:
+                print(f"[ERROR] No transactions found for {walletAddress}", file=sys.stderr)
+                return None, None
+            
+            # Look for buy transactions
+            for tx in transactions:
+                # Check if this is a swap/buy transaction
                 tx_type = tx.get("type", "").upper()
                 description = tx.get("description", "").lower()
                 
@@ -215,160 +327,179 @@ def find_latest_buy_transactions(wallet_address, max_buys=3):
                     
                     for transfer in token_transfers:
                         # Check if this wallet received a token (not SOL/WSOL)
-                        if (transfer.get("toUserAccount") == wallet_address and 
+                        if (transfer.get("toUserAccount") == walletAddress and 
                             transfer.get("mint") != WRAPPED_SOL_MINT):
                             
                             received_token = transfer.get("mint")
-                            slot = tx.get('slot')
                             signature = tx.get('signature')
                             
-                            print(f"[SUCCESS] Found buy transaction - Signature: {signature}, Token: {received_token}, Slot: {slot}", file=sys.stderr)
-                            buys.append((signature, received_token, slot))
-                            
-                            if len(buys) >= max_buys:
-                                break
-                    
-                    if len(buys) >= max_buys:
-                        break
-                        
-            except Exception as e:
-                print(f"[ERROR] Error analyzing transaction {i}: {e}", file=sys.stderr)
-                continue
-        
-        if not buys:
-            print(f"[WARNING] No buy transactions found for wallet: {wallet_address}", file=sys.stderr)
-        
-        return buys
-        
-    except Exception as e:
-        print(f"[ERROR] Error in find_latest_buy_transactions: {e}", file=sys.stderr)
-        traceback.print_exc(file=sys.stderr)
-        return []
+                            print(f"[SUCCESS] Found buy transaction - Signature: {signature}, Token: {received_token}", file=sys.stderr)
+                            return signature, received_token
+            
+            print(f"[WARNING] No buy transactions found in recent history for {walletAddress}", file=sys.stderr)
+            return None, None
+            
+        except Exception as e:
+            print(f"[ERROR] Error in getLastBuyFromHelius: {e}", file=sys.stderr)
+            return None, None
 
-# Add or update this near the top of the file
-KNOWN_BOTS = set([
-    # Add known bot wallet addresses here
-    # Example: 'SomeBotWalletAddress',
-])
+    def getBlockHash(self, transaction: str):
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "getTransaction",
+            "params": [
+                transaction,
+                {"encoding": "jsonParsed", "maxSupportedTransactionVersion": 0, "commitment": "confirmed"}
+            ]
+        }
+        txData = self.session.post(self.rpcUrl, json=payload).json()
+        if txData["result"]['meta']["err"] is not None or not checkTxIsBuy(txData):
+            return None, txData
+        return int(txData['result']['slot']), txData
 
-def scan_blocks_for_copytraders(start_block, token_address, main_wallet):
-    """Scan blocks for potential copy traders"""
-    try:
-        copy_traders = []
-        unique_traders = set()
-        print(f"[DEBUG] Scanning {BLOCK_SCAN_LIMIT} blocks starting from block {start_block}", file=sys.stderr)
-        print(f"[DEBUG] Looking for token: {token_address}", file=sys.stderr)
-        print(f"[DEBUG] Excluding main wallet: {main_wallet}", file=sys.stderr)
-        scan_range = list(range(0, BLOCK_SCAN_LIMIT + 1))  # Just scan forward
-        for i in scan_range:
-            current_block = start_block + i
-            print(f"[DEBUG] Scanning block {current_block} (offset {i:+d})", file=sys.stderr)
+    def getPotentialCopyTraders(self, startBlock: int, walletAddress: str, contractAddress: str, blockLimit: int):
+        mainTx = None
+        potentialTraders = {}
+        total_blocks = blockLimit + 1
+        
+        print(f"[PROGRESS] Starting block scan: {total_blocks} blocks to analyze", file=sys.stderr)
+        
+        for currentBlock in range(startBlock, startBlock + blockLimit + 1):
+            block_index = currentBlock - startBlock + 1
+            print(f"[PROGRESS] Analyzing block {currentBlock} ({block_index}/{total_blocks})", file=sys.stderr)
+            
             payload = {
                 "jsonrpc": "2.0",
-                "id": "1",
+                "id": 1,
                 "method": "getBlock",
-                "params": [
-                    current_block,
-                    {
-                        "encoding": "jsonParsed",
-                        "maxSupportedTransactionVersion": 0,
-                        "transactionDetails": "full"
-                    }
-                ]
+                "params": [currentBlock, {"encoding": "json", "maxSupportedTransactionVersion": 0,
+                                            "transactionDetails": "full", "rewards": False}]
             }
-            block_data = make_helius_request(HELIUS_RPC_URL, method='post', payload=payload)
-            if not block_data or 'result' not in block_data:
-                print(f"[WARNING] No data for block {current_block}", file=sys.stderr)
-                continue
-            if not block_data['result']:
-                print(f"[WARNING] Empty block {current_block}", file=sys.stderr)
-                continue
-            transactions = block_data['result'].get('transactions', [])
-            print(f"[DEBUG] Found {len(transactions)} transactions in block {current_block}", file=sys.stderr)
-            for tx_index, tx in enumerate(transactions):
-                try:
-                    account_keys = tx.get('transaction', {}).get('message', {}).get('accountKeys', [])
-                    if not account_keys:
-                        print(f"[DEBUG] Skipping tx {tx_index}: no account keys", file=sys.stderr)
-                        continue
-                    signer = account_keys[0].get('pubkey')
-                    if not signer or signer == main_wallet or signer in KNOWN_BOTS:
-                        print(f"[DEBUG] Skipping tx {tx_index}: signer is main wallet or known bot", file=sys.stderr)
-                        continue
-                    if signer in unique_traders:
-                        print(f"[DEBUG] Skipping tx {tx_index}: signer already processed", file=sys.stderr)
-                        continue
-                    tx_type = tx.get('meta', {}).get('type', '').upper() or tx.get('type', '').upper()
-                    description = tx.get('meta', {}).get('description', '').lower() or tx.get('description', '').lower()
-                    if tx.get('meta', {}).get('err') is not None:
-                        print(f"[DEBUG] Skipping tx {tx_index}: transaction failed", file=sys.stderr)
-                        continue
-                    # Check if the wallet received the target token
-                    post_balances = tx.get('meta', {}).get('postTokenBalances', [])
-                    pre_balances = tx.get('meta', {}).get('preTokenBalances', [])
-                    target_token_acquired = False
-                    token_amount_acquired = 0
-                    for post_bal in post_balances:
-                        if (post_bal.get('mint') == token_address and post_bal.get('owner') == signer):
-                            post_amount = post_bal.get('uiTokenAmount', {}).get('uiAmount', 0)
-                            pre_amount = 0
-                            for pre_bal in pre_balances:
-                                if (pre_bal.get('mint') == token_address and pre_bal.get('owner') == signer and pre_bal.get('accountIndex') == post_bal.get('accountIndex')):
-                                    pre_amount = pre_bal.get('uiTokenAmount', {}).get('uiAmount', 0)
-                                    break
-                            if post_amount > pre_amount:
-                                target_token_acquired = True
-                                token_amount_acquired = post_amount - pre_amount
-                                break
-                    if not target_token_acquired:
-                        print(f"[DEBUG] Skipping tx {tx_index}: signer did not acquire target token", file=sys.stderr)
-                        continue
-                    # Check if the wallet spent SOL/WSOL in this transaction
-                    sol_spent = 0
-                    meta = tx.get('meta', {})
-                    for i, post_bal in enumerate(meta.get('postBalances', [])):
-                        pre_bal = meta.get('preBalances', [0] * len(meta.get('postBalances', [])))[i]
-                        if i < len(account_keys) and account_keys[i].get('pubkey') == signer:
-                            sol_difference = (pre_bal - post_bal) / 1e9  # Convert lamports to SOL
-                            if sol_difference > 0:  # SOL was spent
-                                sol_spent = sol_difference
+            data = self.session.post(self.rpcUrl, json=payload).json()
+            transactions = data['result']['transactions']
+            
+            print(f"[PROGRESS] Found {len(transactions)} transactions in block {currentBlock}", file=sys.stderr)
+            
+            if currentBlock == startBlock:
+                for tx in transactions:
+                    if walletAddress in tx['transaction']['message']['accountKeys']:
+                        postBalances = tx['meta'].get('postTokenBalances', [])
+                        if postBalances and postBalances[0].get('mint') == contractAddress:
+                            mainTx = tx['transaction']['signatures'][0]
+                            print(f"[PROGRESS] Found main transaction: {mainTx[:8]}...", file=sys.stderr)
                             break
-                    # Only include if:
-                    # - SWAP/TRADE (or description contains swap/buy), OR
-                    # - TRANSFER but spent SOL and received target token
-                    is_swap = (tx_type in ["SWAP", "TRADE"] or "swap" in description or "buy" in description)
-                    is_transfer_with_sol = (tx_type == "TRANSFER" and sol_spent > 0)
-                    if not (is_swap or is_transfer_with_sol):
-                        print(f"[DEBUG] Skipping tx {tx_index}: not swap/trade or transfer with SOL spent", file=sys.stderr)
-                        continue
-                    # If we get here, this is a candidate copytrader
-                    print(f"[DEBUG] Including tx {tx_index}: signer {signer} is a copytrader (type={tx_type}, sol_spent={sol_spent})", file=sys.stderr)
-                    profit_usd, profit_pct = get_pnl(token_address, signer)
-                    signature = tx.get('transaction', {}).get('signatures', [None])[0]
-                    trader_info = {
-                        "Trader": signer,
-                        "Signature": signature or "N/A",
-                        "Block Delay": current_block - start_block,
-                        "Bot Used": tx_type,
-                        "Fee Wallet": "Unknown",
-                        "Tx Processor/Fee Wallet": signer,
-                        "Fee Paid": meta.get('fee', 0) / 1e9,
-                        "SOL Spent": round(sol_spent, 6) if sol_spent > 0 else "N/A",
-                        "Token Amount": round(token_amount_acquired, 6) if token_amount_acquired > 0 else "N/A",
-                        "Profit/USD": profit_usd,
-                        "Profit/%": profit_pct
-                    }
-                    copy_traders.append(trader_info)
-                    unique_traders.add(signer)
-                except Exception as e:
-                    print(f"[ERROR] Error processing transaction {tx_index} in block {current_block}: {e}", file=sys.stderr)
+            
+            copytrader_count = 0
+            for tx in transactions:
+                trader = tx['transaction']['message']['accountKeys'][0]
+                if trader == walletAddress:
                     continue
-        print(f"[SUCCESS] Found {len(copy_traders)} potential copy traders", file=sys.stderr)
-        return copy_traders
-    except Exception as e:
-        print(f"[ERROR] Error in scan_blocks_for_copytraders: {e}", file=sys.stderr)
-        traceback.print_exc(file=sys.stderr)
-        return []
+                postBalances = tx['meta'].get('postTokenBalances', [])
+                if any(balance.get('mint') == contractAddress for balance in postBalances):
+                    if trader not in potentialTraders:
+                        potentialTraders[trader] = (tx['transaction']['signatures'][0], currentBlock)
+                        copytrader_count += 1
+            
+            if copytrader_count > 0:
+                print(f"[PROGRESS] Found {copytrader_count} new copytraders in block {currentBlock}", file=sys.stderr)
+        
+        uniqueTraders = [(w, sig, blk) for w, (sig, blk) in potentialTraders.items()]
+        print(f"[PROGRESS] Total copytraders found: {len(uniqueTraders)}", file=sys.stderr)
+        return mainTx, startBlock, uniqueTraders
+
+def processTransaction(finder: CopyWalletFinder, txSignature: str, mainBlock: int, wallet: str):
+    botUsed = ""
+    feePaidTo, feePaid, solBought = {}, 0, 0
+    blockInfo, txData = finder.getBlockHash(txSignature)
+    if blockInfo is None:
+        return None
+    
+    # Enhanced bot detection
+    botUsed = detectBotUsage(txData, wallet)
+    
+    feePaidTo, feePaid = getFeeInfo(txData)
+    solBought = getSolAmountBought(txData)
+    blockDelay = blockInfo - mainBlock
+    return {
+        "hash": txSignature,
+        "blockDelay": blockDelay,
+        "botUsed": botUsed,
+        "feePaidTo": feePaidTo,
+        "feePaid": f"{feePaid:.8f}",
+        "solAmountBought": solBought
+    }
+
+def detectBotUsage(txData: dict, wallet: str) -> str:
+    """Enhanced bot detection that checks multiple patterns"""
+    
+    # 1. Check if wallet is a known bot
+    if wallet in botAccounts:
+        return botAccounts[wallet]
+    
+    # 2. Check transaction instructions for known bot program IDs
+    instructions = txData["result"]["transaction"]["message"]["instructions"]
+    for instr in instructions:
+        if "programId" in instr:
+            program_id = instr["programId"]
+            if program_id in botAccounts:
+                return botAccounts[program_id]
+    
+    # 3. Check log messages for bot patterns
+    log_messages = txData["result"]["meta"].get("logMessages", [])
+    for msg in log_messages:
+        msg_lower = msg.lower()
+        # Check for common bot patterns in logs
+        if any(pattern in msg_lower for pattern in [
+            "jupiter", "raydium", "orca", "whirlpool", "meteora", "fluxbeam",
+            "banana", "lunar", "photon", "bloom", "sharp", "mintech", "okx",
+            "stark", "cabal", "blood", "axiom", "peppermint", "king"
+        ]):
+            # Extract bot name from log
+            for bot_name in ["jupiter", "raydium", "orca", "whirlpool", "meteora", "fluxbeam",
+                           "banana", "lunar", "photon", "bloom", "sharp", "mintech", "okx",
+                           "stark", "cabal", "blood", "axiom", "peppermint", "king"]:
+                if bot_name in msg_lower:
+                    return bot_name.capitalize()
+    
+    # 4. Check for specific transaction patterns
+    # Look for high-frequency trading patterns
+    if len(instructions) > 10:  # Complex transaction might indicate bot
+        return "Complex Bot"
+    
+    # 5. Check for specific program interactions
+    program_ids = set()
+    for instr in instructions:
+        if "programId" in instr:
+            program_ids.add(instr["programId"])
+    
+    # Known DEX program IDs
+    dex_programs = {
+        "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4": "Jupiter",
+        "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM": "Raydium",
+        "EhpADApTmMm46FWTaWqkqNpgEm4xgHUHoJZCWrfnT27": "Orca",
+        "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc": "Whirlpool",
+        "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK": "Raydium CLMM",
+        "CLMM9tUoggJu2wagPkkqs9eFG4BWhVBZWkP1qv3Sp7tR": "Raydium CLMM",
+        "SaberQK8Z8Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2": "Saber",
+        "Amm1QK8Z8Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q2Q": "Amm1",
+    }
+    
+    for program_id in program_ids:
+        if program_id in dex_programs:
+            return f"{dex_programs[program_id]} DEX"
+    
+    # 6. Check for fee wallet interactions (indicates bot usage)
+    feePaidTo, _ = getFeeInfo(txData)
+    if feePaidTo:
+        fee_wallets = list(feePaidTo.keys())
+        if fee_wallets:
+            return f"Bot ({fee_wallets[0]})"
+    
+    # 7. Check for very fast execution (same block as original)
+    # This is handled in the main logic where blockDelay is calculated
+    
+    return "Manual"  # Default to manual if no bot patterns detected
 
 # --- MAIN EXECUTION ---
 def main():
@@ -404,25 +535,61 @@ def main():
             print(f"[ERROR] Invalid wallet address format: {walletAddress}", file=sys.stderr)
             sys.exit(1)
         
-        print("[INFO] Step 1: Finding latest buy transactions...", file=sys.stderr)
-        buy_txs = find_latest_buy_transactions(walletAddress, max_buys=3)
-        if not buy_txs:
-            print(f"[FAIL] Could not find recent buy transactions for wallet {walletAddress}.", file=sys.stderr)
+        print("[INFO] Step 1: Finding latest buy transactions using GMGN API...", file=sys.stderr)
+        finder = CopyWalletFinder(rpcUrl)
+        transaction, contractAddress = finder.getLastBuy(walletAddress)
+        if not transaction or not contractAddress:
+            print(f"[FAIL] Could not retrieve main wallet transaction details for {walletAddress}.", file=sys.stderr)
             output = {
                 "count": 0,
                 "results": [],
-                "error": "No recent buy transactions found"
+                "error": "Could not retrieve main wallet transaction details"
             }
             print(json.dumps(output))
             return
         
-        all_potential_traders = []
-        for idx, (signature, token_address, start_block) in enumerate(buy_txs):
-            print(f"[INFO] Step 2: Scanning blocks for copy traders for buy {idx+1} (token: {token_address}, slot: {start_block})...", file=sys.stderr)
-            potential_traders = scan_blocks_for_copytraders(start_block, token_address, walletAddress)
-            all_potential_traders.extend(potential_traders)
+        print(f"[INFO] Found buy transaction: {transaction} for token: {contractAddress}", file=sys.stderr)
         
-        results = [trader for trader in all_potential_traders]
+        mainBlock, txData = finder.getBlockHash(transaction)
+        if mainBlock is None:
+            print("Main transaction failed or did not meet the criteria; cannot proceed.", file=sys.stderr)
+            output = {
+                "count": 0,
+                "results": [],
+                "error": "Main transaction failed or did not meet the criteria"
+            }
+            print(json.dumps(output))
+            return
+        
+        print(f"[INFO] Main transaction block: {mainBlock}", file=sys.stderr)
+        
+        print(f"[INFO] Step 2: Scanning {blockLimit} blocks for copy traders...", file=sys.stderr)
+        _, mainBlock, potentialTraders = finder.getPotentialCopyTraders(mainBlock, walletAddress, contractAddress, blockLimit)
+        
+        results = []
+        total_traders = len(potentialTraders)
+        print(f"[PROGRESS] Processing {total_traders} potential copytraders...", file=sys.stderr)
+        
+        for idx, (trader, txSig, contestantBlock) in enumerate(potentialTraders, 1):
+            print(f"[PROGRESS] Analyzing copytrader {idx}/{total_traders}: {trader[:8]}...", file=sys.stderr)
+            result = processTransaction(finder, txSig, mainBlock, trader)
+            if not result:
+                print(f"[PROGRESS] Skipped copytrader {idx}: transaction analysis failed", file=sys.stderr)
+                continue
+            
+            feeWalletsStr = ", ".join(result["feePaidTo"].keys()) if result["feePaidTo"] else "None"
+            
+            trader_info = {
+                "Trader": trader,
+                "Signature": shorten(txSig),
+                "Block Delay": result["blockDelay"],
+                "Bot Used": result["botUsed"],
+                "Fee Wallet": feeWalletsStr,
+                "Fee Paid": result["feePaid"],
+                "SOL Bought": f"{result['solAmountBought']:.8f}"
+            }
+            results.append(trader_info)
+            print(f"[PROGRESS] Completed copytrader {idx}/{total_traders}: {result['botUsed']} bot, {result['blockDelay']} block delay", file=sys.stderr)
         
         output = {
             "count": len(results),
@@ -446,14 +613,4 @@ def main():
         sys.exit(1)
 
 if __name__ == "__main__":
-    try:
-        sys.stdout.reconfigure(encoding='utf-8')
-    except:
-        pass  # Ignore if reconfigure fails
     main()
-
-# Remove the test code at the end since it's not part of the main functionality
-# url = "https://api.helius.xyz/v0/addresses/DfMxre4cKmvogbLrPigxmibVTTQDuzjdXojWzjCXXhzj/transactions?api-key=5f76bf48-ea7b-4491-beb2-1122aedd3c07&limit=1"
-# response = requests.get(url)
-# print("MINIMAL TEST Status:", response.status_code)
-# print("MINIMAL TEST Body:", response.text)
