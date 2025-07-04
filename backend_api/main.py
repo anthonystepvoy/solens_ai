@@ -1,3 +1,5 @@
+import os
+
 # Try to load dotenv, but don't fail if it's not available
 try:
     from dotenv import load_dotenv
@@ -12,8 +14,6 @@ try:
 except ImportError:
     print("python-dotenv not available, using system environment variables only")
     # dotenv is not available, but that's okay - we'll just use system env vars
-
-import os
 from fastapi import FastAPI, Request, BackgroundTasks, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
