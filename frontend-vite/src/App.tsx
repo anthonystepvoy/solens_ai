@@ -1704,7 +1704,13 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/*" element={<MainAppLayout />} />
+        <Route path="/dashboard" element={<MainAppLayout />} />
+        <Route path="/top-tokens" element={<MainAppLayout />} />
+        <Route path="/settings" element={<MainAppLayout />} />
+        <Route path="/discovery" element={<MainAppLayout />} />
+        <Route path="/wallet-finder" element={<MainAppLayout />} />
+        <Route path="/copytrade-finder" element={<MainAppLayout />} />
+        <Route path="/ml-processor" element={<MainAppLayout />} />
       </Routes>
     </Router>
   );
