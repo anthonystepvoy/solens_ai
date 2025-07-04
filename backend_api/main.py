@@ -32,9 +32,16 @@ from pymongo import MongoClient
 import random
 import asyncio
 import threading
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.interval import IntervalTrigger
 from collections import Counter
+
+# Conditional imports for scheduler (only needed for local development)
+try:
+    from apscheduler.schedulers.background import BackgroundScheduler
+    from apscheduler.triggers.interval import IntervalTrigger
+    HAS_SCHEDULER = True
+except ImportError:
+    # apscheduler not available (Railway deployment)
+    HAS_SCHEDULER = False
 
 # Rest of your code continues here...
 
@@ -72,8 +79,10 @@ client = MongoClient(
 )
 db = client["solens_ai"]
 
-# Background scheduler for automatic discovery
-scheduler = BackgroundScheduler()
+# Background scheduler for automatic discovery (only if available)
+scheduler = None
+if HAS_SCHEDULER:
+    scheduler = BackgroundScheduler()
 
 @app.get("/")
 def read_root():
@@ -664,14 +673,17 @@ def start_scheduler():
 
 @app.on_event("startup")
 async def startup_event():
-    """Start scheduler only for local development, disabled on Railway"""
-    # Check if running locally (not on Railway)
+    """Start scheduler only for local development with apscheduler available"""
+    # Check if running locally (not on Railway) and scheduler is available
     is_local = os.environ.get("RAILWAY_ENVIRONMENT") is None
     
-    if is_local:
+    if is_local and HAS_SCHEDULER and scheduler is not None:
         print("[SCHEDULER] 🚀 Starting background scheduler for local development...")
         print("[SCHEDULER] 📊 Data will automatically sync to website via shared MongoDB!")
         start_scheduler()
+    elif not HAS_SCHEDULER:
+        print("[SCHEDULER] APScheduler not available - Railway deployment mode")
+        print("[SCHEDULER] Data collection runs on local PC instead")
     else:
         print("[SCHEDULER] Background scheduler disabled for Railway deployment")
         print("[SCHEDULER] Data collection runs on local PC instead")
@@ -679,13 +691,19 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Stop the background scheduler when the app shuts down"""
-    if scheduler.running:
+    if HAS_SCHEDULER and scheduler is not None and scheduler.running:
         scheduler.shutdown()
         print("[SCHEDULER] Background scheduler stopped")
 
 @app.get("/scheduler-status")
 def get_scheduler_status():
     """Get the status of the background scheduler"""
+    if not HAS_SCHEDULER or scheduler is None:
+        return {
+            "scheduler_available": False,
+            "message": "Scheduler not available (Railway deployment mode)"
+        }
+    
     try:
         jobs = []
         for job in scheduler.get_jobs():
@@ -697,16 +715,20 @@ def get_scheduler_status():
             })
         
         return {
+            "scheduler_available": True,
             "scheduler_running": scheduler.running,
             "jobs": jobs,
             "job_count": len(jobs)
-                }
+        }
     except Exception as e:
         return {"error": str(e)}
 
 @app.post("/scheduler/start")
 def start_scheduler_manual():
     """Manually start the scheduler"""
+    if not HAS_SCHEDULER or scheduler is None:
+        return {"error": "Scheduler not available (Railway deployment mode)"}
+    
     try:
         if not scheduler.running:
             start_scheduler()
@@ -719,6 +741,9 @@ def start_scheduler_manual():
 @app.post("/scheduler/stop")
 def stop_scheduler_manual():
     """Manually stop the scheduler"""
+    if not HAS_SCHEDULER or scheduler is None:
+        return {"error": "Scheduler not available (Railway deployment mode)"}
+    
     try:
         if scheduler.running:
             scheduler.shutdown()
