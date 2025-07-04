@@ -3,8 +3,7 @@ nixPkgs = ["nodejs", "python3", "python3Packages.pip"]
 
 [phases.install]
 cmds = [
-  "cd backend/scrapers && npm install",
-  "pip install -r backend_api/requirements.txt"
+  "cd backend/scrapers && npm install"
 ]
 
 [phases.build]
