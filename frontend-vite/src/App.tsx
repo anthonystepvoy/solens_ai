@@ -1481,7 +1481,7 @@ function CopytradeFinderPage() {
           fontFamily: '"Courier New", monospace',
           textShadow: '0 0 10px rgba(0, 255, 65, 0.5)'
         }}>
-          [COMING SOON]
+          [ON THE WORKS]
         </h2>
         <p style={{
           color: '#cccccc',
@@ -1490,7 +1490,7 @@ function CopytradeFinderPage() {
           fontFamily: '"Courier New", monospace',
           lineHeight: 1.4
         }}>
-          Advanced AI-powered copytrader detection engine is currently under development.<br/>
+          Advanced AI-powered copytrader detection engine is currently being developed.<br/>
           This feature will identify sophisticated trading patterns and wallet relationships.
         </p>
         <div style={{
