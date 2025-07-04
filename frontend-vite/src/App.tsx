@@ -4,7 +4,7 @@ import axios from 'axios';
 // import solensLogo from '../assets/solens-logo-white.png';
 import '@fontsource/dm-sans/400.css';
 import '@fontsource/dm-sans/700.css';
-
+import { API_ENDPOINTS } from './config';
 import TopTokensSection from './components/TopTokensSection';
 import LandingPage from './components/LandingPage';
 
@@ -100,7 +100,7 @@ function DashboardPage() {
   // Fetch dashboard data
   const fetchDashboardData = (isInitialLoad = false) => {
     if (isInitialLoad) setLoading(true);
-    axios.get('http://localhost:8000/dashboard-summary')
+    axios.get(API_ENDPOINTS.DASHBOARD_SUMMARY)
       .then(res => {
         const d = res.data;
         setMetrics(d.metrics || []);
@@ -727,7 +727,7 @@ function TopTokensPage() {
       setTokenErrorMap(prev => ({ ...prev, [addr]: '' }));
       
       try {
-        const res = await axios.get(`http://localhost:8000/token/${addr}`);
+        const res = await axios.get(API_ENDPOINTS.TOKEN(addr));
         return [addr, res.data, null];
       } catch (error: any) {
         const errorMsg = error.response?.status === 404 ? 'Token not found' : 'Failed to fetch data';
@@ -764,7 +764,7 @@ function TopTokensPage() {
     setMinuteRankLoading(true);
     setMinuteRankError(null);
     try {
-      const res = await axios.get('http://localhost:8000/tokens/latest-minute-rank');
+      const res = await axios.get(API_ENDPOINTS.LATEST_MINUTE_RANK);
       setMinuteRankTokens(res.data);
     } catch (err) {
       setMinuteRankError('Failed to fetch 1-minute top tokens');
@@ -920,7 +920,7 @@ function WalletFinderPage() {
   // Fetch wallets from backend
   const fetchWallets = () => {
     setLoading(true);
-    axios.get('http://localhost:8000/wallets')
+    axios.get(API_ENDPOINTS.WALLETS)
       .then(res => {
         setWallets(res.data);
         setLoading(false);
@@ -1074,7 +1074,7 @@ function WalletFinderPage() {
   const fetchWalletInfos = async () => {
     const promises = watchlist.map(async (addr) => {
       try {
-        const res = await axios.get(`http://localhost:8000/wallet/${addr}`);
+        const res = await axios.get(API_ENDPOINTS.WALLET(addr));
         return [addr, res.data];
       } catch {
         return [addr, null];
@@ -1432,7 +1432,7 @@ function CopytradeFinderPage() {
     localStorage.removeItem('copytrade_status');
 
     try {
-      const response = await axios.post('http://localhost:8000/copytrade-analyze', { wallet_address: wallet });
+      const response = await axios.post(API_ENDPOINTS.COPYTRADE_ANALYZE, { wallet_address: wallet });
       const { count, results } = response.data;
       if (count > 0) {
         setStatus(`[ANALYSIS_COMPLETE] Found ${count} unique potential copytraders.`);

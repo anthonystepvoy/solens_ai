@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config';
 
 // Inject custom scrollbar CSS
 if (typeof window !== 'undefined') {
@@ -163,7 +164,7 @@ const TopTokensSection: React.FC<TopTokensSectionProps> = ({ onTokenHistoryUpdat
       setLoading(true);
     }
     try {
-      const response = await axios.get('http://localhost:8000/top-tokens');
+      const response = await axios.get(API_ENDPOINTS.TOP_TOKENS);
       setTokensData(response.data);
       setLastRefresh(new Date());
       setError(null);
@@ -186,7 +187,7 @@ const TopTokensSection: React.FC<TopTokensSectionProps> = ({ onTokenHistoryUpdat
   const fetchMinuteRank = async () => {
     setMinuteLoading(true);
     try {
-      const response = await axios.get('http://localhost:8000/tokens/latest-minute-rank');
+      const response = await axios.get(API_ENDPOINTS.LATEST_MINUTE_RANK);
       setMinuteRank(response.data);
       setMinuteRefresh(new Date());
       setMinuteError(null);

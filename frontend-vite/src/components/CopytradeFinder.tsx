@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const API_URL = 'http://localhost:8000/copytrade-analyze';
+import { API_ENDPOINTS } from '../config';
 
 const retroBox: React.CSSProperties = {
   border: '2px solid #00ff41',
@@ -65,7 +65,7 @@ const CopytradeFinder: React.FC = () => {
     setResults([]);
     setSearched(false);
     try {
-      const res = await fetch(API_URL, {
+      const res = await fetch(API_ENDPOINTS.COPYTRADE_ANALYZE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wallet_address: wallet.trim() }),

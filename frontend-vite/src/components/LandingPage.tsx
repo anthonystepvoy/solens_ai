@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config';
 
 // Matrix-style text scrambling component
 const MatrixText: React.FC<{ 
@@ -105,7 +106,7 @@ const LandingPage: React.FC = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await axios.get('http://localhost:8000/dashboard-summary');
+        const res = await axios.get(API_ENDPOINTS.DASHBOARD_SUMMARY);
         setStats(res.data);
       } catch {}
     };
