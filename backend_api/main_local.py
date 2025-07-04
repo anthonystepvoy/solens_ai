@@ -204,27 +204,14 @@ def copytrade_analyze(data: dict = Body(...)):
     wallet_address = data.get('wallet_address')
     if not wallet_address:
         return PlainTextResponse("wallet_address is required", status_code=400)
-    script_path = os.path.join(os.path.dirname(__file__), '../backend/scrapers/copy_trader_analyzer.py')
-    env = os.environ.copy()
-    print("[DEBUG] HELIUS_API_KEY in env:", env.get("HELIUS_API_KEY"))
-    print("[DEBUG] Current working directory:", os.getcwd())
-    try:
-        result = subprocess.run(
-            ['python', script_path, wallet_address],
-            capture_output=True,
-            text=True,
-            env=env,
-            timeout=120
-        )
-        if result.returncode == 0:
-            try:
-                return JSONResponse(json.loads(result.stdout))
-            except Exception:
-                return PlainTextResponse(result.stdout, status_code=200)
-        else:
-            return PlainTextResponse(result.stderr or "Script error", status_code=500)
-    except Exception as e:
-        return PlainTextResponse(str(e), status_code=500)
+    
+    # Return "ON THE WORKS" message for now
+    return JSONResponse({
+        "status": "feature_in_development",
+        "message": "ON THE WORKS",
+        "wallet_address": wallet_address,
+        "description": "Copy trader analysis feature is currently under development. Check back soon!"
+    })
 
 @app.post("/ml-process")
 def ml_process():

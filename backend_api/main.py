@@ -216,10 +216,11 @@ def copytrade_analyze(data: dict = Body(...)):
     
     # Return "ON THE WORKS" message for now
     return JSONResponse({
-        "status": "feature_in_development",
+        "status": "feature_in_development", 
         "message": "ON THE WORKS",
         "wallet_address": wallet_address,
-        "description": "Copy trader analysis feature is currently under development. Check back soon!"
+        "description": "Copy trader analysis feature is currently under development. Check back soon!",
+        "note": "Feature coming soon to Railway deployment"
     })
 
 @app.post("/ml-process")
