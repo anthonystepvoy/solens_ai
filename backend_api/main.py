@@ -1,19 +1,23 @@
-from dotenv import load_dotenv
+# Try to load dotenv, but don't fail if it's not available
+try:
+    from dotenv import load_dotenv
+    
+    # Load environment variables - try multiple paths for different deployment scenarios
+    env_paths = ['../.env', '.env', './.env']
+    for env_path in env_paths:
+        if os.path.exists(env_path):
+            load_dotenv(dotenv_path=env_path)
+            break
+    print("Successfully loaded dotenv")
+except ImportError:
+    print("python-dotenv not available, using system environment variables only")
+    # dotenv is not available, but that's okay - we'll just use system env vars
+
 import os
-
-# ed suck my d
-# Load environment variables - try multiple paths for different deployment scenarios
-env_paths = ['../.env', '.env', './.env']
-for env_path in env_paths:
-    if os.path.exists(env_path):
-        load_dotenv(dotenv_path=env_path)
-        break
-
 from fastapi import FastAPI, Request, BackgroundTasks, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 import json
-import os
 import subprocess
 import io
 import ssl
@@ -30,6 +34,8 @@ import threading
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from collections import Counter
+
+# Rest of your code continues here...
 
 app = FastAPI(title="Solens AI API", version="1.0.0")
 
