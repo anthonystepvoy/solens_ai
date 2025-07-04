@@ -1451,138 +1451,80 @@ function CopytradeFinderPage() {
     <div style={{ marginTop: 32, maxWidth: 900, margin: '32px auto 0', padding: '0 24px', fontFamily: '"Courier New", monospace', color: '#fff' }}>
       <h1 style={{ color: '#cccccc', marginBottom: 16, fontSize: 24, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: 'inherit' }}>&gt; COPYTRADE_FINDER</h1>
       <p style={{ color: '#cccccc', marginBottom: 24, fontFamily: 'inherit', fontSize: 14 }}>[ADVANCED_PATTERN_RECOGNITION_SYSTEM]</p>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+        <input
+          type="text"
+          value={wallet}
+          onChange={e => setWallet(e.target.value)}
+          placeholder="Enter wallet address to analyze"
+        style={{
+            background: '#000',
+            color: '#00ff41', 
+            fontFamily: '"Courier New", monospace',
+          border: '1px solid #00ff41',
+          borderRadius: 0,
+            padding: '10px 16px',
+            fontSize: 16,
+            minWidth: 340,
+            outline: 'none',
+            flex: 1
+          }}
+        />
+        <button
+          onClick={handleAnalyze}
+          disabled={loading || !wallet}
+          style={{ padding: '12px 24px', borderRadius: 0, border: '1px solid #00ff41', background: loading ? '#222' : '#000', color: loading ? '#666' : '#00ff41', fontWeight: 700, fontFamily: 'inherit', fontSize: 14, cursor: loading || !wallet ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
+        >
+          {loading ? '[SCANNING...]' : '> SEARCH'}
+      </button>
+          </div>
       
-      {/* COMING SOON Banner */}
-      <div style={{
-        border: '2px solid #00ff41',
-        background: 'rgba(0, 255, 65, 0.05)',
-        padding: '20px',
-        marginBottom: 32,
-        textAlign: 'center',
-        borderRadius: 0,
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '2px',
-          background: 'linear-gradient(90deg, transparent, #00ff41, transparent)',
-          animation: 'pulse 2s ease-in-out infinite'
-        }}></div>
-        <h2 style={{
-          color: '#00ff41',
-          fontSize: 20,
-          fontWeight: 700,
-          letterSpacing: '3px',
-          margin: '0 0 8px 0',
-          fontFamily: '"Courier New", monospace',
-          textShadow: '0 0 10px rgba(0, 255, 65, 0.5)'
+      {/* Display error or status message */}
+      {error && <div style={{ color: '#ff6b6b', marginBottom: 16, fontFamily: 'inherit', padding: 12, border: '1px solid #ff6b6b', background: 'rgba(255, 107, 107, 0.1)', fontSize: 14 }}>{error}</div>}
+      {status && !loading && (
+        <div style={{ 
+          marginBottom: 16, 
+          padding: 16, 
+          background: 'rgba(0, 255, 65, 0.1)', 
+          color: '#00ff41', 
+          borderRadius: 0, 
+          fontWeight: 600, 
+          fontSize: 14, 
+          border: '1px solid #00ff41',
+          fontFamily: '"Courier New", monospace'
         }}>
-          [ON THE WORKS]
-        </h2>
-        <p style={{
-          color: '#cccccc',
-          fontSize: 14,
-          margin: 0,
-          fontFamily: '"Courier New", monospace',
-          lineHeight: 1.4
-        }}>
-          Advanced AI-powered copytrader detection engine is currently being developed.<br/>
-          This feature will identify sophisticated trading patterns and wallet relationships.
-        </p>
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: '2px',
-          background: 'linear-gradient(90deg, transparent, #00ff41, transparent)',
-          animation: 'pulse 2s ease-in-out infinite reverse'
-        }}></div>
-      </div>
+          {status}
+        </div>
+      )}
 
-      {/* Placeholder functionality disabled - COMING SOON */}
-      {false && (
-        <>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-            <input
-              type="text"
-              value={wallet}
-              onChange={e => setWallet(e.target.value)}
-              placeholder="Enter wallet address to analyze"
-            style={{
-                background: '#000',
-                color: '#00ff41', 
-                fontFamily: '"Courier New", monospace',
-              border: '1px solid #00ff41',
-              borderRadius: 0,
-                padding: '10px 16px',
-                fontSize: 16,
-                minWidth: 340,
-                outline: 'none',
-                flex: 1
-              }}
-            />
-            <button
-              onClick={handleAnalyze}
-              disabled={loading || !wallet}
-              style={{ padding: '12px 24px', borderRadius: 0, border: '1px solid #00ff41', background: loading ? '#222' : '#000', color: loading ? '#666' : '#00ff41', fontWeight: 700, fontFamily: 'inherit', fontSize: 14, cursor: loading || !wallet ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}
-            >
-              {loading ? '[SCANNING...]' : '> SEARCH'}
-          </button>
-              </div>
-          
-          {/* Display error or status message */}
-          {error && <div style={{ color: '#ff6b6b', marginBottom: 16, fontFamily: 'inherit', padding: 12, border: '1px solid #ff6b6b', background: 'rgba(255, 107, 107, 0.1)', fontSize: 14 }}>{error}</div>}
-          {status && !loading && (
-            <div style={{ 
-              marginBottom: 16, 
-              padding: 16, 
-              background: 'rgba(0, 255, 65, 0.1)', 
-              color: '#00ff41', 
-              borderRadius: 0, 
-              fontWeight: 600, 
-              fontSize: 14, 
-              border: '1px solid #00ff41',
-              fontFamily: '"Courier New", monospace'
-            }}>
-              {status}
-            </div>
-          )}
-
-          {/* Display results table */}
-          {results.length > 0 && !loading && (
-            <div style={{ width: '100%', marginBottom: 32 }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', color: '#fff', fontFamily: 'inherit', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid #333333' }}>
-                <thead style={{ background: 'rgba(0, 255, 65, 0.1)' }}>
-                  <tr>
-                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Trader</th>
-                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Signature</th>
-                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Block Delay</th>
-                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Tx Processor/Fee Wallet</th>
-                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Fee Paid</th>
-                    <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>SOL Bought</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {results.map((row, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #333333' }}>
-                      <td style={{ padding: '10px' }}><WalletAddress address={row['Trader']} short={true}/></td>
-                      <td style={{ padding: '10px' }}><WalletAddress address={row['Signature']} short={true}/></td>
-                      <td style={{ padding: '10px' }}>{row['Block Delay']}</td>
-                      <td style={{ padding: '10px' }}>{row['Tx Processor/Fee Wallet']}</td>
-                      <td style={{ padding: '10px' }}>{row['Fee Paid']}</td>
-                      <td style={{ padding: '10px' }}>{row['SOL Bought']}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </>
+      {/* Display results table */}
+      {results.length > 0 && !loading && (
+        <div style={{ width: '100%', marginBottom: 32 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', color: '#fff', fontFamily: 'inherit', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid #333333' }}>
+            <thead style={{ background: 'rgba(0, 255, 65, 0.1)' }}>
+              <tr>
+                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Trader</th>
+                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Signature</th>
+                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Block Delay</th>
+                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Tx Processor/Fee Wallet</th>
+                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Fee Paid</th>
+                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>SOL Bought</th>
+              </tr>
+            </thead>
+            <tbody>
+              {results.map((row, idx) => (
+                <tr key={idx} style={{ borderBottom: '1px solid #333333' }}>
+                  <td style={{ padding: '10px' }}><WalletAddress address={row['Trader']} short={true}/></td>
+                  <td style={{ padding: '10px' }}><WalletAddress address={row['Signature']} short={true}/></td>
+                  <td style={{ padding: '10px' }}>{row['Block Delay']}</td>
+                  <td style={{ padding: '10px' }}>{row['Tx Processor/Fee Wallet']}</td>
+                  <td style={{ padding: '10px' }}>{row['Fee Paid']}</td>
+                  <td style={{ padding: '10px' }}>{row['SOL Bought']}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
