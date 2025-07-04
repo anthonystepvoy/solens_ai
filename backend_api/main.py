@@ -664,9 +664,17 @@ def start_scheduler():
 
 @app.on_event("startup")
 async def startup_event():
-    """Background scheduler disabled for Railway deployment"""
-    print("[SCHEDULER] Background scheduler disabled - run data collection from local PC instead")
-    # start_scheduler()  # Disabled to avoid Puppeteer issues on Railway
+    """Start scheduler only for local development, disabled on Railway"""
+    # Check if running locally (not on Railway)
+    is_local = os.environ.get("RAILWAY_ENVIRONMENT") is None
+    
+    if is_local:
+        print("[SCHEDULER] 🚀 Starting background scheduler for local development...")
+        print("[SCHEDULER] 📊 Data will automatically sync to website via shared MongoDB!")
+        start_scheduler()
+    else:
+        print("[SCHEDULER] Background scheduler disabled for Railway deployment")
+        print("[SCHEDULER] Data collection runs on local PC instead")
 
 @app.on_event("shutdown")
 async def shutdown_event():
