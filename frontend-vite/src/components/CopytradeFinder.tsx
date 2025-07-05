@@ -1,3 +1,4 @@
+// Version 2.0 - Fixed crashes and added comprehensive error handling
 import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 
@@ -139,7 +140,7 @@ const CopytradeFinder: React.FC = () => {
       // Handle different response formats
       let processedResults: CopytradeResult[] = [];
       
-      if (responseData.status === 'feature_in_development') {
+      if ((responseData as any)?.status === 'feature_in_development') {
         setError('Feature is under development. Please try again later.');
         return;
       }
@@ -147,10 +148,10 @@ const CopytradeFinder: React.FC = () => {
       // Extract results array safely
       if (Array.isArray(responseData)) {
         processedResults = responseData;
-      } else if (responseData.results && Array.isArray(responseData.results)) {
-        processedResults = responseData.results;
-      } else if (responseData.results && typeof responseData.results === 'object') {
-        processedResults = [responseData.results];
+      } else if ((responseData as any)?.results && Array.isArray((responseData as any).results)) {
+        processedResults = (responseData as any).results;
+      } else if ((responseData as any)?.results && typeof (responseData as any).results === 'object') {
+        processedResults = [(responseData as any).results];
       } else {
         processedResults = [];
       }
