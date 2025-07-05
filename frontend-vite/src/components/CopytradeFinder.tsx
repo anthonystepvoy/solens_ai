@@ -117,7 +117,7 @@ const CopytradeFinder: React.FC = () => {
         textAlign: 'center'
       }}>
         💡 Meanwhile, explore our other powerful features: Smart Wallet Discovery and AI Analysis!
-      </div>
+        </div>
     </div>
   );
 };
