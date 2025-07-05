@@ -1,20 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
+
+interface CopytradeResult {
+  trader_address?: string;
+  signature?: string;
+  block_delay?: number;
+  bot_used?: string;
+}
+
+interface Progress {
+  current: number;
+  total: number;
+  label: string;
+}
 
 const CopytradeFinder: React.FC = () => {
   const [wallet, setWallet] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [results, setResults] = useState<any[]>([]);
-  const [progress, setProgress] = useState<{current: number, total: number, label: string} | null>(null);
+  const [results, setResults] = useState<CopytradeResult[]>([]);
+  const [progress, setProgress] = useState<Progress | null>(null);
 
-  // Enable copytrade analyzer in production
-  const isLocal = true; // Always enabled now
+  // Always enable the feature for testing
+  const isLocal = true;
 
-  const ProgressBarTerminal: React.FC<{ progress: number; total: number; label: string }> = ({ progress, total, label }) => {
-    const percentage = (progress / total) * 100;
-    const filledWidth = Math.min(percentage, 100);
+  const ProgressBarTerminal: React.FC<{ progress: number; total: number; label: string }> = ({ 
+    progress, 
+    total, 
+    label 
+  }) => {
+    const percentage = Math.min((progress / total) * 100, 100);
+    const filledWidth = Math.max(0, Math.min(percentage, 100));
     
     return (
       <div style={{ width: '100%', marginBottom: 8 }}>
@@ -25,7 +42,7 @@ const CopytradeFinder: React.FC = () => {
           fontSize: '12px',
           color: '#00ff41'
         }}>
-          <span>{label}</span>
+          <span>{label || 'Processing...'}</span>
           <span>{Math.round(percentage)}%</span>
         </div>
         <div style={{ 
@@ -47,33 +64,41 @@ const CopytradeFinder: React.FC = () => {
     );
   };
 
-  const handleAnalyze = async () => {
-    if (!wallet.trim()) return;
-    
-    setLoading(true);
-    setError('');
+  const resetState = useCallback(() => {
+    setError(null);
     setStatus(null);
     setResults([]);
     setProgress(null);
+  }, []);
+
+  const handleAnalyze = useCallback(async () => {
+    if (!wallet?.trim()) {
+      setError('Please enter a wallet address');
+      return;
+    }
+    
+    setLoading(true);
+    resetState();
+
+    let progressInterval: NodeJS.Timeout | null = null;
 
     try {
-      // Always use Railway backend in production
+      // Determine API URL
       const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'http://localhost:8001' 
         : 'https://solensai-production.up.railway.app';
       
-      console.log('[DEBUG] Starting copytrade analysis for wallet:', wallet);
-      console.log('[DEBUG] Using API URL:', apiUrl);
+      console.log('[COPYTRADE] Starting analysis for wallet:', wallet);
+      console.log('[COPYTRADE] Using API URL:', apiUrl);
       
-      // Start progress tracking with simulation
-      setProgress({current: 0, total: 100, label: 'INITIALIZING_ANALYSIS'});
+      // Start progress simulation
+      setProgress({ current: 0, total: 100, label: 'INITIALIZING_ANALYSIS' });
       
-      // Simulate progress updates
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setProgress(prev => {
           if (!prev) return null;
-          const newCurrent = Math.min(prev.current + Math.random() * 15, 90);
-          let newLabel = prev.label;
+          const newCurrent = Math.min(prev.current + Math.random() * 10 + 5, 90);
+          let newLabel = 'PROCESSING';
           
           if (newCurrent < 20) newLabel = 'FINDING_BUY_TRANSACTIONS';
           else if (newCurrent < 40) newLabel = 'SCANNING_BLOCKS';
@@ -81,170 +106,213 @@ const CopytradeFinder: React.FC = () => {
           else if (newCurrent < 80) newLabel = 'DETECTING_BOTS';
           else newLabel = 'FINALIZING_RESULTS';
           
-          return {current: newCurrent, total: 100, label: newLabel};
+          return { current: newCurrent, total: 100, label: newLabel };
         });
-      }, 500);
+      }, 800);
       
-      const response = await axios.post(`${apiUrl}/copytrade-analyze`, { wallet_address: wallet });
+      // Make API call with timeout
+      const response = await axios.post(
+        `${apiUrl}/copytrade-analyze`, 
+        { wallet_address: wallet },
+        { timeout: 30000 } // 30 second timeout
+      );
       
-      console.log('[DEBUG] Raw response:', response);
-      console.log('[DEBUG] Response data:', response.data);
+      console.log('[COPYTRADE] Response received:', response);
       
-      // Clear progress simulation
-      clearInterval(progressInterval);
-      setProgress({current: 100, total: 100, label: 'ANALYSIS_COMPLETE'});
+      // Clear progress interval
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
       
-      // Handle different response formats with better type safety
-      const responseData = response?.data as any;
-      console.log('[DEBUG] Processing response data:', responseData);
+      // Complete progress
+      setProgress({ current: 100, total: 100, label: 'ANALYSIS_COMPLETE' });
       
-      if (responseData && responseData.status === 'feature_in_development') {
-        setError('Feature is under development on the live site. Use local development for testing.');
+      // Process response safely
+      const responseData = response?.data;
+      console.log('[COPYTRADE] Processing response data:', responseData);
+      
+      if (!responseData) {
+        throw new Error('No data received from server');
+      }
+      
+      // Handle different response formats
+      let processedResults: CopytradeResult[] = [];
+      
+      if (responseData.status === 'feature_in_development') {
+        setError('Feature is under development. Please try again later.');
         return;
       }
       
-      // Ensure results is always an array with maximum safety
-      let results = [];
-      try {
-        if (responseData && typeof responseData === 'object') {
-          if (Array.isArray((responseData as any).results)) {
-            results = (responseData as any).results;
-          } else if (Array.isArray(responseData)) {
-            results = responseData;
-          } else if ((responseData as any).results && typeof (responseData as any).results === 'object') {
-            // If results exists but isn't an array, wrap it
-            results = [(responseData as any).results];
-          }
-        }
-        console.log('[DEBUG] Processed results:', results);
-      } catch (parseError) {
-        console.error('[DEBUG] Error parsing results:', parseError);
-        results = [];
+      // Extract results array safely
+      if (Array.isArray(responseData)) {
+        processedResults = responseData;
+      } else if (responseData.results && Array.isArray(responseData.results)) {
+        processedResults = responseData.results;
+      } else if (responseData.results && typeof responseData.results === 'object') {
+        processedResults = [responseData.results];
+      } else {
+        processedResults = [];
       }
       
-      setResults(results || []);
-      setStatus(`[ANALYSIS_COMPLETE] Found ${(results || []).length} potential copytraders.`);
-    } catch (err: any) {
-      console.error('[DEBUG] Copytrade analysis error:', err);
+      // Validate results structure
+      const validResults = processedResults.filter(result => 
+        result && typeof result === 'object'
+      );
       
-      let errorMessage = 'Error analyzing wallet.';
-      try {
-        if (err.response?.data?.message) {
-          errorMessage = err.response.data.message;
-        } else if (err.response?.data) {
-          errorMessage = typeof err.response.data === 'string' ? err.response.data : 'API Error';
-        } else if (err.message) {
-          errorMessage = err.message;
-        }
-      } catch (errorParseError) {
-        console.error('[DEBUG] Error parsing error message:', errorParseError);
+      console.log('[COPYTRADE] Processed results:', validResults);
+      
+      setResults(validResults);
+      setStatus(`Analysis complete. Found ${validResults.length} potential copytraders.`);
+      
+    } catch (err: any) {
+      console.error('[COPYTRADE] Error during analysis:', err);
+      
+      // Clear progress interval on error
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+      
+      setProgress(null);
+      
+      // Handle different error types
+      let errorMessage = 'An error occurred during analysis.';
+      
+      if (err.code === 'ECONNABORTED') {
+        errorMessage = 'Request timed out. Please try again.';
+      } else if (err.response?.status === 404) {
+        errorMessage = 'API endpoint not found. Please check the server.';
+      } else if (err.response?.status >= 500) {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
       }
       
       setError(errorMessage);
       
-      // Clear progress on error
-      setProgress(null);
     } finally {
       setLoading(false);
-      setTimeout(() => setProgress(null), 2000); // Keep progress bar for 2 seconds after completion
+      
+      // Clear progress after delay
+      setTimeout(() => {
+        setProgress(null);
+      }, 2000);
     }
-  };
+  }, [wallet, resetState]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      setLoading(false);
+      resetState();
+    };
+  }, [resetState]);
+
+  const handleWalletChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setWallet(e.target.value);
+    if (error) setError(null); // Clear error when user starts typing
+  }, [error]);
+
+  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !loading && wallet.trim()) {
+      handleAnalyze();
+    }
+  }, [handleAnalyze, loading, wallet]);
 
   return (
-    <div style={{ marginTop: 32, maxWidth: 900, margin: '32px auto 0', padding: '0 24px', fontFamily: '"Courier New", monospace', color: '#fff' }}>
-      <h1 style={{ color: '#cccccc', marginBottom: 16, fontSize: 24, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: 'inherit' }}>&gt; COPYTRADE_FINDER</h1>
-      <p style={{ color: '#cccccc', marginBottom: 24, fontFamily: 'inherit', fontSize: 14 }}>[ADVANCED_PATTERN_RECOGNITION_SYSTEM]</p>
+    <div style={{ 
+      marginTop: 32, 
+      maxWidth: 900, 
+      margin: '32px auto 0', 
+      padding: '0 24px', 
+      fontFamily: '"Courier New", monospace', 
+      color: '#fff' 
+    }}>
+      <h1 style={{ 
+        color: '#cccccc', 
+        marginBottom: 16, 
+        fontSize: 24, 
+        fontWeight: 700, 
+        letterSpacing: '2px', 
+        textTransform: 'uppercase', 
+        fontFamily: 'inherit' 
+      }}>
+        &gt; COPYTRADE_FINDER
+      </h1>
       
-      {/* Show development notice if not local */}
-      {!isLocal && (
-        <div style={{ 
-          border: '2px solid #00ff41', 
-          borderRadius: 0, 
-          padding: '24px', 
-          margin: '24px 0',
-          background: 'rgba(0, 0, 0, 0.6)',
-          color: '#00ff41',
-          fontFamily: '"Courier New", monospace'
-        }}>
-          <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', color: '#00ff41' }}>
-            [COPYTRADE_ANALYZER MODULE]
-          </div>
-          
-          <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: '#00ff41' }}>
-            [WHAT IS THIS?]
-          </div>
-          <div style={{ fontSize: '14px', marginBottom: '20px', color: '#cccccc', lineHeight: '1.6' }}>
-            The Copytrade Analyzer is an advanced pattern recognition system for Cipher. It analyzes blockchain transactions to identify wallets that copy successful traders, providing insights into trading patterns and behaviors.
-          </div>
-          
-          <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: '#00ff41' }}>
-            [WHAT DOES IT DO?]
-          </div>
-          <div style={{ fontSize: '14px', marginBottom: '20px', color: '#cccccc' }}>
-            - Detects copy trading patterns by analyzing transaction timing.<br />
-            - Identifies wallets that follow successful traders.<br />
-            - Provides detailed analytics on copy trading behaviors.<br />
-            - Exports results in CSV/JSON format for further analysis.<br />
-            - Integrates with the main wallet discovery system.
-          </div>
-          
-          <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '12px', color: '#00ff41' }}>
-            [COMING SOON]
-          </div>
-          <div style={{ fontSize: '14px', color: '#cccccc', lineHeight: '1.6' }}>
-            Advanced blockchain analysis capabilities are currently being enhanced. Check back soon for the full copy trader detection system.
-          </div>
-        </div>
-      )}
+      <p style={{ 
+        color: '#cccccc', 
+        marginBottom: 24, 
+        fontFamily: 'inherit', 
+        fontSize: 14 
+      }}>
+        [ADVANCED_PATTERN_RECOGNITION_SYSTEM]
+      </p>
       
-      {/* Working interface for local development */}
+      {/* Input Section */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
         <input
           type="text"
           value={wallet}
-          onChange={e => setWallet(e.target.value)}
-          placeholder={isLocal ? "Enter wallet address to analyze" : "Feature coming soon..."}
-          disabled={!isLocal || loading}
+          onChange={handleWalletChange}
+          onKeyPress={handleKeyPress}
+          placeholder="Enter wallet address to analyze"
+          disabled={loading}
           style={{
-            background: isLocal ? '#000' : '#0f1114',
-            color: isLocal ? '#00ff41' : '#666', 
+            background: '#000',
+            color: '#00ff41',
             fontFamily: '"Courier New", monospace',
-            border: `1px solid ${isLocal ? '#00ff41' : '#333'}`,
+            border: '1px solid #00ff41',
             borderRadius: 0,
             padding: '10px 16px',
             fontSize: 16,
             minWidth: 340,
             outline: 'none',
             flex: 1,
-            opacity: isLocal ? 1 : 0.5,
-            cursor: isLocal && !loading ? 'text' : 'not-allowed'
+            opacity: loading ? 0.7 : 1,
+            cursor: loading ? 'not-allowed' : 'text'
           }}
         />
         <button
           onClick={handleAnalyze}
-          disabled={!isLocal || loading || !wallet}
+          disabled={loading || !wallet.trim()}
           style={{ 
             padding: '12px 24px', 
             borderRadius: 0, 
-            border: `1px solid ${isLocal ? '#00ff41' : '#333'}`, 
-            background: isLocal ? (loading ? '#222' : '#000') : '#0f1114', 
-            color: isLocal ? (loading ? '#666' : '#00ff41') : '#666', 
+            border: '1px solid #00ff41', 
+            background: loading ? '#222' : '#000', 
+            color: loading ? '#666' : '#00ff41', 
             fontWeight: 700, 
             fontFamily: 'inherit', 
             fontSize: 14, 
-            cursor: isLocal && !loading && wallet ? 'pointer' : 'not-allowed',
-            opacity: isLocal ? 1 : 0.5
+            cursor: loading || !wallet.trim() ? 'not-allowed' : 'pointer',
+            opacity: loading || !wallet.trim() ? 0.7 : 1
           }}
         >
-          {loading ? '[SCANNING...]' : isLocal ? '> SEARCH' : 'DISABLED'}
+          {loading ? '[ANALYZING...]' : '> ANALYZE'}
         </button>
       </div>
       
-      {/* Status and Error Messages */}
-      {error && <div style={{ color: '#ff6b6b', marginBottom: 16, fontFamily: 'inherit', padding: 12, border: '1px solid #ff6b6b', background: 'rgba(255, 107, 107, 0.1)', fontSize: 14 }}>{error}</div>}
+      {/* Error Message */}
+      {error && (
+        <div style={{ 
+          color: '#ff6b6b', 
+          marginBottom: 16, 
+          fontFamily: 'inherit', 
+          padding: 12, 
+          border: '1px solid #ff6b6b', 
+          background: 'rgba(255, 107, 107, 0.1)', 
+          fontSize: 14 
+        }}>
+          [ERROR] {error}
+        </div>
+      )}
       
       {/* Progress Bar */}
-      {loading && progress && (
+      {progress && (
         <div style={{ 
           marginBottom: 16, 
           padding: 16, 
@@ -270,6 +338,7 @@ const CopytradeFinder: React.FC = () => {
         </div>
       )}
       
+      {/* Status Message */}
       {status && !loading && (
         <div style={{ 
           marginBottom: 16, 
@@ -282,20 +351,65 @@ const CopytradeFinder: React.FC = () => {
           border: '1px solid #00ff41',
           fontFamily: '"Courier New", monospace'
         }}>
-          {status}
+          [STATUS] {status}
         </div>
       )}
 
       {/* Results Table */}
-      {results && Array.isArray(results) && results.length > 0 && !loading && (
+      {results.length > 0 && !loading && (
         <div style={{ width: '100%', marginBottom: 32 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', color: '#fff', fontFamily: 'inherit', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid #333333' }}>
+          <div style={{ 
+            marginBottom: 16, 
+            color: '#00ff41', 
+            fontFamily: 'inherit', 
+            fontSize: 14,
+            fontWeight: 600 
+          }}>
+            [RESULTS] {results.length} copytraders detected
+          </div>
+          
+          <table style={{ 
+            width: '100%', 
+            borderCollapse: 'collapse', 
+            color: '#fff', 
+            fontFamily: 'inherit', 
+            background: 'rgba(255, 255, 255, 0.02)', 
+            border: '1px solid #333333' 
+          }}>
             <thead style={{ background: 'rgba(0, 255, 65, 0.1)' }}>
               <tr>
-                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Trader</th>
-                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Signature</th>
-                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Block Delay</th>
-                <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>Bot Used</th>
+                <th style={{ 
+                  padding: '12px', 
+                  textAlign: 'left', 
+                  color: '#00ff41', 
+                  borderBottom: '1px solid #333333' 
+                }}>
+                  Trader
+                </th>
+                <th style={{ 
+                  padding: '12px', 
+                  textAlign: 'left', 
+                  color: '#00ff41', 
+                  borderBottom: '1px solid #333333' 
+                }}>
+                  Signature
+                </th>
+                <th style={{ 
+                  padding: '12px', 
+                  textAlign: 'left', 
+                  color: '#00ff41', 
+                  borderBottom: '1px solid #333333' 
+                }}>
+                  Block Delay
+                </th>
+                <th style={{ 
+                  padding: '12px', 
+                  textAlign: 'left', 
+                  color: '#00ff41', 
+                  borderBottom: '1px solid #333333' 
+                }}>
+                  Bot Used
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -303,24 +417,46 @@ const CopytradeFinder: React.FC = () => {
                 <tr key={index} style={{ borderBottom: '1px solid #333333' }}>
                   <td style={{ padding: '12px', borderBottom: '1px solid #333333' }}>
                     <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>
-                      {result && result.trader_address ? `${result.trader_address.slice(0, 4)}...${result.trader_address.slice(-4)}` : 'N/A'}
+                      {result?.trader_address 
+                        ? `${result.trader_address.slice(0, 4)}...${result.trader_address.slice(-4)}`
+                        : 'N/A'
+                      }
                     </span>
                   </td>
                   <td style={{ padding: '12px', borderBottom: '1px solid #333333' }}>
                     <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>
-                      {result && result.signature ? `${result.signature.slice(0, 8)}...${result.signature.slice(-8)}` : 'N/A'}
+                      {result?.signature 
+                        ? `${result.signature.slice(0, 8)}...${result.signature.slice(-8)}`
+                        : 'N/A'
+                      }
                     </span>
                   </td>
                   <td style={{ padding: '12px', borderBottom: '1px solid #333333' }}>
-                    {result && result.block_delay ? result.block_delay : 'N/A'}
+                    {result?.block_delay ?? 'N/A'}
                   </td>
                   <td style={{ padding: '12px', borderBottom: '1px solid #333333' }}>
-                    {result && result.bot_used ? result.bot_used : 'N/A'}
+                    {result?.bot_used || 'N/A'}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* No Results Message */}
+      {!loading && results.length === 0 && status && (
+        <div style={{ 
+          padding: 16, 
+          background: 'rgba(255, 255, 255, 0.05)', 
+          color: '#cccccc', 
+          borderRadius: 0, 
+          fontSize: 14, 
+          border: '1px solid #333333',
+          fontFamily: '"Courier New", monospace',
+          textAlign: 'center'
+        }}>
+          No copytraders detected for this wallet.
         </div>
       )}
     </div>

@@ -262,8 +262,8 @@ class CopyWalletFinder:
             try:
                 print(f"[DEBUG] Attempt {attempt + 1}: Making request to {url}", file=sys.stderr)
                 response = self.session.get(url, headers=self.headers)
-                print(f"[DEBUG] Response status: {response.status_code}", file=sys.stderr)
-                
+        print(f"[DEBUG] Response status: {response.status_code}", file=sys.stderr)
+        
                 if response.status_code != 200:
                     print(f"[DEBUG] Non-200 status: {response.text[:200]}", file=sys.stderr)
                     continue
@@ -292,7 +292,7 @@ class CopyWalletFinder:
                 tokenBuys = [act for act in buys if act['token']['address'] == lastToken]
                 firstTokenBuy = min(tokenBuys, key=lambda x: x['timestamp'])
                 return firstTokenBuy['tx_hash'], firstTokenBuy['token']['address']
-            except Exception as e:
+    except Exception as e:
                 print(f"Attempt {attempt + 1} failed for wallet {walletAddress}: {e}", file=sys.stderr)
         
         # Fallback: Use Helius API to find recent buy transactions
@@ -301,7 +301,7 @@ class CopyWalletFinder:
     
     def getLastBuyFromHelius(self, walletAddress: str):
         """Fallback method using Helius API to find buy transactions"""
-        try:
+    try:
             # Get recent transactions from Helius
             url = f"{HELIUS_API_BASE_URL}/v0/addresses/{walletAddress}/transactions?api-key={HELIUS_API_KEY}&limit=50"
             response = requests.get(url, timeout=30)
@@ -338,8 +338,8 @@ class CopyWalletFinder:
             
             print(f"[WARNING] No buy transactions found in recent history for {walletAddress}", file=sys.stderr)
             return None, None
-            
-        except Exception as e:
+                        
+            except Exception as e:
             print(f"[ERROR] Error in getLastBuyFromHelius: {e}", file=sys.stderr)
             return None, None
 
