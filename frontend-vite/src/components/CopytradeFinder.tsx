@@ -57,7 +57,10 @@ const CopytradeFinder: React.FC = () => {
     setProgress(null);
 
     try {
-      const apiUrl = isLocal ? 'http://localhost:8001' : 'https://solensai-production.up.railway.app';
+      // Always use Railway backend in production
+      const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+        ? 'http://localhost:8001' 
+        : 'https://solensai-production.up.railway.app';
       
       // Start progress tracking with simulation
       setProgress({current: 0, total: 100, label: 'INITIALIZING_ANALYSIS'});
