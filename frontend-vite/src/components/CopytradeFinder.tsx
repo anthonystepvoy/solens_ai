@@ -62,6 +62,9 @@ const CopytradeFinder: React.FC = () => {
         ? 'http://localhost:8001' 
         : 'https://solensai-production.up.railway.app';
       
+      console.log('[DEBUG] Starting copytrade analysis for wallet:', wallet);
+      console.log('[DEBUG] Using API URL:', apiUrl);
+      
       // Start progress tracking with simulation
       setProgress({current: 0, total: 100, label: 'INITIALIZING_ANALYSIS'});
       
@@ -84,34 +87,60 @@ const CopytradeFinder: React.FC = () => {
       
       const response = await axios.post(`${apiUrl}/copytrade-analyze`, { wallet_address: wallet });
       
+      console.log('[DEBUG] Raw response:', response);
+      console.log('[DEBUG] Response data:', response.data);
+      
       // Clear progress simulation
       clearInterval(progressInterval);
       setProgress({current: 100, total: 100, label: 'ANALYSIS_COMPLETE'});
       
       // Handle different response formats with better type safety
-      const responseData = response.data as any;
+      const responseData = response?.data as any;
+      console.log('[DEBUG] Processing response data:', responseData);
       
       if (responseData && responseData.status === 'feature_in_development') {
         setError('Feature is under development on the live site. Use local development for testing.');
         return;
       }
       
-      // Ensure results is always an array
+      // Ensure results is always an array with maximum safety
       let results = [];
-      if (responseData && responseData.results && Array.isArray(responseData.results)) {
-        results = responseData.results;
-      } else if (responseData && Array.isArray(responseData)) {
-        results = responseData;
-      } else if (responseData && responseData.results) {
-        // If results exists but isn't an array, wrap it
-        results = [responseData.results];
+      try {
+        if (responseData && typeof responseData === 'object') {
+          if (Array.isArray((responseData as any).results)) {
+            results = (responseData as any).results;
+          } else if (Array.isArray(responseData)) {
+            results = responseData;
+          } else if ((responseData as any).results && typeof (responseData as any).results === 'object') {
+            // If results exists but isn't an array, wrap it
+            results = [(responseData as any).results];
+          }
+        }
+        console.log('[DEBUG] Processed results:', results);
+      } catch (parseError) {
+        console.error('[DEBUG] Error parsing results:', parseError);
+        results = [];
       }
       
-      setResults(results);
-      setStatus(`[ANALYSIS_COMPLETE] Found ${results.length} potential copytraders.`);
+      setResults(results || []);
+      setStatus(`[ANALYSIS_COMPLETE] Found ${(results || []).length} potential copytraders.`);
     } catch (err: any) {
-      console.error('Copytrade analysis error:', err);
-      setError(err.response?.data?.message || err.response?.data || err.message || 'Error analyzing wallet.');
+      console.error('[DEBUG] Copytrade analysis error:', err);
+      
+      let errorMessage = 'Error analyzing wallet.';
+      try {
+        if (err.response?.data?.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.response?.data) {
+          errorMessage = typeof err.response.data === 'string' ? err.response.data : 'API Error';
+        } else if (err.message) {
+          errorMessage = err.message;
+        }
+      } catch (errorParseError) {
+        console.error('[DEBUG] Error parsing error message:', errorParseError);
+      }
+      
+      setError(errorMessage);
       
       // Clear progress on error
       setProgress(null);
