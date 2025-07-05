@@ -9,7 +9,8 @@ const CopytradeFinder: React.FC = () => {
   const [results, setResults] = useState<any[]>([]);
   const [progress, setProgress] = useState<{current: number, total: number, label: string} | null>(null);
 
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  // Enable copytrade analyzer in production
+  const isLocal = true; // Always enabled now
 
   const ProgressBarTerminal: React.FC<{ progress: number; total: number; label: string }> = ({ progress, total, label }) => {
     const percentage = (progress / total) * 100;

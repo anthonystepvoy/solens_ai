@@ -1399,7 +1399,8 @@ function CopytradeFinderPage() {
   const [progress, setProgress] = useState<{current: number, total: number, label: string} | null>(null);
 
   // Check if running locally (for development)
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      // Enable copytrade analyzer in production
+    const isLocal = true; // Always enabled now
 
   const handleAnalyze = async () => {
     setLoading(true);
