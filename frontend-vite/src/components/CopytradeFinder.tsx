@@ -85,12 +85,12 @@ const CopytradeFinder: React.FC = () => {
       setProgress({current: 100, total: 100, label: 'ANALYSIS_COMPLETE'});
       
       // Handle different response formats
-      if (response.data.status === 'feature_in_development') {
+      if ((response.data as any).status === 'feature_in_development') {
         setError('Feature is under development on the live site. Use local development for testing.');
         return;
       }
       
-      const results = response.data.results || response.data || [];
+      const results = (response.data as any).results || response.data || [];
       setResults(Array.isArray(results) ? results : []);
       setStatus(`[ANALYSIS_COMPLETE] Found ${results.length} potential copytraders.`);
     } catch (err: any) {
