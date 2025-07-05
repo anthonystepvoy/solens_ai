@@ -1,4 +1,5 @@
 // Version 2.0 - Fixed crashes and added comprehensive error handling
+// DEPLOYMENT TEST: If you see this in console, new version is deployed
 import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 
@@ -25,6 +26,11 @@ const CopytradeFinder: React.FC = () => {
 
   // Always enable the feature for testing
   const isLocal = true;
+
+  // DEPLOYMENT TEST: Log to console when component loads
+  useEffect(() => {
+    console.log('🚀 CopytradeFinder v2.0 loaded - crashes fixed!');
+  }, []);
 
   const ProgressBarTerminal: React.FC<{ progress: number; total: number; label: string }> = ({ 
     progress, 
