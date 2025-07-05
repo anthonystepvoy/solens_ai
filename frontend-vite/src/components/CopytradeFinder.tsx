@@ -88,18 +88,33 @@ const CopytradeFinder: React.FC = () => {
       clearInterval(progressInterval);
       setProgress({current: 100, total: 100, label: 'ANALYSIS_COMPLETE'});
       
-      // Handle different response formats
-      if ((response.data as any).status === 'feature_in_development') {
+      // Handle different response formats with better type safety
+      const responseData = response.data as any;
+      
+      if (responseData && responseData.status === 'feature_in_development') {
         setError('Feature is under development on the live site. Use local development for testing.');
         return;
       }
       
-      const results = (response.data as any).results || response.data || [];
-      setResults(Array.isArray(results) ? results : []);
+      // Ensure results is always an array
+      let results = [];
+      if (responseData && responseData.results && Array.isArray(responseData.results)) {
+        results = responseData.results;
+      } else if (responseData && Array.isArray(responseData)) {
+        results = responseData;
+      } else if (responseData && responseData.results) {
+        // If results exists but isn't an array, wrap it
+        results = [responseData.results];
+      }
+      
+      setResults(results);
       setStatus(`[ANALYSIS_COMPLETE] Found ${results.length} potential copytraders.`);
     } catch (err: any) {
       console.error('Copytrade analysis error:', err);
-      setError(err.response?.data || err.message || 'Error analyzing wallet.');
+      setError(err.response?.data?.message || err.response?.data || err.message || 'Error analyzing wallet.');
+      
+      // Clear progress on error
+      setProgress(null);
     } finally {
       setLoading(false);
       setTimeout(() => setProgress(null), 2000); // Keep progress bar for 2 seconds after completion
@@ -243,7 +258,7 @@ const CopytradeFinder: React.FC = () => {
       )}
 
       {/* Results Table */}
-      {results.length > 0 && !loading && (
+      {results && Array.isArray(results) && results.length > 0 && !loading && (
         <div style={{ width: '100%', marginBottom: 32 }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', color: '#fff', fontFamily: 'inherit', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid #333333' }}>
             <thead style={{ background: 'rgba(0, 255, 65, 0.1)' }}>
@@ -259,19 +274,19 @@ const CopytradeFinder: React.FC = () => {
                 <tr key={index} style={{ borderBottom: '1px solid #333333' }}>
                   <td style={{ padding: '12px', borderBottom: '1px solid #333333' }}>
                     <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>
-                      {result.trader_address ? `${result.trader_address.slice(0, 4)}...${result.trader_address.slice(-4)}` : 'N/A'}
+                      {result && result.trader_address ? `${result.trader_address.slice(0, 4)}...${result.trader_address.slice(-4)}` : 'N/A'}
                     </span>
                   </td>
                   <td style={{ padding: '12px', borderBottom: '1px solid #333333' }}>
                     <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>
-                      {result.signature ? `${result.signature.slice(0, 8)}...${result.signature.slice(-8)}` : 'N/A'}
+                      {result && result.signature ? `${result.signature.slice(0, 8)}...${result.signature.slice(-8)}` : 'N/A'}
                     </span>
                   </td>
                   <td style={{ padding: '12px', borderBottom: '1px solid #333333' }}>
-                    {result.block_delay || 'N/A'}
+                    {result && result.block_delay ? result.block_delay : 'N/A'}
                   </td>
                   <td style={{ padding: '12px', borderBottom: '1px solid #333333' }}>
-                    {result.bot_used || 'N/A'}
+                    {result && result.bot_used ? result.bot_used : 'N/A'}
                   </td>
                 </tr>
               ))}

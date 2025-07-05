@@ -1441,14 +1441,26 @@ function CopytradeFinderPage() {
       clearInterval(progressInterval);
       setProgress({current: 100, total: 100, label: 'ANALYSIS_COMPLETE'});
       
-      // Handle different response formats
-      if (response.data.status === 'feature_in_development') {
+      // Handle different response formats with better type safety
+      const responseData = response.data as any;
+      
+      if (responseData && responseData.status === 'feature_in_development') {
         setError('Feature is under development on the live site. Use local development for testing.');
         return;
       }
       
-      const results = response.data.results || response.data || [];
-      setResults(Array.isArray(results) ? results : []);
+      // Ensure results is always an array
+      let results = [];
+      if (responseData && responseData.results && Array.isArray(responseData.results)) {
+        results = responseData.results;
+      } else if (responseData && Array.isArray(responseData)) {
+        results = responseData;
+      } else if (responseData && responseData.results) {
+        // If results exists but isn't an array, wrap it
+        results = [responseData.results];
+      }
+      
+      setResults(results);
       setStatus(`[ANALYSIS_COMPLETE] Found ${results.length} potential copytraders.`);
     } catch (err: any) {
       console.error('Copytrade analysis error:', err);
