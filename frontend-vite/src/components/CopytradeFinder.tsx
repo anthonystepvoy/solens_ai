@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const CopytradeFinder: React.FC = () => {
+const CopytradeFinder: React.FC<{ isMobile?: boolean }> = ({ isMobile = false }) => {
   const [walletAddress, setWalletAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<any[]>([]);
@@ -60,10 +60,10 @@ const CopytradeFinder: React.FC = () => {
 
   return (
     <div style={{ 
-      marginTop: 32, 
-      maxWidth: 800, 
-      margin: '32px auto 0', 
-      padding: '0 24px', 
+      marginTop: isMobile ? 16 : 32, 
+      maxWidth: isMobile ? '100%' : 800, 
+      margin: isMobile ? '16px 0 0 0' : '32px auto 0', 
+      padding: isMobile ? '0 4px' : '0 24px', 
       fontFamily: '"Courier New", monospace', 
       color: '#fff'
     }}>
@@ -88,20 +88,20 @@ const CopytradeFinder: React.FC = () => {
         [ADVANCED_PATTERN_RECOGNITION_SYSTEM]
       </p>
         
-      <div style={{ marginBottom: 32, display: 'flex', gap: 12, alignItems: 'center' }}>
+      <div style={{ marginBottom: isMobile ? 20 : 32, display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 8 : 12, alignItems: isMobile ? 'stretch' : 'center' }}>
         <input
           type="text"
           value={walletAddress}
           onChange={(e) => setWalletAddress(e.target.value)}
           placeholder="Enter wallet address..."
           style={{ 
-            padding: '8px 12px', 
-            fontSize: 16, 
+            padding: isMobile ? '6px 8px' : '8px 12px', 
+            fontSize: isMobile ? 14 : 16, 
             border: '1px solid #00ff41', 
             borderRadius: 0, 
             background: '#111', 
             color: '#00ff41', 
-            width: 340, 
+            width: isMobile ? '100%' : 340, 
             fontFamily: 'inherit' 
           }}
           disabled={isLoading}
@@ -114,10 +114,11 @@ const CopytradeFinder: React.FC = () => {
             color: isLoading ? '#ccc' : '#000', 
             border: 'none', 
             fontWeight: 700, 
-            fontSize: 16, 
-            padding: '8px 24px', 
+            fontSize: isMobile ? 14 : 16, 
+            padding: isMobile ? '6px 12px' : '8px 24px', 
             cursor: isLoading ? 'not-allowed' : 'pointer', 
-            borderRadius: 0 
+            borderRadius: 0, 
+            width: isMobile ? '100%' : undefined
           }}
         >
           {isLoading ? 'ANALYZING...' : 'ANALYZE'}
@@ -185,8 +186,8 @@ const CopytradeFinder: React.FC = () => {
           background: 'rgba(0,255,65,0.04)', 
           border: '1px solid #00ff41', 
           borderRadius: 0, 
-          padding: 24, 
-          marginBottom: 32 
+          padding: isMobile ? 12 : 24, 
+          marginBottom: isMobile ? 20 : 32 
         }}>
           <b style={{ color: '#00ff41' }}>[COPYTRADER RESULTS]</b><br/>
           <div style={{ 
@@ -221,7 +222,7 @@ const CopytradeFinder: React.FC = () => {
                   </span>
                 </div>
                 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? 8 : 12 }}>
                   <div>
                     <div style={{ marginBottom: 8 }}>
                       <span style={{ color: '#888' }}>Signature:</span>{' '}

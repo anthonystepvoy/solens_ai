@@ -5,4 +5,14 @@ html, body, #root {
   background: #000000;
   font-family: "Courier New", monospace;
   color: #b0bec5;
+}
+
+@media (max-width: 767px) {
+  .dashboard-card {
+    padding: 12px !important;
+    margin-bottom: 12px !important;
+  }
+  .dashboard-grid {
+    gap: 16px !important;
+  }
 } 

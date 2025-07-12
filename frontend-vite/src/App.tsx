@@ -82,8 +82,21 @@ function getCoreStat(wallet, stat) {
   return '';
 }
 
+// Before DashboardPage function, add interface
+interface DashboardData {
+  metrics: any[];
+  topWallets: any[];
+  topRiskyWallets: any[];
+  hotWallets24h: any[];
+  hotWallets1h: any[];
+  trendingTokens: any[];
+  mlTags: string[];
+  mlCategories: string[];
+  lastUpdate?: string;
+}
+
 // Dashboard Page
-function DashboardPage() {
+function DashboardPage({ isMobile = false }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<any[]>([]);
@@ -101,7 +114,7 @@ function DashboardPage() {
   // Fetch dashboard data
   const fetchDashboardData = (isInitialLoad = false) => {
     if (isInitialLoad) setLoading(true);
-    axios.get(API_ENDPOINTS.DASHBOARD_SUMMARY)
+    axios.get<DashboardData>(API_ENDPOINTS.DASHBOARD_SUMMARY)
       .then(res => {
         const d = res.data;
         setMetrics(d.metrics || []);
@@ -114,26 +127,20 @@ function DashboardPage() {
         setMlCategories(d.mlCategories || []);
         if (d.lastUpdate) setLastUpdate(d.lastUpdate);
         setCountdown(60);
+        if (isInitialLoad) setLoading(false);
       })
       .catch(() => {
-        if (isInitialLoad) {
-          setError('[WARNING] Failed to load live data.');
-        setMetrics([
-            // { label: 'Total Wallets Tracked', value: '1,452' },
-            // { label: 'New Wallets Today', value: '+56' },
-            // { label: 'Total 7D PNL', value: '$1.2M' },
-            // { label: 'Top 1m Token', value: '$WIF' },
-          ]);
-          setTopWallets([]);
-          setTopRiskyWallets([]);
-          setHotWallets24h([]);
-          setHotWallets1h([]);
-          setTrendingTokens([]);
-          setMlTags([]);
-          setMlCategories([]);
-        }
-      })
-      .finally(() => { if (isInitialLoad) setLoading(false); });
+        setError('[WARNING] Failed to load live data.');
+        setMetrics([]);
+        setTopWallets([]);
+        setTopRiskyWallets([]);
+        setHotWallets24h([]);
+        setHotWallets1h([]);
+        setTrendingTokens([]);
+        setMlTags([]);
+        setMlCategories([]);
+        if (isInitialLoad) setLoading(false);
+      });
   };
 
   // Poll every 60s, and set up countdown
@@ -186,150 +193,98 @@ function DashboardPage() {
           {/* Key Metrics Row - now in banner */}
 
           {/* --- DASHBOARD GRID REARRANGED --- */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div className={isMobile ? 'dashboard-grid' : ''} style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: isMobile ? 16 : 24 }}>
             {/* Top row: Profitable | Hot Wallets (1H) | Top Tokens */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 24 }}>
-              {/* Top Profitable Wallets */}
-              <div>
-                <div style={{ 
-                  background: 'rgba(255, 255, 255, 0.02)', 
-                  color: '#ffffff', 
-                  borderRadius: 0, 
-                  padding: 24, 
-                  border: '1px solid #333333',
-                  marginBottom: 16,
-                  fontFamily: '"Courier New", monospace'
+            <div className={isMobile ? 'dashboard-card' : ''} style={{ 
+              background: 'rgba(255, 255, 255, 0.02)', 
+              color: '#ffffff', 
+              borderRadius: 0, 
+              padding: isMobile ? 12 : 24, 
+              border: '1px solid #333333',
+              marginBottom: 16,
+              fontFamily: '"Courier New", monospace'
+            }}>
+              <h3 style={{ 
+                marginBottom: 16, 
+                fontSize: 16, 
+                fontWeight: 600,
+                color: '#ffffff',
+                letterSpacing: '1px',
+                fontFamily: '"Courier New", monospace'
+              }}>[TOP_PROFITABLE_WALLETS]</h3>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'minmax(180px,1.5fr) 1fr 1fr 1fr 2.5fr',
+                gap: 12,
+                fontSize: 13,
+                color: '#cccccc',
+                fontFamily: '"Courier New", monospace',
+                borderBottom: '1px solid #333333',
+                paddingBottom: 8,
+                marginBottom: 8,
+                fontWeight: 600
+              }}>
+                <span>ADDRESS</span>
+                <span>PNL_7D</span>
+                <span>WIN_RATE</span>
+                <span>SMART_SCORE</span>
+                <span>ML_TAGS</span>
+              </div>
+                  {topWallets.map((w, i) => (
+                <div key={i} style={{ 
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : 'minmax(180px,1.5fr) 1fr 1fr 1fr 2.5fr',
+                  gap: 12,
+                  alignItems: 'center',
+                  padding: '8px 0',
+                  borderBottom: i < topWallets.length - 1 ? '1px solid #333333' : 'none',
+                  fontFamily: '"Courier New", monospace',
+                  fontSize: 13,
+                  background: i % 2 === 0 ? 'rgba(0,255,65,0.03)' : 'transparent'
                 }}>
-                  <h3 style={{ 
-                    marginBottom: 16, 
-                    fontSize: 16, 
-                    fontWeight: 600,
-                    color: '#ffffff',
-                    letterSpacing: '1px',
-                    fontFamily: '"Courier New", monospace'
-                  }}>[TOP_PROFITABLE_WALLETS]</h3>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'minmax(180px,1.5fr) 1fr 1fr 1fr 2.5fr',
-                    gap: 12,
-                    fontSize: 13,
-                    color: '#cccccc',
-                    fontFamily: '"Courier New", monospace',
-                    borderBottom: '1px solid #333333',
-                    paddingBottom: 8,
-                    marginBottom: 8,
-                    fontWeight: 600
-                  }}>
-                    <span>ADDRESS</span>
-                    <span>PNL_7D</span>
-                    <span>WIN_RATE</span>
-                    <span>SMART_SCORE</span>
-                    <span>ML_TAGS</span>
-                  </div>
-                      {topWallets.map((w, i) => (
-                    <div key={i} style={{ 
-                      display: 'grid',
-                      gridTemplateColumns: 'minmax(180px,1.5fr) 1fr 1fr 1fr 2.5fr',
-                      gap: 12,
-                      alignItems: 'center',
-                      padding: '8px 0',
-                      borderBottom: i < topWallets.length - 1 ? '1px solid #333333' : 'none',
-                      fontFamily: '"Courier New", monospace',
-                      fontSize: 13,
-                      background: i % 2 === 0 ? 'rgba(0,255,65,0.03)' : 'transparent'
-                    }}>
-                          <WalletAddress address={w.address} short={true} />
-                      <span style={{ color: '#00ff41', fontWeight: 400, fontFamily: '"Courier New", monospace', fontSize: 13 }}>{w.pnl_7d !== undefined ? (parseFloat(w.pnl_7d) * 100).toFixed(2) + '%' : ''}</span>
-                      <span style={{ fontFamily: '"Courier New", monospace', fontSize: 13 }}>{w.winRate}</span>
-                      <span style={{ color: '#00ff41', fontWeight: 400, fontFamily: '"Courier New", monospace', fontSize: 13 }}>{!isNaN(parseFloat(w.smartScore)) ? `${parseFloat(w.smartScore).toFixed(0)}%` : 'N/A'}</span>
-                      <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                        {w.ml_tags && w.ml_tags.length > 0 ? w.ml_tags.map((tag, j) => (
-                          <span key={j} style={{
-                            background: 'rgba(0,255,65,0.1)',
-                        color: '#00ff41',
-                            border: '1px solid #00ff41',
-                            padding: '2px 6px',
-                            fontSize: 11,
-                            borderRadius: 0,
-                            fontFamily: '"Courier New", monospace',
-                            letterSpacing: '0.5px',
-                            fontWeight: 400
-                          }}>{tag}</span>
-                        )) : <span style={{ color: '#555', fontFamily: '"Courier New", monospace', fontSize: 13 }}>-</span>}
-                      </span>
-                    </div>
-                  ))}
+                      <WalletAddress address={w.address} short={true} />
+                  <span style={{ color: '#00ff41', fontWeight: 400, fontFamily: '"Courier New", monospace', fontSize: 13 }}>{w.pnl_7d !== undefined ? (parseFloat(w.pnl_7d) * 100).toFixed(2) + '%' : ''}</span>
+                  <span style={{ fontFamily: '"Courier New", monospace', fontSize: 13 }}>{w.winRate}</span>
+                  <span style={{ color: '#00ff41', fontWeight: 400, fontFamily: '"Courier New", monospace', fontSize: 13 }}>{!isNaN(parseFloat(w.smartScore)) ? `${parseFloat(w.smartScore).toFixed(0)}%` : 'N/A'}</span>
+                  <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                    {w.ml_tags && w.ml_tags.length > 0 ? w.ml_tags.map((tag, j) => (
+                      <span key={j} style={{
+                        background: 'rgba(0,255,65,0.1)',
+                    color: '#00ff41',
+                        border: '1px solid #00ff41',
+                        padding: '2px 6px',
+                        fontSize: 11,
+                        borderRadius: 0,
+                        fontFamily: '"Courier New", monospace',
+                        letterSpacing: '0.5px',
+                        fontWeight: 400
+                      }}>{tag}</span>
+                    )) : <span style={{ color: '#555', fontFamily: '"Courier New", monospace', fontSize: 13 }}>-</span>}
+                  </span>
                 </div>
+              ))}
+            </div>
 
-                {/* Hot Wallets 1H */}
-                <div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.02)', color: '#ffffff', borderRadius: 0, padding: 24, border: '1px solid #333333', marginBottom: 16, fontFamily: '"Courier New", monospace' }}>
-                    <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600, color: '#ffffff', letterSpacing: '1px', fontFamily: '"Courier New", monospace' }}>[HOT_WALLETS_1H]</h3>
-                    {hotWallets1h.length === 0 ? (
-                      <div style={{ color: '#ff6b6b', fontSize: 14, fontFamily: '"Courier New", monospace' }}>[NO HOT WALLETS FOUND IN LAST 1H]</div>
-                    ) : hotWallets1h.map((w, i) => (
-                      <div key={i} style={{ padding: '12px 0', borderBottom: i < hotWallets1h.length - 1 ? '1px solid #333333' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: '"Courier New", monospace' }}>
-                        <div>
-                          <div style={{ fontSize: 14, marginBottom: 4, fontFamily: '"Courier New", monospace' }}>
-                            <WalletAddress address={w.address} short={true} />
-                          </div>
-                          <div style={{ fontSize: 12, color: '#cccccc', fontFamily: '"Courier New", monospace' }}>
-                            TRADES_1H: <span style={{ color: '#00ff41', fontFamily: '"Courier New", monospace' }}>{w.trades_1h}</span>
-                          </div>
-                        </div>
-                        <div style={{ fontSize: 14, fontWeight: 400, color: '#00ff41', textAlign: 'right', fontFamily: '"Courier New", monospace' }}>
-                          {w.pnl_1h !== undefined ? w.pnl_1h : ''}
-                        </div>
-                      </div>
-                    ))}
+            {/* Hot Wallets 1H */}
+            <div className={isMobile ? 'dashboard-card' : ''} style={{ background: 'rgba(255, 255, 255, 0.02)', color: '#ffffff', borderRadius: 0, padding: isMobile ? 12 : 24, border: '1px solid #333333', marginBottom: 16, fontFamily: '"Courier New", monospace' }}>
+              <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600, color: '#ffffff', letterSpacing: '1px', fontFamily: '"Courier New", monospace' }}>[HOT_WALLETS_1H]</h3>
+              {hotWallets1h.length === 0 ? (
+                <div style={{ color: '#ff6b6b', fontSize: 14, fontFamily: '"Courier New", monospace' }}>[NO HOT WALLETS FOUND IN LAST 1H]</div>
+              ) : hotWallets1h.map((w, i) => (
+                <div key={i} style={{ padding: '12px 0', borderBottom: i < hotWallets1h.length - 1 ? '1px solid #333333' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: '"Courier New", monospace' }}>
+                  <div>
+                    <div style={{ fontSize: 14, marginBottom: 4, fontFamily: '"Courier New", monospace' }}>
+                      <WalletAddress address={w.address} short={true} />
+                    </div>
+                    <div style={{ fontSize: 12, color: '#cccccc', fontFamily: '"Courier New", monospace' }}>
+                      TRADES_1H: <span style={{ color: '#00ff41', fontFamily: '"Courier New", monospace' }}>{w.trades_1h}</span>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 400, color: '#00ff41', textAlign: 'right', fontFamily: '"Courier New", monospace' }}>
+                    {w.pnl_1h !== undefined ? w.pnl_1h : ''}
                   </div>
                 </div>
-              </div>
-              {/* Top Tokens and stacked below: Top Risky Wallets, ML Categories */}
-              <div>
-                {/* Top Tokens */}
-                {/* <div style={{ background: 'rgba(255, 255, 255, 0.02)', color: '#ffffff', borderRadius: 0, padding: 24, border: '1px solid #333333', fontFamily: '"Courier New", monospace' }}>
-                  <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600, color: '#ffffff', letterSpacing: '1px' }}>[TOP_TOKENS]</h3>
-                  {trendingTokens.map((t, i) => (
-                    <div key={i} style={{ padding: '8px 0', borderBottom: i < trendingTokens.length - 1 ? '1px solid #333333' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ fontSize: 14, fontWeight: 600 }}>{t.token}</div>
-                      <div style={{ fontSize: 12, color: '#00ff41' }}>MC: {t.market_cap}</div>
-                    </div>
-                  ))}
-                </div> */}
-                {/* Top Risky Wallets below Top Tokens, same width */}
-
-                {/* ML Categories only in right column */}
-                <div>
-                  {/* ML Categories */}
-                  <div style={{ 
-                    background: 'rgba(255, 255, 255, 0.02)', 
-                    color: '#ffffff', 
-                    borderRadius: 0, 
-                    padding: 24, 
-                    border: '1px solid #333333',
-                    fontFamily: '"Courier New", monospace'
-                  }}>
-                    <h3 style={{ 
-                      marginBottom: 16, 
-                      fontSize: 16, 
-                      fontWeight: 600,
-                      color: '#ffffff',
-                      letterSpacing: '1px',
-                      fontFamily: '"Courier New", monospace'
-                    }}>[ML_CATEGORIES]</h3>
-                    {mlCategories.length === 0 ? (
-                      <div style={{ color: '#555', fontSize: 14, fontFamily: '"Courier New", monospace' }}>[NO ML CATEGORIES FOUND]</div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {mlCategories.map((cat, i) => (
-                          <span key={i} style={{ color: '#00ff41', border: '1px solid #00ff41', padding: '4px 12px', fontFamily: '"Courier New", monospace', fontSize: 14, borderRadius: 0, width: 'fit-content' }}>{cat}</span>
-                      ))}
-                    </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -339,7 +294,7 @@ function DashboardPage() {
 }
 
 // Settings Page
-function SettingsPage() {
+function SettingsPage({ isMobile = false }) {
   // --- Security ---
   const [sessionTimeout, setSessionTimeout] = useState<number>(30); // minutes
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -420,7 +375,7 @@ const ProgressBarTerminal: React.FC<{ progress: number; total: number; label: st
 };
 
 // Discovery Page
-function DiscoveryPage() {
+function DiscoveryPage({ isMobile = false }) {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -559,7 +514,7 @@ function DiscoveryPage() {
 }
 
 // Top Tokens Page
-function TopTokensPage() {
+function TopTokensPage({ isMobile = false }) {
   // Token Watchlist logic (match wallet watchlist)
   const [tokenInput, setTokenInput] = useState('');
   const [watchlistTokens, setWatchlistTokens] = useState<string[]>([]);
@@ -859,7 +814,7 @@ function TopTokensPage() {
   );
 }
 
-function WalletFinderPage() {
+function WalletFinderPage({ isMobile = false }) {
   const [wallets, setWallets] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<any | null>(null);
@@ -1134,10 +1089,10 @@ function WalletFinderPage() {
 
   return (
     <div style={{ 
-      marginTop: 32, 
-      maxWidth: 1200, 
-      margin: '32px auto 0', 
-      padding: '0 24px', 
+      marginTop: isMobile ? 16 : 32, 
+      maxWidth: isMobile ? '100%' : 1200, 
+      margin: isMobile ? '16px 0 0 0' : '32px auto 0', 
+      padding: isMobile ? '0 4px' : '0 24px', 
       color: '#ffffff',
       fontFamily: '"Courier New", monospace'
     }}>
@@ -1247,7 +1202,7 @@ function WalletFinderPage() {
           fontSize: 14
         }}>{error}</div>
       ) : (
-        <div style={{ overflowX: 'auto', maxHeight: 600, marginTop: 24 }} className="wallet-finder-scroll">
+        <div style={{ overflowX: 'auto', maxHeight: 600, marginTop: isMobile ? 12 : 24 }} className="wallet-finder-scroll">
           <div style={{
             background: 'rgba(255, 255, 255, 0.02)',
             border: '1px solid #333333',
@@ -1255,11 +1210,12 @@ function WalletFinderPage() {
             overflow: 'hidden'
           }}>
             <table style={{ 
-              width: '100%', 
+              width: isMobile ? 700 : '100%', 
+              minWidth: isMobile ? 700 : undefined, 
               borderCollapse: 'collapse', 
               background: 'transparent', 
               color: '#ffffff', 
-              fontSize: 13,
+              fontSize: isMobile ? 11 : 13,
               fontFamily: '"Courier New", monospace'
             }}>
               <thead>
@@ -1375,7 +1331,7 @@ function WalletFinderPage() {
             marginBottom: 16,
             fontFamily: '"Courier New", monospace'
           }}>[WALLET_PROFILE]</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, fontSize: 14 }}>
+          <div style={{ display: isMobile ? 'block' : 'grid', gridTemplateColumns: isMobile ? undefined : '1fr 1fr', gap: isMobile ? 8 : 16, fontSize: isMobile ? 12 : 14 }}>
             <p style={{ color: '#cccccc' }}>ADDRESS: <span style={{ color: '#ffffff' }}>{selected.id}</span></p>
             <p style={{ color: '#cccccc' }}>PNL_7D: <span style={{ color: '#ffffff' }}>{selected.gmgn_detailed_stats?.pnl_7d !== undefined ? (selected.gmgn_detailed_stats.pnl_7d * 100).toFixed(2) + '%' : ''}</span></p>
             <p style={{ color: '#cccccc' }}>WIN_RATE: <span style={{ color: '#ffffff' }}>{selected.gmgn_detailed_stats?.winrate !== undefined ? `${(selected.gmgn_detailed_stats.winrate * 100).toFixed(0)}%` : ''}</span></p>
@@ -1391,9 +1347,9 @@ function WalletFinderPage() {
   );
 }
 
-function CopytradeFinderPage() {
+function CopytradeFinderPage({ isMobile = false }) {
   return (
-    <CopytradeFinder />
+    <CopytradeFinder isMobile={isMobile} />
   );
 }
 
@@ -1401,6 +1357,19 @@ function CopytradeFinderPage() {
 function MainAppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) setIsSidebarOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div style={{ 
       display: 'flex', 
@@ -1411,7 +1380,7 @@ function MainAppLayout() {
     }}>
       {/* Sidebar */}
       <div style={{ 
-        width: 280, 
+        width: drawerWidth, 
         background: '#000000', 
         borderRight: '1px solid #333333',
         display: 'flex',
@@ -1420,7 +1389,9 @@ function MainAppLayout() {
         left: 0,
         top: 0,
         height: '100vh',
-        zIndex: 1000
+        zIndex: 1000,
+        transition: 'transform 0.3s ease-in-out',
+        transform: isMobile && !isSidebarOpen ? 'translateX(-100%)' : 'translateX(0)'
       }}>
         {/* Header */}
         <div style={{ 
@@ -1535,8 +1506,36 @@ function MainAppLayout() {
         display: 'flex', 
         flexDirection: 'column', 
         boxSizing: 'border-box',
-        marginLeft: 280
+        marginLeft: isMobile ? 0 : drawerWidth,
+        transition: 'margin-left 0.3s ease-in-out'
       }}>
+        {isMobile && (
+          <div style={{ 
+            position: 'sticky', 
+            top: 0, 
+            background: '#000000', 
+            padding: '10px 20px', 
+            borderBottom: '1px solid #333333', 
+            zIndex: 999, 
+            display: 'flex', 
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <h1 style={{ margin: 0, fontSize: 18, color: '#fff', letterSpacing: 2 }}>CIPHER</h1>
+            <button 
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                color: '#00ff41', 
+                fontSize: 24, 
+                cursor: 'pointer' 
+              }}
+            >
+              ☰
+            </button>
+          </div>
+        )}
         <div style={{ 
           position: 'relative', 
           zIndex: 1, 
@@ -1550,17 +1549,31 @@ function MainAppLayout() {
           boxSizing: 'border-box' 
         }}>
           <Routes>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/top-tokens" element={<TopTokensPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/discovery" element={<DiscoveryPage />} />
-            <Route path="/wallet-finder" element={<WalletFinderPage />} />
-            <Route path="/copytrade-finder" element={<CopytradeFinderPage />} />
-            <Route path="/ml-processor" element={<MLProcessorPage />} />
-            <Route path="/" element={<DashboardPage />} />
+            <Route path="/dashboard" element={<DashboardPage isMobile={isMobile} />} />
+            <Route path="/top-tokens" element={<TopTokensPage isMobile={isMobile} />} />
+            <Route path="/settings" element={<SettingsPage isMobile={isMobile} />} />
+            <Route path="/discovery" element={<DiscoveryPage isMobile={isMobile} />} />
+            <Route path="/wallet-finder" element={<WalletFinderPage isMobile={isMobile} />} />
+            <Route path="/copytrade-finder" element={<CopytradeFinderPage isMobile={isMobile} />} />
+            <Route path="/ml-processor" element={<MLProcessorPage isMobile={isMobile} />} />
+            <Route path="/" element={<DashboardPage isMobile={isMobile} />} />
           </Routes>
         </div>
       </div>
+      {isMobile && isSidebarOpen && (
+        <div 
+          style={{ 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            width: '100%', 
+            height: '100%', 
+            background: 'rgba(0,0,0,0.5)', 
+            zIndex: 999 
+          }} 
+          onClick={() => setIsSidebarOpen(false)} 
+        />
+      )}
     </div>
   );
 }
@@ -1577,7 +1590,7 @@ function App() {
   );
 }
 
-function MLProcessorPage() {
+function MLProcessorPage({ isMobile = false }) {
   return (
     <div style={{ marginTop: 32, maxWidth: 800, margin: '32px auto 0', padding: '0 24px', fontFamily: '"Courier New", monospace', color: '#fff' }}>
       <h1 style={{ color: '#cccccc', marginBottom: 16, fontSize: 24, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', fontFamily: 'inherit' }}>&gt; ML_PROCESSOR</h1>
