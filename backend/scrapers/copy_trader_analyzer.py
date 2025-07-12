@@ -19,6 +19,8 @@ from fake_useragent import UserAgent
 WALLET_TO_ANALYZE = ""  # Set a default wallet here if desired
 RPC_URL = "https://api.mainnet-beta.solana.com"  # Set your Helius or Solana RPC URL here
 BLOCK_LIMIT = 5  # Number of blocks to scan for copytraders (reduced from 20)
+MAX_TRANSACTIONS_PER_BLOCK = 10  # Limit transactions processed per block to prevent infinite loops
+TIMEOUT_SECONDS = 300  # 5 minute timeout for entire analysis
 
 # --- CONFIGURATION ---
 try:
@@ -292,7 +294,7 @@ class CopyWalletFinder:
                 tokenBuys = [act for act in buys if act['token']['address'] == lastToken]
                 firstTokenBuy = min(tokenBuys, key=lambda x: x['timestamp'])
                 return firstTokenBuy['tx_hash'], firstTokenBuy['token']['address']
-    except Exception as e:
+            except Exception as e:
                 print(f"Attempt {attempt + 1} failed for wallet {walletAddress}: {e}", file=sys.stderr)
         
         # Fallback: Use Helius API to find recent buy transactions
@@ -301,7 +303,7 @@ class CopyWalletFinder:
     
     def getLastBuyFromHelius(self, walletAddress: str):
         """Fallback method using Helius API to find buy transactions"""
-    try:
+        try:
             # Get recent transactions from Helius
             url = f"{HELIUS_API_BASE_URL}/v0/addresses/{walletAddress}/transactions?api-key={HELIUS_API_KEY}&limit=50"
             response = requests.get(url, timeout=30)
@@ -339,7 +341,7 @@ class CopyWalletFinder:
             print(f"[WARNING] No buy transactions found in recent history for {walletAddress}", file=sys.stderr)
             return None, None
                         
-            except Exception as e:
+        except Exception as e:
             print(f"[ERROR] Error in getLastBuyFromHelius: {e}", file=sys.stderr)
             return None, None
 
@@ -362,47 +364,79 @@ class CopyWalletFinder:
         mainTx = None
         potentialTraders = {}
         total_blocks = blockLimit + 1
+        start_time = time.time()
         
         print(f"[PROGRESS] Starting block scan: {total_blocks} blocks to analyze", file=sys.stderr)
         
         for currentBlock in range(startBlock, startBlock + blockLimit + 1):
+            # Check timeout
+            if time.time() - start_time > TIMEOUT_SECONDS:
+                print(f"[ERROR] Analysis timed out after {TIMEOUT_SECONDS} seconds", file=sys.stderr)
+                break
+                
             block_index = currentBlock - startBlock + 1
             print(f"[PROGRESS] Analyzing block {currentBlock} ({block_index}/{total_blocks})", file=sys.stderr)
             
-            payload = {
-                "jsonrpc": "2.0",
-                "id": 1,
-                "method": "getBlock",
-                "params": [currentBlock, {"encoding": "json", "maxSupportedTransactionVersion": 0,
-                                            "transactionDetails": "full", "rewards": False}]
-            }
-            data = self.session.post(self.rpcUrl, json=payload).json()
-            transactions = data['result']['transactions']
-            
-            print(f"[PROGRESS] Found {len(transactions)} transactions in block {currentBlock}", file=sys.stderr)
-            
-            if currentBlock == startBlock:
-                for tx in transactions:
-                    if walletAddress in tx['transaction']['message']['accountKeys']:
-                        postBalances = tx['meta'].get('postTokenBalances', [])
-                        if postBalances and postBalances[0].get('mint') == contractAddress:
-                            mainTx = tx['transaction']['signatures'][0]
-                            print(f"[PROGRESS] Found main transaction: {mainTx[:8]}...", file=sys.stderr)
-                            break
-            
-            copytrader_count = 0
-            for tx in transactions:
-                trader = tx['transaction']['message']['accountKeys'][0]
-                if trader == walletAddress:
+            try:
+                payload = {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "getBlock",
+                    "params": [currentBlock, {"encoding": "json", "maxSupportedTransactionVersion": 0,
+                                                "transactionDetails": "full", "rewards": False}]
+                }
+                response = self.session.post(self.rpcUrl, json=payload, timeout=30)
+                data = response.json()
+                
+                if 'error' in data:
+                    print(f"[ERROR] RPC error for block {currentBlock}: {data['error']}", file=sys.stderr)
                     continue
-                postBalances = tx['meta'].get('postTokenBalances', [])
-                if any(balance.get('mint') == contractAddress for balance in postBalances):
-                    if trader not in potentialTraders:
-                        potentialTraders[trader] = (tx['transaction']['signatures'][0], currentBlock)
-                        copytrader_count += 1
-            
-            if copytrader_count > 0:
-                print(f"[PROGRESS] Found {copytrader_count} new copytraders in block {currentBlock}", file=sys.stderr)
+                    
+                if 'result' not in data or not data['result']:
+                    print(f"[WARNING] No result for block {currentBlock}", file=sys.stderr)
+                    continue
+                    
+                transactions = data['result']['transactions']
+                
+                # Limit transactions processed to prevent infinite loops
+                if len(transactions) > MAX_TRANSACTIONS_PER_BLOCK:
+                    print(f"[WARNING] Limiting transactions from {len(transactions)} to {MAX_TRANSACTIONS_PER_BLOCK} for block {currentBlock}", file=sys.stderr)
+                    transactions = transactions[:MAX_TRANSACTIONS_PER_BLOCK]
+                
+                print(f"[PROGRESS] Found {len(transactions)} transactions in block {currentBlock}", file=sys.stderr)
+                
+                if currentBlock == startBlock:
+                    for tx in transactions:
+                        if walletAddress in tx['transaction']['message']['accountKeys']:
+                            postBalances = tx['meta'].get('postTokenBalances', [])
+                            if postBalances and postBalances[0].get('mint') == contractAddress:
+                                mainTx = tx['transaction']['signatures'][0]
+                                print(f"[PROGRESS] Found main transaction: {mainTx[:8]}...", file=sys.stderr)
+                                break
+                
+                copytrader_count = 0
+                processed_txs = 0
+                for tx in transactions:
+                    # Additional safety check
+                    if processed_txs >= MAX_TRANSACTIONS_PER_BLOCK:
+                        break
+                    processed_txs += 1
+                    
+                    trader = tx['transaction']['message']['accountKeys'][0]
+                    if trader == walletAddress:
+                        continue
+                    postBalances = tx['meta'].get('postTokenBalances', [])
+                    if any(balance.get('mint') == contractAddress for balance in postBalances):
+                        if trader not in potentialTraders:
+                            potentialTraders[trader] = (tx['transaction']['signatures'][0], currentBlock)
+                            copytrader_count += 1
+                
+                if copytrader_count > 0:
+                    print(f"[PROGRESS] Found {copytrader_count} new copytraders in block {currentBlock}", file=sys.stderr)
+                    
+            except Exception as e:
+                print(f"[ERROR] Failed to process block {currentBlock}: {e}", file=sys.stderr)
+                continue
         
         uniqueTraders = [(w, sig, blk) for w, (sig, blk) in potentialTraders.items()]
         print(f"[PROGRESS] Total copytraders found: {len(uniqueTraders)}", file=sys.stderr)

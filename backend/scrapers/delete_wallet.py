@@ -3,6 +3,11 @@
 Interactive script to delete specific wallets from the MongoDB database
 """
 
+import sys
+import os
+# Add the parent directory to the Python path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
 from backend.config.config import MONGO_URI
 from backend.database.database import get_client, get_db, get_wallets_collection
 from datetime import datetime

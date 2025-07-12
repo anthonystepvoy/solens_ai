@@ -25,6 +25,7 @@ CIPHER is a full-stack intelligence platform for Solana, featuring real-time cop
 solens_ai/
 │
 ├── backend/                # Scrapers, database, and utility modules
+│   └── scrapers/          # Node.js scrapers with puppeteer
 ├── backend_api/            # FastAPI backend (main API server)
 ├── frontend-vite/          # React (Vite) frontend
 │   └── public/assets/      # Static assets (logo, bgvid.webm, etc.)
@@ -32,6 +33,15 @@ solens_ai/
 ├── .env                    # Environment variables (Mongo URI, API keys, etc.)
 ├── README.md               # This file
 ```
+
+---
+
+## Prerequisites
+
+- **Python 3.8+** with pip
+- **Node.js 18+** with npm
+- **MongoDB Atlas** account (or local MongoDB)
+- **Git**
 
 ---
 
@@ -48,7 +58,9 @@ cd solens_ai
 
 - Copy `.env.example` to `.env` and fill in your MongoDB URI and any API keys.
 
-#### Python (Backend & Scrapers)
+### 3. Install Dependencies
+
+#### Python (Backend API)
 
 ```bash
 cd backend_api
@@ -57,16 +69,21 @@ source ../venv/bin/activate  # or ../venv/Scripts/activate on Windows
 pip install -r requirements.txt
 ```
 
-#### Node.js (Scrapers & Frontend)
+#### Node.js (Frontend)
 
 ```bash
 cd frontend-vite
 npm install
-cd ../backend/scrapers
+```
+
+#### Node.js (Scrapers)
+
+```bash
+cd backend/scrapers
 npm install
 ```
 
-### 3. Running the Backend
+### 4. Running the Backend
 
 ```bash
 cd backend_api
@@ -74,8 +91,10 @@ uvicorn main:app --reload
 ```
 
 - The backend will start the API server and all background jobs (scrapers, ML processor, etc.).
+- The scheduler will automatically start scraping and processing data.
+- API will be available at `http://127.0.0.1:8000`
 
-### 4. Running the Frontend
+### 5. Running the Frontend
 
 ```bash
 cd frontend-vite
@@ -83,6 +102,20 @@ npm run dev
 ```
 
 - Visit [http://localhost:5173](http://localhost:5173) to view the app.
+
+---
+
+## Common Issues & Solutions
+
+### "vite" command not found
+- **Solution:** Run `npm install` in the `frontend-vite` directory
+
+### "Cannot find package 'puppeteer-extra'"
+- **Solution:** Run `npm install` in the `backend/scrapers` directory
+
+### MongoDB Connection Issues
+- Ensure your IP is whitelisted in MongoDB Atlas
+- Check that your `.env` file has the correct MongoDB URI
 
 ---
 
@@ -105,10 +138,12 @@ npm run dev
 
 ---
 
-## Troubleshooting
+## Development Workflow
 
-- **MongoDB Connection Issues:**  
-  Ensure your IP is whitelisted in MongoDB Atlas and your `.env` is correct.
+1. **Start Backend:** `cd backend_api && uvicorn main:app --reload`
+2. **Start Frontend:** `cd frontend-vite && npm run dev`
+3. **Monitor Logs:** The backend will show scheduler activity and API requests
+4. **Data Flow:** Scrapers → MongoDB → API → Frontend
 
 ---
 

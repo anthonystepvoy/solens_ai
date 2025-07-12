@@ -11,6 +11,8 @@ import CopytradeFinder from './components/CopytradeFinder';
 
 const drawerWidth = 280;
 
+// changes to push
+
 // WalletAddress component
 function WalletAddress({ address, short = false }: { address: string, short?: boolean }) {
   const [copied, setCopied] = useState(false);
