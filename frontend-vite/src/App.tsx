@@ -1131,25 +1131,26 @@ function WalletFinderPage({ isMobile = false }) {
           <div style={{ color: '#cccccc', fontSize: 13, marginBottom: 4 }}>Wallets:</div>
           {watchlist.length === 0 && <div style={{ color: '#555', fontSize: 13 }}>[No wallets saved]</div>}
           {watchlist.map(addr => (
-            <div key={addr} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-              <WalletAddress address={addr} />
-              {walletInfoMap[addr] ? (
-                <span style={{ color: '#00ff41', fontSize: 13, fontFamily: 'inherit', background: 'rgba(0,255,65,0.05)', border: '1px solid #222', padding: '2px 8px', borderRadius: 0, marginLeft: 4 }}>
-                  {walletInfoMap[addr].gmgn_detailed_stats?.pnl_7d !== undefined ? `PNL_7D: ${(walletInfoMap[addr].gmgn_detailed_stats.pnl_7d * 100).toFixed(2)}%` : ''}
-                  {walletInfoMap[addr].gmgn_detailed_stats?.winrate !== undefined ? ` | WIN: ${(walletInfoMap[addr].gmgn_detailed_stats.winrate * 100).toFixed(0)}%` : ''}
-                  {walletInfoMap[addr].ai_insights?.overall_smart_score !== undefined ? ` | SMART: ${(walletInfoMap[addr].ai_insights.overall_smart_score * 100).toFixed(0)}%` : ''}
-                  {walletInfoMap[addr].ai_insights?.risk_score !== undefined && !isNaN(walletInfoMap[addr].ai_insights.risk_score) ? ` | RISK: ${(walletInfoMap[addr].ai_insights.risk_score * 100).toFixed(0)}%` : ' | RISK: N/A'}
-                  {walletInfoMap[addr].ai_insights?.tags_ml?.length ? ` | TAGS: ${walletInfoMap[addr].ai_insights.tags_ml.join(', ')}` : ''}
-                </span>
-              ) : (
-                <span style={{ color: '#ff6b6b', fontSize: 13, fontFamily: 'inherit', marginLeft: 4 }}>[No data]</span>
-              )}
-              <button onClick={() => fetchWalletInfos()} style={{ background: 'none', color: '#00ff41', border: '1px solid #00ff41', fontSize: 12, padding: '2px 8px', cursor: 'pointer', marginLeft: 4 }}>↻</button>
-              <button onClick={() => removeWallet(addr)} style={{ background: 'none', color: '#ff6b6b', border: 'none', fontSize: 14, cursor: 'pointer' }}>🗑️</button>
+            <div key={addr} className="wallet-address-row">
+              <span className="wallet-address"><WalletAddress address={addr} /></span>
+              <span className="wallet-stats">
+                {walletInfoMap[addr] ? (
+                  <>
+                    {walletInfoMap[addr].gmgn_detailed_stats?.pnl_7d !== undefined ? `PNL_7D: ${(walletInfoMap[addr].gmgn_detailed_stats.pnl_7d * 100).toFixed(2)}%` : ''}
+                    {walletInfoMap[addr].gmgn_detailed_stats?.winrate !== undefined ? `\nWIN: ${(walletInfoMap[addr].gmgn_detailed_stats.winrate * 100).toFixed(0)}%` : ''}
+                    {walletInfoMap[addr].ai_insights?.overall_smart_score !== undefined ? `\nSMART: ${(walletInfoMap[addr].ai_insights.overall_smart_score * 100).toFixed(0)}%` : ''}
+                    {walletInfoMap[addr].ai_insights?.risk_score !== undefined && !isNaN(walletInfoMap[addr].ai_insights.risk_score) ? `\nRISK: ${(walletInfoMap[addr].ai_insights.risk_score * 100).toFixed(0)}%` : '\nRISK: N/A'}
+                    {walletInfoMap[addr].ai_insights?.tags_ml?.length ? `\nTAGS: ${walletInfoMap[addr].ai_insights.tags_ml.join(', ')}` : ''}
+                  </>
+                ) : (
+                  <span style={{ color: '#ff6b6b', fontSize: 13, fontFamily: 'inherit' }}>[No data]</span>
+                )}
+              </span>
+              <button className="wallet-refresh-btn" onClick={() => fetchWalletInfos()} style={{ background: 'none', color: '#00ff41', border: '1px solid #00ff41', fontSize: 12, padding: '2px 8px', cursor: 'pointer' }}>↻</button>
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 12 }}>
+        <div className="wallet-watchlist-buttons" style={{ marginTop: 12 }}>
           <button onClick={exportWatchlistJSON} style={{ background: 'none', color: '#00ff41', border: '1px solid #00ff41', padding: '8px 16px', fontFamily: 'inherit', cursor: 'pointer', marginRight: 8 }}>&gt; EXPORT_WATCHLIST_JSON</button>
           <button onClick={exportWatchlistCSV} style={{ background: 'none', color: '#00ff41', border: '1px solid #00ff41', padding: '8px 16px', fontFamily: 'inherit', cursor: 'pointer', marginRight: 8 }}>&gt; EXPORT_WATCHLIST_CSV</button>
           <input type="file" accept="application/json" ref={fileInputRef} style={{ display: 'none' }} onChange={importWatchlist} />

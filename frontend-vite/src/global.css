@@ -15,4 +15,67 @@ html, body, #root {
   .dashboard-grid {
     gap: 16px !important;
   }
+}
+
+/* Responsive wallet address styling */
+.wallet-address {
+  word-break: break-all;
+  font-size: 1rem;
+  font-family: 'Courier New', monospace;
+}
+
+.wallet-stats {
+  background: rgba(0,255,65,0.05);
+  border: 1px solid #00ff41;
+  color: #00ff41;
+  font-size: 0.95rem;
+  padding: 6px 8px;
+  margin: 4px 0 4px 0;
+  width: fit-content;
+  box-sizing: border-box;
+  white-space: pre-line;
+  border-radius: 4px;
+  display: block;
+}
+.wallet-refresh-btn {
+  align-self: flex-end;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  width: fit-content;
+}
+@media (max-width: 600px) {
+  .wallet-address-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #222;
+    padding-bottom: 8px;
+  }
+  .wallet-address {
+    font-size: 0.9rem;
+    word-break: break-all;
+    margin-bottom: 2px;
+  }
+  .wallet-stats {
+    font-size: 0.85rem;
+    width: 100%;
+    margin: 4px 0;
+    border-radius: 4px;
+  }
+  .wallet-refresh-btn {
+    align-self: flex-end;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    width: fit-content;
+  }
+  .wallet-watchlist-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .wallet-watchlist-buttons button {
+    width: 100%;
+    margin-right: 0 !important;
+  }
 } 
