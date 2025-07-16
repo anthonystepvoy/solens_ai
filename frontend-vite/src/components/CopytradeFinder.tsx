@@ -276,7 +276,7 @@ const CopytradeFinder: React.FC<{ isMobile?: boolean }> = ({ isMobile = false })
         marginBottom: 32 
       }}>
         <b style={{ color: '#00ff41' }}>[WHAT IS THIS?]</b><br/>
-        The Copytrade Analyzer is an advanced pattern recognition system for Cipher. It analyzes blockchain transactions to identify wallets that copy successful traders, providing insights into trading patterns and behaviors. <br/><br/>
+        The Copytrade Analyzer is an advanced pattern recognition system for Cypher. It analyzes blockchain transactions to identify wallets that copy successful traders, providing insights into trading patterns and behaviors. <br/><br/>
         <b style={{ color: '#00ff41' }}>[WHAT DOES IT DO?]</b><br/>
         - Detects copy trading patterns by analyzing transaction timing.<br/>
         - Identifies wallets that follow successful traders.<br/>

@@ -173,7 +173,7 @@ const LandingPage: React.FC = () => {
             textTransform: 'uppercase',
             letterSpacing: '2px'
           }}>
-            <span>&gt;</span> CIPHER
+            <span>&gt;</span> CYPHER
           </span>
         </div>
         <MatrixText
@@ -449,13 +449,13 @@ const LandingPage: React.FC = () => {
         fontSize: isMobile ? '10px' : '12px'
       }}>
         <div style={{ marginBottom: '16px' }}>
-          <span style={{ color: '#ffffff' }}>&gt; CIPHER_SYSTEMS</span> • ADVANCED ON-CHAIN INTELLIGENCE PLATFORM
+                      <span style={{ color: '#ffffff' }}>&gt; CYPHER_SYSTEMS</span> • ADVANCED ON-CHAIN INTELLIGENCE PLATFORM
         </div>
         <div style={{ opacity: 0.7 }}>
           [OPERATIONAL_STATUS: ONLINE] •• [DATA_CLASSIFICATION: OPEN]
         </div>
         <div style={{ marginTop: '16px', opacity: 0.5 }}>
-          © 2024 CIPHER SYSTEMS. ALL RIGHTS RESERVED.
+                      © 2024 CYPHER SYSTEMS. ALL RIGHTS RESERVED.
         </div>
       </footer>
 

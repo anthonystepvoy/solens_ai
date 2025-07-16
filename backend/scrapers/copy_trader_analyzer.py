@@ -22,6 +22,7 @@ BLOCK_LIMIT = 5  # Number of blocks to scan for copytraders (reduced from 20)
 MAX_TRANSACTIONS_PER_BLOCK = 10  # Limit transactions processed per block to prevent infinite loops
 TIMEOUT_SECONDS = 300  # 5 minute timeout for entire analysis
 
+#
 # --- CONFIGURATION ---
 try:
     # Try multiple paths for .env file

@@ -1,7 +1,7 @@
 {
-  "name": "cipher",
+  "name": "cypher",
   "version": "1.0.0",
-  "description": "Cipher Backend",
+      "description": "Cypher Backend",
   "scripts": {
     "build": "cd backend/scrapers && npm install",
     "start": "python3 backend_api/main.py"

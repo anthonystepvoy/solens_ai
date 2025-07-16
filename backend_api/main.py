@@ -1,6 +1,6 @@
 import os
 
-# Force redeploy - Cipher backend v2
+# Force redeploy - Cypher backend v2
 # Try to load dotenv, but don't fail if it's not available
 try:
     from dotenv import load_dotenv
@@ -1008,6 +1008,35 @@ def run_all_now():
         minute_rank_thread.start()
         
         return {"status": "triggered", "message": "Discovery and 1-minute rank fetch started in background"}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/cleanup-low-token-wallets")
+def cleanup_low_token_wallets():
+    """Remove wallets with less than 3 unique tokens traded in the last 7 days"""
+    try:
+        # Find wallets with less than 3 unique tokens traded in 7 days
+        low_token_wallets = list(db.wallets.find({
+            "$or": [
+                {"unique_tokens_bought_7d": {"$lt": 3}},
+                {"unique_tokens_bought_7d": {"$exists": False}},
+                {"unique_tokens_bought_7d": None}
+            ]
+        }))
+        
+        if not low_token_wallets:
+            return {"status": "no_action", "message": "No wallets to remove. All wallets meet the minimum token requirement."}
+        
+        # Remove the wallets
+        wallet_addresses = [w['_id'] for w in low_token_wallets]
+        result = db.wallets.delete_many({"_id": {"$in": wallet_addresses}})
+        
+        return {
+            "status": "success", 
+            "message": f"Successfully removed {result.deleted_count} wallets with less than 3 tokens traded",
+            "removed_count": result.deleted_count,
+            "total_remaining": db.wallets.count_documents({})
+        }
     except Exception as e:
         return {"error": str(e)}
 

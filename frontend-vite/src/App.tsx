@@ -244,24 +244,46 @@ function DashboardPage({ isMobile = false }) {
                   fontSize: 13,
                   background: i % 2 === 0 ? 'rgba(0,255,65,0.03)' : 'transparent'
                 }}>
-                      <WalletAddress address={w.address} short={true} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <WalletAddress address={w.address} short={true} />
+                        <button
+                          title="View wallet on GMGN"
+                          onClick={e => { 
+                            e.stopPropagation(); 
+                            window.open(`https://gmgn.ai/sol/address/${w.address}`, '_blank');
+                          }}
+                          style={{
+                            background: 'rgba(0, 255, 65, 0.1)',
+                            border: '1px solid #00ff41',
+                            color: '#00ff41',
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            padding: '4px 8px',
+                            borderRadius: 0,
+                            fontFamily: '"Courier New", monospace',
+                            fontWeight: 'bold',
+                            transition: 'all 0.2s'
+                          }}
+                          onMouseOver={e => e.currentTarget.style.background = 'rgba(0, 255, 65, 0.2)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(0, 255, 65, 0.1)'}
+                        >
+                          GMGN
+                        </button>
+                      </div>
                   <span style={{ color: '#00ff41', fontWeight: 400, fontFamily: '"Courier New", monospace', fontSize: 13 }}>{w.pnl_7d !== undefined ? (parseFloat(w.pnl_7d) * 100).toFixed(2) + '%' : ''}</span>
                   <span style={{ fontFamily: '"Courier New", monospace', fontSize: 13 }}>{w.winRate}</span>
                   <span style={{ color: '#00ff41', fontWeight: 400, fontFamily: '"Courier New", monospace', fontSize: 13 }}>{!isNaN(parseFloat(w.smartScore)) ? `${parseFloat(w.smartScore).toFixed(0)}%` : 'N/A'}</span>
                   <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {w.ml_tags && w.ml_tags.length > 0 ? w.ml_tags.map((tag, j) => (
                       <span key={j} style={{
-                        background: 'rgba(0,255,65,0.1)',
-                    color: '#00ff41',
-                        border: '1px solid #00ff41',
+                        background: 'rgba(0, 255, 65, 0.1)',
+                        color: '#00ff41',
                         padding: '2px 6px',
                         fontSize: 11,
-                        borderRadius: 0,
                         fontFamily: '"Courier New", monospace',
-                        letterSpacing: '0.5px',
-                        fontWeight: 400
+                        border: '1px solid #00ff41'
                       }}>{tag}</span>
-                    )) : <span style={{ color: '#555', fontFamily: '"Courier New", monospace', fontSize: 13 }}>-</span>}
+                    )) : <span style={{ color: '#555', fontFamily: '"Courier New", monospace', fontSize: 13 }}>N/A</span>}
                   </span>
                 </div>
               ))}
@@ -275,8 +297,31 @@ function DashboardPage({ isMobile = false }) {
               ) : hotWallets1h.map((w, i) => (
                 <div key={i} style={{ padding: '12px 0', borderBottom: i < hotWallets1h.length - 1 ? '1px solid #333333' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: '"Courier New", monospace' }}>
                   <div>
-                    <div style={{ fontSize: 14, marginBottom: 4, fontFamily: '"Courier New", monospace' }}>
+                    <div style={{ fontSize: 14, marginBottom: 4, fontFamily: '"Courier New", monospace', display: 'flex', alignItems: 'center', gap: 8 }}>
                       <WalletAddress address={w.address} short={true} />
+                      <button
+                        title="View wallet on GMGN"
+                        onClick={e => { 
+                          e.stopPropagation(); 
+                          window.open(`https://gmgn.ai/sol/address/${w.address}`, '_blank');
+                        }}
+                        style={{
+                          background: 'rgba(0, 255, 65, 0.1)',
+                          border: '1px solid #00ff41',
+                          color: '#00ff41',
+                          fontSize: 12,
+                          cursor: 'pointer',
+                          padding: '4px 8px',
+                          borderRadius: 0,
+                          fontFamily: '"Courier New", monospace',
+                          fontWeight: 'bold',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = 'rgba(0, 255, 65, 0.2)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(0, 255, 65, 0.1)'}
+                      >
+                        GMGN
+                      </button>
                     </div>
                     <div style={{ fontSize: 12, color: '#cccccc', fontFamily: '"Courier New", monospace' }}>
                       TRADES_1H: <span style={{ color: '#00ff41', fontFamily: '"Courier New", monospace' }}>{w.trades_1h}</span>
@@ -1132,21 +1177,22 @@ function WalletFinderPage({ isMobile = false }) {
           {watchlist.length === 0 && <div style={{ color: '#555', fontSize: 13 }}>[No wallets saved]</div>}
           {watchlist.map(addr => (
             <div key={addr} className="wallet-address-row">
-              <span className="wallet-address"><WalletAddress address={addr} /></span>
-              <span className="wallet-stats">
+              <div className="wallet-address"><WalletAddress address={addr} /></div>
+              <div className="wallet-stats-container">
                 {walletInfoMap[addr] ? (
-                  <>
-                    {walletInfoMap[addr].gmgn_detailed_stats?.pnl_7d !== undefined ? `PNL_7D: ${(walletInfoMap[addr].gmgn_detailed_stats.pnl_7d * 100).toFixed(2)}%` : ''}
-                    {walletInfoMap[addr].gmgn_detailed_stats?.winrate !== undefined ? `\nWIN: ${(walletInfoMap[addr].gmgn_detailed_stats.winrate * 100).toFixed(0)}%` : ''}
-                    {walletInfoMap[addr].ai_insights?.overall_smart_score !== undefined ? `\nSMART: ${(walletInfoMap[addr].ai_insights.overall_smart_score * 100).toFixed(0)}%` : ''}
-                    {walletInfoMap[addr].ai_insights?.risk_score !== undefined && !isNaN(walletInfoMap[addr].ai_insights.risk_score) ? `\nRISK: ${(walletInfoMap[addr].ai_insights.risk_score * 100).toFixed(0)}%` : '\nRISK: N/A'}
-                    {walletInfoMap[addr].ai_insights?.tags_ml?.length ? `\nTAGS: ${walletInfoMap[addr].ai_insights.tags_ml.join(', ')}` : ''}
-                  </>
+                  <div className="wallet-stats">
+                    {walletInfoMap[addr].gmgn_detailed_stats?.pnl_7d !== undefined ? `${(walletInfoMap[addr].gmgn_detailed_stats.pnl_7d * 100).toFixed(2)}%` : ''}
+                    {walletInfoMap[addr].gmgn_detailed_stats?.winrate !== undefined ? ` | WIN: ${(walletInfoMap[addr].gmgn_detailed_stats.winrate * 100).toFixed(0)}%` : ''}
+                    {walletInfoMap[addr].ai_insights?.overall_smart_score !== undefined ? ` | SMART: ${(walletInfoMap[addr].ai_insights.overall_smart_score * 100).toFixed(0)}%` : ''}
+                    {walletInfoMap[addr].ai_insights?.risk_score !== undefined && !isNaN(walletInfoMap[addr].ai_insights.risk_score) ? ` | RISK: ${(walletInfoMap[addr].ai_insights.risk_score * 100).toFixed(0)}%` : ' | RISK: N/A'}
+                    {walletInfoMap[addr].ai_insights?.tags_ml?.length ? ` | TAGS: ${walletInfoMap[addr].ai_insights.tags_ml.join(', ')}` : ''}
+                  </div>
                 ) : (
-                  <span style={{ color: '#ff6b6b', fontSize: 13, fontFamily: 'inherit' }}>[No data]</span>
+                  <div className="wallet-stats" style={{ color: '#ff6b6b', fontSize: 13, fontFamily: 'inherit' }}>[No data]</div>
                 )}
-              </span>
-              <button className="wallet-refresh-btn" onClick={() => fetchWalletInfos()} style={{ background: 'none', color: '#00ff41', border: '1px solid #00ff41', fontSize: 12, padding: '2px 8px', cursor: 'pointer' }}>↻</button>
+                <button className="wallet-refresh-btn" onClick={() => fetchWalletInfos()} style={{ background: 'none', color: '#00ff41', border: '1px solid #00ff41', fontSize: 12, padding: '2px 8px', cursor: 'pointer', marginLeft: 8 }}>↻</button>
+                <button className="wallet-delete-btn" onClick={() => removeWallet(addr)} style={{ background: 'none', color: '#ff6b6b', border: '1px solid #ff6b6b', fontSize: 12, padding: '2px 8px', cursor: 'pointer', marginLeft: 4 }}>×</button>
+              </div>
             </div>
           ))}
         </div>
@@ -1231,6 +1277,7 @@ function WalletFinderPage({ isMobile = false }) {
                   <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>ML_TAGS</th>
                   <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>TOKENS (7D)</th>
                   <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>TRADES (7D)</th>
+                  <th style={{ padding: '12px', textAlign: 'left', color: '#00ff41', borderBottom: '1px solid #333333' }}>GMGN</th>
                 </tr>
               </thead>
               <tbody>
@@ -1271,6 +1318,31 @@ function WalletFinderPage({ isMobile = false }) {
                     <td style={{ padding: '10px' }}>{w.ai_insights?.tags_ml?.join(', ')}</td>
                     <td style={{ padding: '10px' }}>{w.unique_tokens_bought_7d ?? ''}</td>
                     <td style={{ padding: '10px' }}>{(w.gmgn_detailed_stats?.buy_7d ?? 0) + (w.gmgn_detailed_stats?.sell_7d ?? 0)}</td>
+                    <td style={{ padding: '10px' }}>
+                      <button
+                        title="View wallet on GMGN"
+                        onClick={e => { 
+                          e.stopPropagation(); 
+                          window.open(`https://gmgn.ai/sol/address/${w.id}`, '_blank');
+                        }}
+                        style={{
+                          background: 'rgba(0, 255, 65, 0.1)',
+                          border: '1px solid #00ff41',
+                          color: '#00ff41',
+                          fontSize: 12,
+                          cursor: 'pointer',
+                          padding: '4px 8px',
+                          borderRadius: 0,
+                          fontFamily: '"Courier New", monospace',
+                          fontWeight: 'bold',
+                          transition: 'all 0.2s'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = 'rgba(0, 255, 65, 0.2)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(0, 255, 65, 0.1)'}
+                      >
+                        GMGN
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1416,7 +1488,7 @@ function MainAppLayout() {
             onMouseLeave={e => (e.currentTarget.style.color = '#00ff41')}
             title="Go to Home"
           >
-            CIPHER
+            CYPHER
           </h1>
           <p style={{ 
             margin: '4px 0 0 0', 
@@ -1524,7 +1596,7 @@ function MainAppLayout() {
             alignItems: 'center',
             justifyContent: 'space-between'
           }}>
-            <h1 style={{ margin: 0, fontSize: 18, color: '#fff', letterSpacing: 2 }}>CIPHER</h1>
+            <h1 style={{ margin: 0, fontSize: 18, color: '#fff', letterSpacing: 2 }}>CYPHER</h1>
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
               style={{ 
@@ -1601,7 +1673,7 @@ function MLProcessorPage({ isMobile = false }) {
       <div style={{ color: '#cccccc', fontWeight: 600, fontSize: 16, marginTop: 32, fontFamily: 'inherit', marginBottom: 32 }}>[ML PROCESSOR MODULE]</div>
       <div style={{ color: '#cccccc', fontSize: 15, lineHeight: 1.7, background: 'rgba(0,255,65,0.04)', border: '1px solid #00ff41', borderRadius: 0, padding: 24, marginBottom: 32 }}>
         <b style={{ color: '#00ff41' }}>[WHAT IS THIS?]</b><br/>
-        The ML Processor is the AI core of Cipher. It analyzes wallet and token data using machine learning algorithms to generate smart scores, risk scores, and predictive trading insights. <br/><br/>
+        The ML Processor is the AI core of Cypher. It analyzes wallet and token data using machine learning algorithms to generate smart scores, risk scores, and predictive trading insights. <br/><br/>
         <b style={{ color: '#00ff41' }}>[WHAT DOES IT DO?]</b><br/>
         - Clusters wallets by trading behavior and performance.<br/>
         - Assigns "Smart Score" and "Risk Score" to each wallet.<br/>

@@ -97,8 +97,9 @@ function passesWalletQualityFilters(detailedStats, enrichmentFields, traderData)
     const pnl7d = detailedStats?.pnl_7d ?? detailedStats?.pnl ?? 0;
     
     // Apply the same strict filters as the main wallet scraper
+    // Updated to require minimum 3 unique tokens traded in 7 days
     const passesFilters = 
-        uniqueTokensBought7d >= 5 &&
+        uniqueTokensBought7d >= 3 &&  // Changed from 5 to 3
         winrate7d >= 0.3 &&
         pnl7d > 0 &&
         avgBuyUsd7d !== null && avgBuyUsd7d >= 30;

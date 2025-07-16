@@ -1,6 +1,6 @@
-# CIPHER: Solana Blockchain Intelligence Platform
+# CYPHER: Solana Blockchain Intelligence Platform
 
-CIPHER is a full-stack intelligence platform for Solana, featuring real-time copytrader analysis, wallet and token discovery, and advanced analytics. Built with a FastAPI backend, MongoDB Atlas, and a modern React (Vite) frontend.
+CYPHER is a full-stack intelligence platform for Solana, featuring real-time copytrader analysis, wallet and token discovery, and advanced analytics. Built with a FastAPI backend, MongoDB Atlas, and a modern React (Vite) frontend.
 
 ---
 
