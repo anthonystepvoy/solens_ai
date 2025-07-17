@@ -523,20 +523,9 @@ def dashboard_summary():
             score *= 0.7
         w['dashboard_score'] = score
 
-    # Filter for wallets with some activity and positive PNL, ensuring at least 20 wallets
+    # Show the top 20 wallets by PNL 7D, regardless of threshold
     eligible_wallets = [w for w in wallets if w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0) > 0 and w.get('unique_tokens_bought_7d', 0) > 0]
-    
-    # If we have less than 20 wallets with 40%+ PNL, lower the threshold to ensure minimum 20
-    high_performers = [w for w in eligible_wallets if w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0) >= 40]
-    if len(high_performers) < 20:
-        # Lower threshold to get at least 20 wallets
-        pnl_threshold = 0  # Start with any positive PNL
-        while len([w for w in eligible_wallets if w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0) >= pnl_threshold]) < 20 and pnl_threshold <= 40:
-            pnl_threshold += 5  # Increase threshold in 5% increments
-        eligible_wallets = [w for w in eligible_wallets if w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0) >= pnl_threshold]
-    else:
-        eligible_wallets = high_performers
-    top_wallets_sorted = sorted(eligible_wallets, key=lambda w: w['dashboard_score'], reverse=True)
+    top_wallets_sorted = sorted(eligible_wallets, key=lambda w: (w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0), w['dashboard_score']), reverse=True)
 
     top_wallets_summary = [{
         "address": w.get('_id'),
