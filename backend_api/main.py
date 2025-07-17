@@ -525,26 +525,35 @@ def dashboard_summary():
         "ml_tags": w.get('ai_insights', {}).get('tags_ml', [])
     } for w in top_wallets_sorted[:20]]
 
-    # 2. Hot Wallets 1H (use 1 hour stats)
+    # 2. Hot Wallets 1H (show best performing wallets from existing data)
     hot_wallets_candidates = [w for w in wallets if w.get('gmgn_detailed_stats')]
-    trades_1h_values = [w.get('gmgn_detailed_stats', {}).get('buy_1h', 0) + w.get('gmgn_detailed_stats', {}).get('sell_1h', 0) for w in hot_wallets_candidates]
-    pnl_1h_values = [w.get('gmgn_detailed_stats', {}).get('pnl_1h') for w in hot_wallets_candidates]
-    norm_trades_1h = normalize(trades_1h_values)
-    norm_pnl_1h = normalize(pnl_1h_values)
-    for i, w in enumerate(hot_wallets_candidates):
-        w['hot_score_1h'] = (norm_trades_1h[i] * 0.6) + (norm_pnl_1h[i] * 0.4)
-        w['trades_1h'] = trades_1h_values[i]
-        w['pnl_1h'] = pnl_1h_values[i] if pnl_1h_values[i] is not None else 0
-    filtered_hot_wallets_1h = [w for w in hot_wallets_candidates if w['trades_1h'] >= 5 and w['pnl_1h'] > 0]
+    
+    # Calculate a performance score based on PNL, win rate, and trade activity
+    for w in hot_wallets_candidates:
+        pnl_7d = w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0)
+        winrate = w.get('gmgn_detailed_stats', {}).get('winrate', 0)
+        trades_7d = w.get('gmgn_detailed_stats', {}).get('buy_7d', 0) + w.get('gmgn_detailed_stats', {}).get('sell_7d', 0)
+        
+        # Performance score: 60% PNL, 30% win rate, 10% trade activity
+        w['performance_score'] = (pnl_7d * 0.6) + (winrate * 0.3) + (min(trades_7d / 100, 1) * 0.1)
+        w['trades_7d'] = trades_7d
+        w['pnl_7d'] = pnl_7d
+    
+    # Filter for wallets with good performance and recent activity
+    filtered_hot_wallets_1h = [w for w in hot_wallets_candidates 
+                               if w['pnl_7d'] > 0 and w['trades_7d'] >= 5 and w['performance_score'] > 0]
+    
     if not filtered_hot_wallets_1h:
-        filtered_hot_wallets_1h = [w for w in hot_wallets_candidates if w['trades_1h'] > 0]
-        filtered_hot_wallets_1h = sorted(filtered_hot_wallets_1h, key=lambda w: w['hot_score_1h'], reverse=True)[:5]
-    else:
-        filtered_hot_wallets_1h = sorted(filtered_hot_wallets_1h, key=lambda w: w['hot_score_1h'], reverse=True)[:5]
+        # Fallback: show any wallets with positive PNL
+        filtered_hot_wallets_1h = [w for w in hot_wallets_candidates if w['pnl_7d'] > 0]
+    
+    # Sort by performance score and take top 10
+    filtered_hot_wallets_1h = sorted(filtered_hot_wallets_1h, key=lambda w: w['performance_score'], reverse=True)[:10]
+    
     hot_wallets_1h = [{
         "address": w.get('_id'),
-        "trades_1h": w['trades_1h'],
-        "pnl_1h": f"{w['pnl_1h']:.2f}%"
+        "trades_1h": w['trades_7d'],  # Show 7d trades as "recent activity"
+        "pnl_1h": f"{w['pnl_7d']:.2f}%"
     } for w in filtered_hot_wallets_1h]
 
     # 3. Top Risky Wallets (by ML risk_score, only if > 0, and stricter filters)

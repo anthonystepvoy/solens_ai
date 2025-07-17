@@ -291,9 +291,9 @@ function DashboardPage({ isMobile = false }) {
 
             {/* Hot Wallets 1H */}
             <div className={isMobile ? 'dashboard-card' : ''} style={{ background: 'rgba(255, 255, 255, 0.02)', color: '#ffffff', borderRadius: 0, padding: isMobile ? 12 : 24, border: '1px solid #333333', marginBottom: 16, fontFamily: '"Courier New", monospace' }}>
-              <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600, color: '#ffffff', letterSpacing: '1px', fontFamily: '"Courier New", monospace' }}>[HOT_WALLETS_1H]</h3>
-              {hotWallets1h.length === 0 ? (
-                <div style={{ color: '#ff6b6b', fontSize: 14, fontFamily: '"Courier New", monospace' }}>[NO HOT WALLETS FOUND IN LAST 1H]</div>
+              <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600, color: '#ffffff', letterSpacing: '1px', fontFamily: '"Courier New", monospace' }}>[BEST_PERFORMING_WALLETS]</h3>
+                              {hotWallets1h.length === 0 ? (
+                  <div style={{ color: '#ff6b6b', fontSize: 14, fontFamily: '"Courier New", monospace' }}>[NO PERFORMING WALLETS FOUND]</div>
               ) : hotWallets1h.map((w, i) => (
                 <div key={i} style={{ padding: '12px 0', borderBottom: i < hotWallets1h.length - 1 ? '1px solid #333333' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: '"Courier New", monospace' }}>
                   <div>
@@ -324,7 +324,7 @@ function DashboardPage({ isMobile = false }) {
                       </button>
                     </div>
                     <div style={{ fontSize: 12, color: '#cccccc', fontFamily: '"Courier New", monospace' }}>
-                      TRADES_1H: <span style={{ color: '#00ff41', fontFamily: '"Courier New", monospace' }}>{w.trades_1h}</span>
+                      TRADES_7D: <span style={{ color: '#00ff41', fontFamily: '"Courier New", monospace' }}>{w.trades_1h}</span>
                     </div>
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 400, color: '#00ff41', textAlign: 'right', fontFamily: '"Courier New", monospace' }}>
