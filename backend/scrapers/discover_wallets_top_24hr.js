@@ -87,7 +87,7 @@ async function main() {
             const walletAddress = trader.address;
             // PRE-WALLET CHECK: Skip if wallet already exists
             const existingWallet = await db.collection("wallets").findOne({ _id: walletAddress });
-            if (existingWallet) continue;
+            // Removed skip logic - always update stats
             // Fetch detailed wallet stats
             const detailedStats = await fetchDetailedWalletStats(page, walletAddress);
             // Fetch wallet activity for enrichment
