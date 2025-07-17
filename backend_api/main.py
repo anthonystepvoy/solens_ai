@@ -496,33 +496,47 @@ def dashboard_summary():
         if max_val == min_val: return [0.0] * len(values)
         return [((v - min_val) / (max_val - min_val)) if v is not None else 0.0 for v in values]
 
-    # --- UPGRADED RANKING LOGIC (GMGN DATA ONLY) ---
+    # --- IMPROVED TOP WALLETS LOGIC (Composite Score) ---
+    # Gather metrics for normalization
+    token_diversity = [w.get('unique_tokens_bought_7d', 0) for w in wallets]
+    winrates = [w.get('gmgn_detailed_stats', {}).get('winrate', 0) for w in wallets]
+    pnls = [w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0) for w in wallets]
+    trade_counts = [w.get('gmgn_detailed_stats', {}).get('buy_7d', 0) + w.get('gmgn_detailed_stats', {}).get('sell_7d', 0) for w in wallets]
+    risk_scores = [w.get('ai_insights', {}).get('risk_score', 0) for w in wallets]
 
-    # 1. Top Profitable Wallets (filtered for 'great' wallets, fallback if empty)
-    great_wallets = [
-        w for w in wallets
-        if w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0) > 0
-        and w.get('gmgn_detailed_stats', {}).get('winrate', 0) > 0.5
-        and w.get('ai_insights', {}).get('overall_smart_score', 0) > 0.5
-        and (w.get('gmgn_detailed_stats', {}).get('buy_7d', 0) + w.get('gmgn_detailed_stats', {}).get('sell_7d', 0)) >= 10
-    ]
-    if not great_wallets:
-        # Fallback: show top 5 by smart score, no filters
-        great_wallets = sorted(
-            [w for w in wallets if w.get('ai_insights', {}).get('overall_smart_score')],
-            key=lambda w: w['ai_insights']['overall_smart_score'], reverse=True
-        )[:5]
-    top_wallets_sorted = sorted(
-        great_wallets,
-        key=lambda w: w['ai_insights']['overall_smart_score'], reverse=True)
-    
+    norm_token_diversity = normalize(token_diversity)
+    norm_winrates = normalize(winrates)
+    norm_pnls = normalize(pnls)
+    norm_trade_counts = normalize(trade_counts)
+    norm_risk_scores = normalize(risk_scores)
+
+    # Compute composite score for each wallet
+    for i, w in enumerate(wallets):
+        score = (
+            0.35 * norm_token_diversity[i] +
+            0.30 * norm_winrates[i] +
+            0.25 * norm_pnls[i] +
+            0.10 * norm_trade_counts[i]
+        )
+        # Penalize high risk
+        if risk_scores[i] > 0.8:
+            score *= 0.7
+        w['dashboard_score'] = score
+
+    # Filter for wallets with some activity and positive PNL
+    eligible_wallets = [w for w in wallets if w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0) > 0 and w.get('unique_tokens_bought_7d', 0) > 0]
+    top_wallets_sorted = sorted(eligible_wallets, key=lambda w: w['dashboard_score'], reverse=True)
+
     top_wallets_summary = [{
         "address": w.get('_id'),
         "pnl_7d": f"{w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0):.2f}%",
         "winRate": f"{w.get('gmgn_detailed_stats', {}).get('winrate', 0) * 100:.0f}%",
         "smartScore": f"{w.get('ai_insights', {}).get('overall_smart_score', 0) * 100:.0f}",
         "riskScore": f"{w.get('ai_insights', {}).get('risk_score', 0) * 100:.0f}",
-        "ml_tags": w.get('ai_insights', {}).get('tags_ml', [])
+        "ml_tags": w.get('ai_insights', {}).get('tags_ml', []),
+        "unique_tokens_bought_7d": w.get('unique_tokens_bought_7d', 0),
+        "trade_count_7d": w.get('gmgn_detailed_stats', {}).get('buy_7d', 0) + w.get('gmgn_detailed_stats', {}).get('sell_7d', 0),
+        "dashboard_score": round(w['dashboard_score'], 4)
     } for w in top_wallets_sorted[:20]]
 
     # 2. Hot Wallets 1H (show best performing wallets from existing data)

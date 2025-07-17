@@ -297,7 +297,7 @@ const LandingPage: React.FC = () => {
             ONLINE • 99.97% UPTIME
           </div>
           <div style={{ fontFamily: '"Courier New", monospace', color: '#cccccc', fontSize: isMobile ? '10px' : '12px' }}>
-            <span style={{ color: '#ffffff', marginRight: '8px' }}>[WALLETS_SCANNED]</span>
+            <span style={{ color: '#ffffff', marginRight: '8px' }}>[WALLETS_OBTAINED]</span>
             {stats ? (stats.metrics?.find((m:any) => m.label.toLowerCase().includes('wallet'))?.value || 'N/A') : 'N/A'}
           </div>
           <div style={{ fontFamily: '"Courier New", monospace', color: '#cccccc', fontSize: isMobile ? '10px' : '12px' }}>
@@ -336,7 +336,7 @@ const LandingPage: React.FC = () => {
             gap: isMobile ? '24px' : '60px', 
             alignItems: 'flex-start' 
           }}>
-            <ModuleCard idx={1} title="WALLET_DISCOVERY" desc="Real-time wallet discovery and ranking powered by GMGN. Instantly find top, new, and risky wallets." stats="LIVE • 2.8M+ WALLETS • 7D PNL, RISK, ML TAGS" isMobile={isMobile} />
+            <ModuleCard idx={1} title="WALLET_DISCOVERY" desc="Real-time wallet discovery and ranking. Instantly find top, new, and risky wallets." stats="LIVE • 2.8M+ WALLETS • 7D PNL, RISK, ML TAGS" isMobile={isMobile} />
             <ModuleCard idx={2} title="AI_PROCESSOR" desc="Automated ML scoring and tagging for every wallet. Risk, smart score, and ML tags updated in real time." stats="LIVE • 2.8M SCORED • 91.8% CONFIDENCE" isMobile={isMobile} />
           </div>
 
