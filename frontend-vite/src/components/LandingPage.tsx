@@ -460,7 +460,7 @@ const LandingPage: React.FC = () => {
             target="_blank" 
             rel="noopener noreferrer"
             style={{
-              color: '#00ff41',
+              color: '#ffffff',
               textDecoration: 'none',
               display: 'flex',
               alignItems: 'center',
@@ -469,8 +469,8 @@ const LandingPage: React.FC = () => {
               fontSize: isMobile ? '10px' : '12px',
               transition: 'color 0.2s'
             }}
-            onMouseEnter={e => e.currentTarget.style.color = '#ffffff'}
-            onMouseLeave={e => e.currentTarget.style.color = '#00ff41'}
+            onMouseEnter={e => e.currentTarget.style.color = '#00ff41'}
+            onMouseLeave={e => e.currentTarget.style.color = '#ffffff'}
           >
             <span style={{ fontSize: isMobile ? '12px' : '14px' }}>𝕏</span>
             @CypherSysSOL
