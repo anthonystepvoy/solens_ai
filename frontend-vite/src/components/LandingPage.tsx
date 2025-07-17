@@ -336,8 +336,8 @@ const LandingPage: React.FC = () => {
             gap: isMobile ? '24px' : '60px', 
             alignItems: 'flex-start' 
           }}>
-            <ModuleCard idx={1} title="WALLET_DISCOVERY" desc="Real-time wallet discovery and ranking. Instantly find top, new, and risky wallets." stats="LIVE • 2.8M+ WALLETS • 7D PNL, RISK, ML TAGS" isMobile={isMobile} />
-            <ModuleCard idx={2} title="AI_PROCESSOR" desc="Automated ML scoring and tagging for every wallet. Risk, smart score, and ML tags updated in real time." stats="LIVE • 2.8M SCORED • 91.8% CONFIDENCE" isMobile={isMobile} />
+            <ModuleCard idx={1} title="WALLET_DISCOVERY" desc="Real-time wallet discovery and ranking. Instantly find top, new, and risky wallets." stats="LIVE  • 7D PNL, RISK, ML TAGS" isMobile={isMobile} />
+            <ModuleCard idx={2} title="AI_PROCESSOR" desc="Automated ML scoring and tagging for every wallet. Risk, smart score, and ML tags updated in real time." stats="LIVE • 91.8% CONFIDENCE" isMobile={isMobile} />
           </div>
 
           {/* Row 2 */}
@@ -453,6 +453,28 @@ const LandingPage: React.FC = () => {
         </div>
         <div style={{ opacity: 0.7 }}>
           [OPERATIONAL_STATUS: ONLINE] •• [DATA_CLASSIFICATION: OPEN]
+        </div>
+        <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
+          <a 
+            href="https://twitter.com/CypherSysSOL" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{
+              color: '#00ff41',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontFamily: '"Courier New", monospace',
+              fontSize: isMobile ? '10px' : '12px',
+              transition: 'color 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = '#ffffff'}
+            onMouseLeave={e => e.currentTarget.style.color = '#00ff41'}
+          >
+            <span style={{ fontSize: isMobile ? '12px' : '14px' }}>𝕏</span>
+            @CypherSysSOL
+          </a>
         </div>
         <div style={{ marginTop: '16px', opacity: 0.5 }}>
                       © 2024 CYPHER SYSTEMS. ALL RIGHTS RESERVED.
