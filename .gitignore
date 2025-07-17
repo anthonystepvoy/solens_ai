@@ -73,7 +73,7 @@ data/
 !package-lock.json
 
 # Build outputs
-dist/
+# dist/
 build/
 *.tgz
 *.tar.gz 
