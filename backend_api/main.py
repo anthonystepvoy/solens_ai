@@ -523,8 +523,8 @@ def dashboard_summary():
             score *= 0.7
         w['dashboard_score'] = score
 
-    # Filter for wallets with some activity and positive PNL
-    eligible_wallets = [w for w in wallets if w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0) > 0 and w.get('unique_tokens_bought_7d', 0) > 0]
+    # Filter for wallets with some activity and PNL 7D >= 40%
+    eligible_wallets = [w for w in wallets if w.get('gmgn_detailed_stats', {}).get('pnl_7d', 0) >= 40 and w.get('unique_tokens_bought_7d', 0) > 0]
     top_wallets_sorted = sorted(eligible_wallets, key=lambda w: w['dashboard_score'], reverse=True)
 
     top_wallets_summary = [{
