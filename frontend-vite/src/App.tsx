@@ -1,3 +1,4 @@
+// Deployment trigger: Added comment to force frontend rebuild
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -285,51 +286,6 @@ function DashboardPage({ isMobile = false }) {
                       }}>{tag}</span>
                     )) : <span style={{ color: '#555', fontFamily: '"Courier New", monospace', fontSize: 13 }}>N/A</span>}
                   </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Hot Wallets 1H */}
-            <div className={isMobile ? 'dashboard-card' : ''} style={{ background: 'rgba(255, 255, 255, 0.02)', color: '#ffffff', borderRadius: 0, padding: isMobile ? 12 : 24, border: '1px solid #333333', marginBottom: 16, fontFamily: '"Courier New", monospace' }}>
-              <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600, color: '#ffffff', letterSpacing: '1px', fontFamily: '"Courier New", monospace' }}>[BEST_PERFORMING_WALLETS]</h3>
-                              {hotWallets1h.length === 0 ? (
-                  <div style={{ color: '#ff6b6b', fontSize: 14, fontFamily: '"Courier New", monospace' }}>[NO PERFORMING WALLETS FOUND]</div>
-              ) : hotWallets1h.map((w, i) => (
-                <div key={i} style={{ padding: '12px 0', borderBottom: i < hotWallets1h.length - 1 ? '1px solid #333333' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: '"Courier New", monospace' }}>
-                  <div>
-                    <div style={{ fontSize: 14, marginBottom: 4, fontFamily: '"Courier New", monospace', display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <WalletAddress address={w.address} short={true} />
-                      <button
-                        title="View wallet on GMGN"
-                        onClick={e => { 
-                          e.stopPropagation(); 
-                          window.open(`https://gmgn.ai/sol/address/${w.address}`, '_blank');
-                        }}
-                        style={{
-                          background: 'rgba(0, 255, 65, 0.1)',
-                          border: '1px solid #00ff41',
-                          color: '#00ff41',
-                          fontSize: 12,
-                          cursor: 'pointer',
-                          padding: '4px 8px',
-                          borderRadius: 0,
-                          fontFamily: '"Courier New", monospace',
-                          fontWeight: 'bold',
-                          transition: 'all 0.2s'
-                        }}
-                        onMouseOver={e => e.currentTarget.style.background = 'rgba(0, 255, 65, 0.2)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(0, 255, 65, 0.1)'}
-                      >
-                        GMGN
-                      </button>
-                    </div>
-                    <div style={{ fontSize: 12, color: '#cccccc', fontFamily: '"Courier New", monospace' }}>
-                      TRADES_7D: <span style={{ color: '#00ff41', fontFamily: '"Courier New", monospace' }}>{w.trades_1h}</span>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 400, color: '#00ff41', textAlign: 'right', fontFamily: '"Courier New", monospace' }}>
-                    {w.pnl_1h !== undefined ? w.pnl_1h : ''}
-                  </div>
                 </div>
               ))}
             </div>
