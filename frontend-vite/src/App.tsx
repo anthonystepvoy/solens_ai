@@ -99,6 +99,7 @@ interface DashboardData {
 function DashboardPage({ isMobile = false }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [backendConnected, setBackendConnected] = useState(false);
   const [metrics, setMetrics] = useState<any[]>([]);
   const [topWallets, setTopWallets] = useState<any[]>([]);
   const [topRiskyWallets, setTopRiskyWallets] = useState<any[]>([]);
@@ -117,6 +118,7 @@ function DashboardPage({ isMobile = false }) {
     axios.get<DashboardData>(API_ENDPOINTS.DASHBOARD_SUMMARY)
       .then(res => {
         const d = res.data;
+        setBackendConnected(true);
         setMetrics(d.metrics || []);
         setTopWallets(d.topWallets || []);
         setTopRiskyWallets(d.topRiskyWallets || []);
@@ -130,6 +132,7 @@ function DashboardPage({ isMobile = false }) {
         if (isInitialLoad) setLoading(false);
       })
       .catch(() => {
+        setBackendConnected(false);
         setError('[WARNING] Failed to load live data.');
         setMetrics([]);
         setTopWallets([]);
@@ -173,6 +176,28 @@ function DashboardPage({ isMobile = false }) {
   return (
     <div style={{ marginTop: 0, position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '32px 24px 0', fontFamily: '"Courier New", monospace' }}>
 
+      {/* Backend Status Banner */}
+      {!backendConnected && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          background: '#ff4444',
+          color: '#ffffff',
+          padding: '12px 20px',
+          textAlign: 'center',
+          fontSize: 14,
+          fontWeight: 700,
+          fontFamily: '"Courier New", monospace',
+          zIndex: 9999,
+          border: 'none',
+          letterSpacing: '1px'
+        }}>
+          ⚠ BACKEND NOT RUNNING - Data may be outdated or unavailable
+        </div>
+      )}
+
       <h1 style={{ 
         color: '#ffffff', 
         marginBottom: 24, 
@@ -181,7 +206,7 @@ function DashboardPage({ isMobile = false }) {
         fontFamily: '"Courier New", monospace',
         letterSpacing: '2px',
         textTransform: 'uppercase',
-        marginTop: 0
+        marginTop: backendConnected ? 0 : 50
         }}>&gt; MAIN_DASHBOARD</h1>
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
