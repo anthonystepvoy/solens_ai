@@ -33,13 +33,14 @@
 &nbsp;&nbsp;&nbsp;&nbsp;Sleek React dashboard with real-time updates and terminal-inspired design
 
 ---
+<div align="center">
 <img width="1400" height="493" alt="image" src="https://github.com/user-attachments/assets/10f1fc9d-d1a5-47b7-bfaa-07d47d8d35c8" />
 
 <img width="796" height="436" alt="image" src="https://github.com/user-attachments/assets/f6bdc0d4-8b9e-49e7-8ee4-a582d2341294" />
 
 <img width="1069" height="925" alt="image" src="https://github.com/user-attachments/assets/34632661-202e-4043-83e1-af8280240fc0" />
 
-
+</div>
 
 ## 📁 Project Structure
 
@@ -273,6 +274,8 @@ MIT License - see LICENSE file for details
 ---
 
 <div align="center">
+
+**Note**: This project was originally built for personal use and is now being shared publicly to contribute to the developer community.
 
 **⭐ Star this repo if you find it useful!**
 
