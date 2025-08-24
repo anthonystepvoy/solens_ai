@@ -194,7 +194,10 @@ function DashboardPage({ isMobile = false }) {
           border: 'none',
           letterSpacing: '1px'
         }}>
-          ⚠ BACKEND NOT RUNNING - Data may be outdated or unavailable
+          <div>⚠ BACKEND NOT RUNNING - Data may be outdated or unavailable</div>
+          <div style={{ fontSize: 12, fontWeight: 400, marginTop: 4, opacity: 0.9 }}>
+            Clone repo → Add MongoDB URI to .env → Run backend & discovery → Wallets will appear
+          </div>
         </div>
       )}
 
@@ -206,7 +209,7 @@ function DashboardPage({ isMobile = false }) {
         fontFamily: '"Courier New", monospace',
         letterSpacing: '2px',
         textTransform: 'uppercase',
-        marginTop: backendConnected ? 0 : 50
+        marginTop: backendConnected ? 0 : 70
         }}>&gt; MAIN_DASHBOARD</h1>
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
