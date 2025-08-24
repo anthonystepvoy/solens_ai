@@ -249,6 +249,7 @@ MIT License - see LICENSE file for details
 
 **👨‍💻 Developer:** Anthony Stepvoy  
 **🐙 GitHub:** [@anthonystepvoy](https://github.com/anthonystepvoy)  
+**🐦 X/Twitter:** [@anthonystepvoy](https://x.com/anthonystepvoy)  
 **🚀 Project:** [solens_ai](https://github.com/anthonystepvoy/solens_ai)
 
 </div>
