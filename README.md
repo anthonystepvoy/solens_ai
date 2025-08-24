@@ -18,6 +18,13 @@ SOLENS is a full-stack intelligence platform for Solana, featuring real-time cop
   Beautiful, responsive React (Vite) UI with live stats and hero video.
 
 ---
+<img width="1400" height="493" alt="image" src="https://github.com/user-attachments/assets/10f1fc9d-d1a5-47b7-bfaa-07d47d8d35c8" />
+
+<img width="796" height="436" alt="image" src="https://github.com/user-attachments/assets/f6bdc0d4-8b9e-49e7-8ee4-a582d2341294" />
+
+<img width="1069" height="925" alt="image" src="https://github.com/user-attachments/assets/34632661-202e-4043-83e1-af8280240fc0" />
+
+
 
 ## Project Structure
 
