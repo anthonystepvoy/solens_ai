@@ -1,6 +1,6 @@
-# CYPHER: Solana Blockchain Intelligence Platform
+# SOLENS: Solana Blockchain Intelligence Platform
 
-CYPHER is a full-stack intelligence platform for Solana, featuring real-time copytrader analysis, wallet and token discovery, and advanced analytics. Built with a FastAPI backend, MongoDB Atlas, and a modern React (Vite) frontend.
+SOLENS is a full-stack intelligence platform for Solana, featuring real-time copytrader analysis, wallet and token discovery, and advanced analytics. Built with a FastAPI backend, MongoDB Atlas, and a modern React (Vite) frontend.
 
 ---
 
@@ -50,22 +50,30 @@ solens_ai/
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/solens_ai.git
+git clone https://github.com/anthonystepvoy/solens_ai.git
 cd solens_ai
 ```
 
 ### 2. Environment Setup
 
-- Copy `.env.example` to `.env` and fill in your MongoDB URI and any API keys.
+Create a `.env` file in the root directory with the following variables:
+
+```bash
+MONGODB_URI=your_mongodb_connection_string
+MONGO_URI=your_mongodb_connection_string  # Alternative name for compatibility
+# Add other environment variables as needed
+```
 
 ### 3. Install Dependencies
 
 #### Python (Backend API)
 
 ```bash
-cd backend_api
-python -m venv ../venv
-source ../venv/bin/activate  # or ../venv/Scripts/activate on Windows
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install Python dependencies
 pip install -r requirements.txt
 ```
 
@@ -83,25 +91,36 @@ cd backend/scrapers
 npm install
 ```
 
-### 4. Running the Backend
+### 4. Running the Application
+
+#### Start the Backend API
 
 ```bash
 cd backend_api
-uvicorn main:app --reload
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-- The backend will start the API server and all background jobs (scrapers, ML processor, etc.).
-- The scheduler will automatically start scraping and processing data.
-- API will be available at `http://127.0.0.1:8000`
+The backend API will be available at `http://localhost:8000`
 
-### 5. Running the Frontend
+#### Start the Frontend
 
 ```bash
 cd frontend-vite
 npm run dev
 ```
 
-- Visit [http://localhost:5173](http://localhost:5173) to view the app.
+The frontend will be available at `http://localhost:5173`
+
+#### Production Build
+
+```bash
+# Build frontend for production
+cd frontend-vite
+npm run build
+
+# Serve production build
+npm run preview
+```
 
 ---
 
@@ -121,39 +140,97 @@ npm run dev
 
 ## API Endpoints
 
-- `GET /wallets` — List all discovered wallets
-- `GET /wallet/{address}` — Get details for a specific wallet
-- `GET /dashboard-summary` — Get summary stats for the dashboard
+### Core Endpoints
+- `GET /` — API health check
+- `GET /dashboard-summary` — Dashboard analytics and metrics
+- `GET /wallets` — List all tracked wallets
+- `GET /wallet/{address}` — Get specific wallet details
+- `GET /tokens` — List all tracked tokens
+- `GET /top-tokens` — Get top performing tokens
+
+### Analysis Endpoints
+- `POST /copytrade-analyze` — Analyze wallet for copytrading patterns
+- `GET /api/copytrade-analyze-progress` — Check analysis progress
+- `GET /api/copytrade-analyze-result` — Get analysis results
+- `POST /api/copytrade-cluster-analyze` — Cluster analysis for multiple wallets
+
+### Data Management
+- `POST /run-discovery` — Trigger manual data discovery
+- `POST /ml-process` — Run ML processing on wallet data
+- `GET /recent-activity` — Get recent platform activity
 
 ---
 
-## Customization
+## Architecture
 
-- **Quality Filters:**  
-  Adjust filtering logic in `backend/scrapers/gmgn_coins_traders.js` and related scripts.
-- **ML Processor:**  
-  Tweak or extend the ML logic in the backend as needed.
-- **Frontend Assets:**  
-  Place new images/videos in `frontend-vite/public/assets/` and update references in your React components.
+### Backend Components
+- **FastAPI Server** (`backend_api/main.py`) - Main API server with REST endpoints
+- **Data Scrapers** (`backend/scrapers/`) - Node.js scripts for blockchain data collection
+- **ML Processor** - Machine learning pipeline for wallet analysis and scoring
+- **MongoDB Integration** - Data persistence and querying
+
+### Frontend Components
+- **React + Vite** - Modern frontend framework with fast development
+- **Dashboard** - Real-time analytics and wallet monitoring
+- **Wallet Finder** - Search and analyze individual wallets
+- **Copytrade Analyzer** - Pattern recognition for copy trading detection
+- **Token Tracker** - Monitor and analyze token performance
+
+### Data Flow
+1. **Collection**: Scrapers fetch data from Solana blockchain and external APIs
+2. **Processing**: ML algorithms analyze and score wallet behavior
+3. **Storage**: Processed data stored in MongoDB
+4. **API**: FastAPI serves data to frontend
+5. **Visualization**: React frontend displays analytics and insights
 
 ---
 
 ## Development Workflow
 
-1. **Start Backend:** `cd backend_api && uvicorn main:app --reload`
-2. **Start Frontend:** `cd frontend-vite && npm run dev`
-3. **Monitor Logs:** The backend will show scheduler activity and API requests
-4. **Data Flow:** Scrapers → MongoDB → API → Frontend
+### Local Development
+1. **Database**: Ensure MongoDB is running and accessible
+2. **Backend**: `cd backend_api && uvicorn main:app --reload`
+3. **Frontend**: `cd frontend-vite && npm run dev`
+4. **Scrapers**: Run individual scrapers as needed for data collection
+
+### Code Structure
+```
+solens_ai/
+├── backend_api/          # FastAPI server
+│   └── main.py          # Main API application
+├── backend/             # Data collection and processing
+│   ├── scrapers/        # Blockchain data scrapers
+│   ├── database/        # Database utilities
+│   └── config/          # Configuration files
+├── frontend-vite/       # React frontend
+│   ├── src/            # Source code
+│   ├── public/         # Static assets
+│   └── dist/           # Built application
+└── requirements.txt     # Python dependencies
+```
 
 ---
+
+## Contributing
+
+This is a personal project showcasing Solana blockchain analytics capabilities. While not actively seeking contributions, feedback and suggestions are welcome.
 
 ## License
 
-MIT
+MIT License - see LICENSE file for details
 
----
+## Contact
 
-## Credits
+- **Developer**: Anthony Stepvoy
+- **GitHub**: [@anthonystepvoy](https://github.com/anthonystepvoy)
+- **Project**: [solens_ai](https://github.com/anthonystepvoy/solens_ai)
 
-- Built by [Your Name or Team]
-- Powered by Solana, MongoDB Atlas, FastAPI, React, and Vite.
+## Technology Stack
+
+- **Blockchain**: Solana
+- **Database**: MongoDB Atlas
+- **Backend**: FastAPI, Python
+- **Frontend**: React, TypeScript, Vite
+- **Styling**: Custom CSS with terminal/matrix theme
+- **Data Processing**: Node.js, Python ML libraries
+- **Deployment**: Railway, Vercel compatible

@@ -1,7 +1,14 @@
 {
-  "name": "cypher",
+  "name": "solens",
   "version": "1.0.0",
-      "description": "Cypher Backend",
+  "description": "Solens - Solana Blockchain Intelligence Platform",
+  "author": "Anthony Stepvoy",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anthonystepvoy/solens_ai.git"
+  },
+  "keywords": ["solana", "blockchain", "analytics", "defi", "trading"],
   "scripts": {
     "build": "cd backend/scrapers && npm install",
     "start": "python3 backend_api/main.py"

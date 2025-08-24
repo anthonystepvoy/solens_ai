@@ -1,6 +1,5 @@
 import os
 
-# Force redeploy - Cypher backend v2
 # Try to load dotenv, but don't fail if it's not available
 try:
     from dotenv import load_dotenv

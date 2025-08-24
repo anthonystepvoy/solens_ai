@@ -173,7 +173,7 @@ const LandingPage: React.FC = () => {
             textTransform: 'uppercase',
             letterSpacing: '2px'
           }}>
-            <span>&gt;</span> CYPHER
+            <span>&gt;</span> SOLENS
           </span>
         </div>
         <MatrixText
@@ -449,14 +449,14 @@ const LandingPage: React.FC = () => {
         fontSize: isMobile ? '10px' : '12px'
       }}>
         <div style={{ marginBottom: '16px' }}>
-                      <span style={{ color: '#ffffff' }}>&gt; CYPHER_SYSTEMS</span> • ADVANCED ON-CHAIN INTELLIGENCE PLATFORM
+                      <span style={{ color: '#ffffff' }}>&gt; SOLENS_SYSTEMS</span> • ADVANCED ON-CHAIN INTELLIGENCE PLATFORM
         </div>
         <div style={{ opacity: 0.7 }}>
           [OPERATIONAL_STATUS: ONLINE] •• [DATA_CLASSIFICATION: OPEN]
         </div>
         <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
           <a 
-            href="https://twitter.com/CypherSysSOL" 
+            href="https://twitter.com/SolensSOL" 
             target="_blank" 
             rel="noopener noreferrer"
             style={{
@@ -473,11 +473,11 @@ const LandingPage: React.FC = () => {
             onMouseLeave={e => e.currentTarget.style.color = '#ffffff'}
           >
             <span style={{ fontSize: isMobile ? '12px' : '14px' }}>𝕏</span>
-            @CypherSysSOL
+            @SolensSOL
           </a>
         </div>
         <div style={{ marginTop: '16px', opacity: 0.5 }}>
-                      © 2024 CYPHER SYSTEMS. ALL RIGHTS RESERVED.
+                      © 2024 SOLENS SYSTEMS. ALL RIGHTS RESERVED.
         </div>
       </footer>
 

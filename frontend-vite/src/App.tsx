@@ -1,4 +1,3 @@
-// Deployment trigger: Added comment to force frontend rebuild
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -7,12 +6,10 @@ import '@fontsource/dm-sans/400.css';
 import '@fontsource/dm-sans/700.css';
 import { API_ENDPOINTS } from './config';
 import TopTokensSection from './components/TopTokensSection';
-import LandingPage from './components/LandingPage';
 import CopytradeFinder from './components/CopytradeFinder';
 
 const drawerWidth = 280;
 
-// changes to push
 
 // WalletAddress component
 function WalletAddress({ address, short = false }: { address: string, short?: boolean }) {
@@ -185,7 +182,7 @@ function DashboardPage({ isMobile = false }) {
         letterSpacing: '2px',
         textTransform: 'uppercase',
         marginTop: 0
-      }}>&gt; MAIN_DASHBOARD</h1>
+        }}>&gt; MAIN_DASHBOARD</h1>
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
           <div style={{ color: '#00ff41', fontSize: 16, fontFamily: '"Courier New", monospace' }}>[LOADING_DATA...]</div>
@@ -1444,7 +1441,7 @@ function MainAppLayout() {
             onMouseLeave={e => (e.currentTarget.style.color = '#00ff41')}
             title="Go to Home"
           >
-            CYPHER
+            SOLENS
           </h1>
           <p style={{ 
             margin: '4px 0 0 0', 
@@ -1552,7 +1549,7 @@ function MainAppLayout() {
             alignItems: 'center',
             justifyContent: 'space-between'
           }}>
-            <h1 style={{ margin: 0, fontSize: 18, color: '#fff', letterSpacing: 2 }}>CYPHER</h1>
+            <h1 style={{ margin: 0, fontSize: 18, color: '#fff', letterSpacing: 2 }}>SOLENS</h1>
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)} 
               style={{ 
@@ -1614,7 +1611,6 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
         <Route path="/*" element={<MainAppLayout />} />
       </Routes>
     </Router>
@@ -1629,7 +1625,7 @@ function MLProcessorPage({ isMobile = false }) {
       <div style={{ color: '#cccccc', fontWeight: 600, fontSize: 16, marginTop: 32, fontFamily: 'inherit', marginBottom: 32 }}>[ML PROCESSOR MODULE]</div>
       <div style={{ color: '#cccccc', fontSize: 15, lineHeight: 1.7, background: 'rgba(0,255,65,0.04)', border: '1px solid #00ff41', borderRadius: 0, padding: 24, marginBottom: 32 }}>
         <b style={{ color: '#00ff41' }}>[WHAT IS THIS?]</b><br/>
-        The ML Processor is the AI core of Cypher. It analyzes wallet and token data using machine learning algorithms to generate smart scores, risk scores, and predictive trading insights. <br/><br/>
+        The ML Processor is the AI core of Solens. It analyzes wallet and token data using machine learning algorithms to generate smart scores, risk scores, and predictive trading insights. <br/><br/>
         <b style={{ color: '#00ff41' }}>[WHAT DOES IT DO?]</b><br/>
         - Clusters wallets by trading behavior and performance.<br/>
         - Assigns "Smart Score" and "Risk Score" to each wallet.<br/>

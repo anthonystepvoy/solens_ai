@@ -1,14 +1,16 @@
 {
-  "name": "frontend-vite",
+  "name": "solens-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Solens - Solana Blockchain Intelligence Platform Frontend",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc && vite build",
     "build-with-types": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview --host 0.0.0.0",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
